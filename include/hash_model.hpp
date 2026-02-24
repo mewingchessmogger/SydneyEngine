@@ -20,6 +20,9 @@
         uint32_t offsetVBO{};
         uint32_t offsetIBO{};
         uint32_t imgBufferOffset; //no shot we get 2 billion images
+        uint32_t totVertices{};
+        uint32_t totIndices{};
+        
     };
 
     
@@ -28,7 +31,7 @@
         std::vector<ModelRecord> models{};
         uint32_t index{};
         
-        void storeModel(ModelRecord model) {
+        void storeModelRecord(ModelRecord model) {
             std::cout << model.path << " added..\n";
             models.push_back(model);
             modelHash[model.path] = index;

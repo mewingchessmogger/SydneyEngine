@@ -1,0 +1,884 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "library",
+					"childIndexes" : 
+					[
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library-Debug-73c165fbd1f03fdab753.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "library",
+					"targetIndexes" : 
+					[
+						5,
+						8
+					]
+				},
+				{
+					"build" : "library/glfw",
+					"childIndexes" : 
+					[
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw-Debug-2243e13c8a1d94768950.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "library/glfw",
+					"targetIndexes" : 
+					[
+						1,
+						6
+					]
+				},
+				{
+					"build" : "library/glfw/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw.src-Debug-cd47be006ec7f3c85470.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/src",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				},
+				{
+					"build" : "library/glfw/docs",
+					"jsonFile" : "directory-library.glfw.docs-Debug-877aae77e42241d4e1d2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/docs"
+				},
+				{
+					"build" : "library/glm",
+					"jsonFile" : "directory-library.glm-Debug-becc2b2dfd53c4e607eb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "library/glm"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						5
+					],
+					"name" : "SydneyEngine",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						5,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-Debug-56500fae9c643ff07f1a.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-ALL_BUILD-Debug-d273b558733cc78da654.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SydneyEngine::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SydneyEngine-Debug-4d972fea2efadd7c0616.json",
+					"name" : "SydneyEngine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-Debug-f381cc437b1435343aae.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "glfw::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-glfw-Debug-0a9734984d075b789efe.json",
+					"name" : "glfw",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "imgui_lib::@25993c7f548492bbc626",
+					"jsonFile" : "target-imgui_lib-Debug-113bf010f9855f4edce8.json",
+					"name" : "imgui_lib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-uninstall-Debug-27bfed5b841d78218ba3.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "update_mappings::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-update_mappings-Debug-b552241e397601066377.json",
+					"name" : "update_mappings",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "vkbootstrap::@25993c7f548492bbc626",
+					"jsonFile" : "target-vkbootstrap-Debug-198d36c808ebcf5a9a24.json",
+					"name" : "vkbootstrap",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Release-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "library",
+					"childIndexes" : 
+					[
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library-Release-73c165fbd1f03fdab753.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "library",
+					"targetIndexes" : 
+					[
+						5,
+						8
+					]
+				},
+				{
+					"build" : "library/glfw",
+					"childIndexes" : 
+					[
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw-Release-2243e13c8a1d94768950.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "library/glfw",
+					"targetIndexes" : 
+					[
+						1,
+						6
+					]
+				},
+				{
+					"build" : "library/glfw/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw.src-Release-00692e5d34b78a22de2b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/src",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				},
+				{
+					"build" : "library/glfw/docs",
+					"jsonFile" : "directory-library.glfw.docs-Release-877aae77e42241d4e1d2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/docs"
+				},
+				{
+					"build" : "library/glm",
+					"jsonFile" : "directory-library.glm-Release-becc2b2dfd53c4e607eb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "library/glm"
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						5
+					],
+					"name" : "SydneyEngine",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						5,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-Release-56500fae9c643ff07f1a.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-ALL_BUILD-Release-d273b558733cc78da654.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SydneyEngine::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SydneyEngine-Release-72fcd042589ba0eca6fd.json",
+					"name" : "SydneyEngine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-Release-f381cc437b1435343aae.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "glfw::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-glfw-Release-9d83edc4d855ec1626c8.json",
+					"name" : "glfw",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "imgui_lib::@25993c7f548492bbc626",
+					"jsonFile" : "target-imgui_lib-Release-26fef289e8f68a731f7e.json",
+					"name" : "imgui_lib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-uninstall-Release-27bfed5b841d78218ba3.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "update_mappings::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-update_mappings-Release-b552241e397601066377.json",
+					"name" : "update_mappings",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "vkbootstrap::@25993c7f548492bbc626",
+					"jsonFile" : "target-vkbootstrap-Release-90a8a631bdc685ab402c.json",
+					"name" : "vkbootstrap",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-MinSizeRel-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "library",
+					"childIndexes" : 
+					[
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library-MinSizeRel-73c165fbd1f03fdab753.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "library",
+					"targetIndexes" : 
+					[
+						5,
+						8
+					]
+				},
+				{
+					"build" : "library/glfw",
+					"childIndexes" : 
+					[
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw-MinSizeRel-2243e13c8a1d94768950.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "library/glfw",
+					"targetIndexes" : 
+					[
+						1,
+						6
+					]
+				},
+				{
+					"build" : "library/glfw/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw.src-MinSizeRel-c2ba67325e0f298cdff3.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/src",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				},
+				{
+					"build" : "library/glfw/docs",
+					"jsonFile" : "directory-library.glfw.docs-MinSizeRel-877aae77e42241d4e1d2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/docs"
+				},
+				{
+					"build" : "library/glm",
+					"jsonFile" : "directory-library.glm-MinSizeRel-becc2b2dfd53c4e607eb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "library/glm"
+				}
+			],
+			"name" : "MinSizeRel",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						5
+					],
+					"name" : "SydneyEngine",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						5,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-MinSizeRel-56500fae9c643ff07f1a.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-ALL_BUILD-MinSizeRel-d273b558733cc78da654.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SydneyEngine::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SydneyEngine-MinSizeRel-c146f44e44bc426e0806.json",
+					"name" : "SydneyEngine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-MinSizeRel-f381cc437b1435343aae.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "glfw::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-glfw-MinSizeRel-2065cd74fca2c791c4f9.json",
+					"name" : "glfw",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "imgui_lib::@25993c7f548492bbc626",
+					"jsonFile" : "target-imgui_lib-MinSizeRel-3278457cfa6de16efa10.json",
+					"name" : "imgui_lib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-uninstall-MinSizeRel-27bfed5b841d78218ba3.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "update_mappings::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-update_mappings-MinSizeRel-b552241e397601066377.json",
+					"name" : "update_mappings",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "vkbootstrap::@25993c7f548492bbc626",
+					"jsonFile" : "target-vkbootstrap-MinSizeRel-db4914ce82f55a4b0d22.json",
+					"name" : "vkbootstrap",
+					"projectIndex" : 0
+				}
+			]
+		},
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-RelWithDebInfo-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3
+					]
+				},
+				{
+					"build" : "library",
+					"childIndexes" : 
+					[
+						2,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library-RelWithDebInfo-73c165fbd1f03fdab753.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "library",
+					"targetIndexes" : 
+					[
+						5,
+						8
+					]
+				},
+				{
+					"build" : "library/glfw",
+					"childIndexes" : 
+					[
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw-RelWithDebInfo-2243e13c8a1d94768950.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "library/glfw",
+					"targetIndexes" : 
+					[
+						1,
+						6
+					]
+				},
+				{
+					"build" : "library/glfw/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-library.glfw.src-RelWithDebInfo-e588e4d70d5c7469f6b8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/src",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				},
+				{
+					"build" : "library/glfw/docs",
+					"jsonFile" : "directory-library.glfw.docs-RelWithDebInfo-877aae77e42241d4e1d2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 2,
+					"projectIndex" : 1,
+					"source" : "library/glfw/docs"
+				},
+				{
+					"build" : "library/glm",
+					"jsonFile" : "directory-library.glm-RelWithDebInfo-becc2b2dfd53c4e607eb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "4.00"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "library/glm"
+				}
+			],
+			"name" : "RelWithDebInfo",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						5
+					],
+					"name" : "SydneyEngine",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						5,
+						8
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2,
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ALL_BUILD::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-56500fae9c643ff07f1a.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "ALL_BUILD::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-ALL_BUILD-RelWithDebInfo-d273b558733cc78da654.json",
+					"name" : "ALL_BUILD",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "SydneyEngine::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-SydneyEngine-RelWithDebInfo-a22ef802f1cef72518bd.json",
+					"name" : "SydneyEngine",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ZERO_CHECK-RelWithDebInfo-f381cc437b1435343aae.json",
+					"name" : "ZERO_CHECK",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "glfw::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-glfw-RelWithDebInfo-7ecf273bf95559e759c9.json",
+					"name" : "glfw",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "imgui_lib::@25993c7f548492bbc626",
+					"jsonFile" : "target-imgui_lib-RelWithDebInfo-7655f7358d1395d4ba0d.json",
+					"name" : "imgui_lib",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "uninstall::@8bbb6307ec29e5f098ab",
+					"jsonFile" : "target-uninstall-RelWithDebInfo-27bfed5b841d78218ba3.json",
+					"name" : "uninstall",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "update_mappings::@45b46a335f462b68ef0a",
+					"jsonFile" : "target-update_mappings-RelWithDebInfo-b552241e397601066377.json",
+					"name" : "update_mappings",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "vkbootstrap::@25993c7f548492bbc626",
+					"jsonFile" : "target-vkbootstrap-RelWithDebInfo-4b89a520ee4789cf2457.json",
+					"name" : "vkbootstrap",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64",
+		"source" : "C:/Users/Gaming/source/repos/SydneyEngine"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 8
+	}
+}

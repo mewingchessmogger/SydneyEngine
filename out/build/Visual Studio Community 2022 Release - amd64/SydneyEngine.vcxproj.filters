@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\Engine\run.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\asset\asset_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\stb_image_implem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\tinygltf_implem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\vma_implem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\platform\window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\initVulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_pipelines\pipeline_builder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_renderer\swapchain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\descriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\sampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vkutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Gaming\source\repos\SydneyEngine\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{335B4A65-04DA-317E-BC64-FA03C70E3349}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

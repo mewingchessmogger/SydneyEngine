@@ -1,0 +1,6 @@
+the modified gltf loader from vulkan tutorials: gemini keep harping 
+about interleaved buffers attributes this hasnt been problem before but should be considiered later
+
+REMEMBMER STALLING IN PLATFORMGLFW WHEN INVALID SWAPCHAIN COMMENTS IN RETHINKSWAPCHAIN
+
+REMember offset aligment SSBO NOT HNADLED IN UPLOAD BUFFER to gpu

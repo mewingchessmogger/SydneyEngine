@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/cmake_install.cmake",
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/cmake_install.cmake",
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/cmake_install.cmake",
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/src/cmake_install.cmake",
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/docs/cmake_install.cmake",
+		"C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

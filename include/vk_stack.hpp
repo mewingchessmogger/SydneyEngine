@@ -4,7 +4,7 @@
 #include "vk_shader.hpp"
 #include "platform_glfw.hpp"
 #include "vk_context.hpp"
-
+#include "pipeline_builder.hpp"
 
 
 
@@ -43,10 +43,10 @@ class VulkanStack{
    
 
 
-    VkRenderer Rdr{};
-    ResManager mem{};
+    Renderer rdr{};
+    ResManager res{};
     VkShaderManager SdrMgr{};
-
+    PipelineBuilder plb{};
     void setupRdr();
     void setupMemMgr();
 
@@ -58,7 +58,7 @@ class VulkanStack{
     void initDescriptorStuff();
     void initSyncs();
     void initBuffers();
-    
+    void initSwapchain();
     void submitHelper(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
     void transitionImage(vk::Image image, vk::CommandBuffer cmdBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks mask, vk::ImageAspectFlagBits aspectImage);
     void bufferBarrier(vk::Buffer buffer, vk::CommandBuffer cmdBuffer, vk::DeviceSize size, BarrierMasks mask);

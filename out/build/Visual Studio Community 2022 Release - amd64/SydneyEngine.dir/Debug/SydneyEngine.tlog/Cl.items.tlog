@@ -1,0 +1,15 @@
+C:\Users\Gaming\source\repos\SydneyEngine\main.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\main.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\Engine\run.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\run.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\asset\asset_manager.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\asset_manager.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\stb_image_implem.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\stb_image_implem.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\tinygltf_implem.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\tinygltf_implem.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\implementLib\vma_implem.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\vma_implem.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\platform\window.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\window.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\initVulkan.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\initVulkan.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_pipelines\pipeline_builder.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\pipeline_builder.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_renderer\swapchain.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\swapchain.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\buffer.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\buffer.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\descriptor.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\descriptor.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\image.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\image.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vk_res\sampler.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\sampler.obj
+C:\Users\Gaming\source\repos\SydneyEngine\src\vk_stack\vkutils.cpp;C:\Users\Gaming\source\repos\SydneyEngine\out\build\Visual Studio Community 2022 Release - amd64\SydneyEngine.dir\Debug\vkutils.obj

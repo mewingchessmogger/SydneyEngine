@@ -4,6 +4,7 @@
 #include <deque>
 #include "vk_del_queue.hpp"
 #include <array>
+#include "vk_context.hpp"
 struct AllocatedBuffer {
     vk::Buffer buffer{};
     VmaAllocation alloc{};
@@ -18,7 +19,8 @@ struct AllocatedImage {
     VmaAllocation alloc{};
     VmaAllocationInfo allocInfo{};
     vk::Format format;
-    vk::Extent3D extent;
+    vk::Extent3D extent3D;
+	vk::Extent2D extent2D;
 };
 enum class ImgType: uint32_t{
 	DEPTH,
@@ -100,7 +102,7 @@ class ResManager{
 	std::vector<AllocatedImage> cubeImages{};
 	std::vector<AllocatedImage> zBufferImages{};
 	std::vector<AllocatedImage> sMapImages{};
-	
+	std::vector<AllocatedImage> swapchainImages{};
 
     void forgeImage(vk::Device device, vk::Format format, uint32_t width, uint32_t height, vk::ImageUsageFlags imageUsageIntent, AllocatedImage& img, vk::ImageAspectFlags aspectMask, std::string_view type, vk::ImageViewType viewtype, uint32_t arrLayers, bool cubeCompatible);
     void requestImage(vk::Device device, ImgType type, AllocatedImage& img, int imgW, int imgH);
@@ -116,6 +118,12 @@ class ResManager{
 
     void initDescriptorPoolAndSets(vk::Device device, uint32_t maxImageAmount, uint32_t maxSamplers);
 	void initAndUpdateSamplers(vk::Device device, float maxAnisotropy);
-    
+
+
+
+    void createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+    void clearSwapchain(VulkanContext &ctx, uint32_t imagesInFlight);
+    void rethinkSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+    bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
     
 };

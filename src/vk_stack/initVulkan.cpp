@@ -93,7 +93,7 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     allocInfo.device = ctx.device;
     allocInfo.instance = ctx.instance;
 	allocInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-    vmaCreateAllocator(&allocInfo, &mem.allocator);
+    vmaCreateAllocator(&allocInfo, &res.allocator);
     
 
     vk::PhysicalDeviceVulkan12Features supported12{};
@@ -127,43 +127,6 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
 
 void VulkanStack::createSwapchain() {
 
-		vkb::SwapchainBuilder swapchainBuilder(ctx.chosenGPU, ctx.device, ctx.surface);
-		ctx.swapchainFormat = vk::Format::eB8G8R8A8Srgb;
-		vk::SurfaceFormatKHR formatInfo{};
-		formatInfo.format = ctx.swapchainFormat;
-		formatInfo.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
-		
-		vkb::Swapchain vkbSwapchain = swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
-			.set_desired_format(formatInfo)
-			.set_desired_extent(WIDTH, HEIGHT)
-			.set_required_min_image_count(NUM_OF_IMAGES)
-			.set_desired_min_image_count(NUM_OF_IMAGES)
-			.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-			.build()
-			.value();
-
-		ctx.swapchain = vk::SwapchainKHR{ vkbSwapchain.swapchain };
-		//_swapchainFormat = vk::Format{ vkbSwapchain.image_format };
-		ctx.swapchainExtent = vk::Extent2D{ vkbSwapchain.extent };
-
-		//gotta convert the vals in vectors to hpp format
-										//value() actually gets vector, otherwise you get vkresult struct iguess
-		auto vkbImages = vkbSwapchain.get_images().value();
-		auto vkbImageViews = vkbSwapchain.get_image_views().value();
-
-		for (int i{}; i < NUM_OF_IMAGES; i++) {
-			ctx.swapchainImages.push_back(vk::Image{ vkbImages[i] });
-			ctx.swapchainImageViews.push_back(vk::ImageView{ vkbImageViews[i] });
-			std::cout << "WOAH" << "\n";
-		}
-		
-		
-		
-
-		//createimages
-		//allocate them
-		//createimageviewsd
-
 	}
 
     
@@ -184,7 +147,7 @@ void VulkanStack::initCommands() {
 	for (auto i : ctx.cmdBuffers) {
 		std::cout <<"cmdbuffer #"<< i << "\n";
 	}
-	mem.delQ.add(ctx.cmdPool);	
+	res.delQ.add(ctx.cmdPool);	
  
  //imgui stuff
 	
@@ -201,7 +164,7 @@ void VulkanStack::initCommands() {
 	for (auto i : ctx.immBuffers) {
 		std::cout << "immgui cmdBuffer#" << i << "\n";
 	}
-	mem.delQ.add(ctx.immPool);
+	res.delQ.add(ctx.immPool);
 		
 }
 
@@ -224,10 +187,10 @@ void VulkanStack::initSyncs() {
 		ctx.fences.push_back(fence);
 		ctx.immFences.push_back(immFence);
 		
-		mem.delQ.add(imgR);
-		mem.delQ.add(renF);
-		mem.delQ.add(fence);
-		mem.delQ.add(immFence);
+		res.delQ.add(imgR);
+		res.delQ.add(renF);
+		res.delQ.add(fence);
+		res.delQ.add(immFence);
 
 	}
 	
@@ -235,11 +198,18 @@ void VulkanStack::initSyncs() {
 
 }
 void VulkanStack::initDescriptorStuff(){
-	mem.initDescriptorPoolAndSets(ctx.device, mem.MAX_IMAGES, mem.MAX_SAMPLER);
-	mem.initAndUpdateSamplers(ctx.device,ctx.chosenGPU.getProperties().limits.maxSamplerAnisotropy);
-	//mem.delQ.add() <--------------------------------------/////////////////////////////////////////////////////////////////// add later
+	res.initDescriptorPoolAndSets(ctx.device, res.MAX_IMAGES, res.MAX_SAMPLER);
+	res.initAndUpdateSamplers(ctx.device,ctx.chosenGPU.getProperties().limits.maxSamplerAnisotropy);
+	//res.delQ.add() <--------------------------------------/////////////////////////////////////////////////////////////////// add later
 }
 
 void VulkanStack::initBuffers(){
-	mem.initBuffers(ctx.device);
+	res.initBuffers(ctx.device);
+}
+
+
+void VulkanStack::initSwapchain(){
+	
+	res.createSwapchain(ctx,WIDTH,HEIGHT,NUM_OF_IMAGES);
+	
 }

@@ -21,13 +21,9 @@ struct VulkanContext {
     queueStruct graphicsQueue{};
 
     vk::SwapchainKHR swapchain{};
-    vk::Format swapchainFormat{};
     VkFormat rawSwapchainFormat{};
     vk::Sampler sampler{};
 
-    std::vector<vk::Image> swapchainImages{};
-    std::vector<vk::ImageView> swapchainImageViews{};
-    vk::Extent2D swapchainExtent{};
 
     vk::DescriptorPool imguiPool{};
     vk::CommandPool cmdPool{};

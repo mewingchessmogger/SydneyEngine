@@ -1,0 +1,15 @@
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/CMakeFiles/SydneyEngine.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/CMakeFiles/INSTALL.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/CMakeFiles/ALL_BUILD.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/CMakeFiles/imgui_lib.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/CMakeFiles/vkbootstrap.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/CMakeFiles/INSTALL.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/CMakeFiles/uninstall.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/CMakeFiles/INSTALL.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/CMakeFiles/ALL_BUILD.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/src/CMakeFiles/glfw.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/src/CMakeFiles/update_mappings.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/src/CMakeFiles/INSTALL.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glfw/docs/CMakeFiles/INSTALL.dir
+C:/Users/Gaming/source/repos/SydneyEngine/out/build/Visual Studio Community 2022 Release - amd64/library/glm/CMakeFiles/INSTALL.dir

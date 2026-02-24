@@ -6,7 +6,8 @@
 #include "vk_stack.hpp"
 #include "asset_manager.hpp"
 #include "hash_model.hpp"
-
+#include <fstream>
+#include <string>
 struct dummyScene {
     std::array<std::string, 3> Models;
     bool addedScnModels{};
@@ -18,7 +19,6 @@ void Engine::run(){
     PlatformGLFW plt{};
     AssetManager ast{};
     VulkanStack stk{};
-    
     plt.initWindow(stk.WIDTH,stk.HEIGHT);
     stk.initInstance(plt);
     stk.initDevice(plt);
@@ -26,109 +26,67 @@ void Engine::run(){
     stk.initCommands();
     stk.initDescriptorStuff();
     stk.initBuffers();
-
+    stk.initSwapchain();
+    
     dummyScene scn = {{"foo.glb", "goo.glb", "asdf.glb"}, false};
     auto device = stk.ctx.device;
     auto cmdBuffers = stk.ctx.cmdBuffers;
-    auto &allocator = stk.mem.allocator;
+    auto &allocator = stk.res.allocator;
     ModelStorage modelStorage{};
-    
-    
+
+
+    std::ifstream f("src/shaders/test.frag");
+    if (!f.is_open()) {
+            std::cerr << "Error opening the file!";
+            return;
+    }
+    std::string s;   
+    while (std::getline(f,s)){
+        std::cout << s << "\n";
+    }
+    f.close();
     while (plt.windowOpen()) {
         plt.pollEvents();
-
+        //scn startframe
 
         if (scn.addedScnModels == true){
             scn.addedScnModels = false;
-            AssetManager::ModelData md{};
-            std::vector<tinygltf::Model> models{};
-            uint64_t vertBytes{};
-            uint64_t idxBytes{}; 
-            std::vector<Vertex> vertices{};
-            std::vector<uint32_t> indices{};
-            for (const auto& m: scn.Models){
-                models.push_back(ast.getModel(m));
-            }
-            for (auto& m: models){
-                for (const auto& mesh : m.meshes) {
-                    for (const auto& primitive : mesh.primitives) {
-                        // Get Position Accessor (usually the baseline for vertex count)
-                        int posIdx = primitive.attributes.at("POSITION");
-                        vertBytes += m.accessors[posIdx].count* sizeof(Vertex);
-
-                        // Get Index Accessor
-                        int indicesIdx = primitive.indices;
-                        if (indicesIdx != -1) {
-                            idxBytes += m.accessors[indicesIdx].count * sizeof(uint32_t);
-                        }
-                    }
-                }
-            }
+            AssetManager::UploadData tempData{};
+            uint64_t bytesVertex{};
+            uint64_t bytesIndex{}; 
             
-            md.vertices.reserve(vertBytes/sizeof(Vertex));
-            md.indices.reserve(idxBytes/sizeof(uint32_t));
-            md.records.reserve(models.size());
+           // IF MODEL ARLEADY EXIST SKIP SHIT TODO j11111111!!!!!!!!!!!!!!!!!!!!!!!
+            // CHECK IF path is already hashed TODO !!!!!!!!!!!!!!!!!!!!!!
 
-            for (int i{}; i < models.size(); i++){
-                auto& m = models[i];
-                ast.getData(m,md);
-                auto& rec = md.records[i];
-                rec.offsetIBO = stk.tailVBO;
-                rec.offsetVBO = stk.tailIBO;
-                modelStorage.storeModel(rec);
-                stk.tailVBO += md.
+            for (int i{}; i < scn.Models.size(); i++){
+                tinygltf::Model model = ast.getModel(scn.Models[i]);
+                ast.getData(model,tempData);
+                
+                tempData.records[i].offsetVBO = stk.tailVBO;
+                tempData.records[i].offsetIBO = stk.tailIBO;
+
+                stk.tailVBO += tempData.records[i].totVertices;
+                stk.tailIBO += tempData.records[i].totIndices;
                 
             }
+            for(auto r : tempData.records){
+                modelStorage.storeModelRecord(r);
+            }
 
-            AllocatedBuffer vrtBuffer{};
-            AllocatedBuffer idxBuffer{};
-            stk.mem.createBuffer(BufferType::STAGING, vertBytes, vrtBuffer);
-            stk.mem.createBuffer(BufferType::STAGING, idxBytes, idxBuffer);
-            stk.mem.uploadToBuffer(device,cmdBuffers[0], md.vertices.data(),vertBytes,vrtBuffer, stk.mem.vertexBuffer);
-            stk.mem.uploadToBuffer(device,cmdBuffers[0], md.indices.data(),idxBytes,idxBuffer, stk.mem.indexBuffer);
+
+            AllocatedBuffer stageVertex{};
+            AllocatedBuffer stageIndex{};
+            bytesVertex = tempData.vertices.size() * sizeof(Vertex);
+            bytesIndex = tempData.indices.size() * sizeof(uint32_t);
+            stk.res.createBuffer(BufferType::STAGING, bytesVertex, stageVertex);
+            stk.res.createBuffer(BufferType::STAGING, bytesIndex, stageIndex);
+            stk.res.uploadToBuffer(device,cmdBuffers[0], tempData.vertices.data(),bytesVertex,stageVertex, stk.res.vertexBuffer);
+            stk.res.uploadToBuffer(device,cmdBuffers[0], tempData.indices.data(),bytesIndex,stageIndex, stk.res.indexBuffer);
+            
+
+            
             
         }
-
-
-        //start frame, get img, cmdbuffer if invalid swapchian, continue
-        //evalgamescene -> 
-            //check out scenes requested models, if model not processed before or isnt uploaded to gpu, processmodel, gen prims, eval textures, record upload to gpu 
-            
-            //check each objects dirtyflag
-            //  if dirty 
-            //  if change or first time, ensure upload of objects to idbo,ssbo
- 
-            //check if we have the wished shader effects, create pipelines accordingly, batch objects that use same pipeline,
-            //process best way to render objects
-            //instructions on how renderer should render objects.
-            
-        //imgui dis or ena here
-        // start renderer with rendergraph and objs
-        
-        
-        //iter objs, if want shadows, add to shadowpass,  
-        
-        //if wanna process adn upload
-        //if ast.ismodeluploaded(scn.wishedModel)?
-            //send models vertices, indicies , raw img data to vkstack, store their data in primtives storage
-        // else 
-        
-        
-        
-
-        // AllocatedBuffer stagingBuffer{};
-        // AllocatedImage img{};
-        // AssetManager::imgInfo info = ast.processImageFile("foo");
-        // uint32_t byteSize = info.texH * info.texW * 4;
-        // uint32_t texH =  info.texH;
-        // uint32_t texW =  info.texW;
-        
-        // stk.MemMgr.createBuffer(BufferType::SSBO,byteSize,stagingBuffer);
-        // stk.MemMgr.requestImage(device,ImgType::TEXTURE,img,texW,texH);
-        // stk.MemMgr.recordUploadTextureImage(device,cmdBuffers[0],img,info.ptr,texW,texH);
-        // stbi_image_free(info.ptr); // safe here!!!!!!!!!!!!!!!
-        // //need a SUBMIT BETWEEN HERE
-        // vmaDestroyBuffer(allocator,stagingBuffer.buffer,stagingBuffer.alloc);
 
     }
     plt.shutdown();
