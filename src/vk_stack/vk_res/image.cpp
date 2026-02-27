@@ -1,5 +1,4 @@
 #include <vk_mmu.hpp>
-#include "vkutils.hpp"
 #include <stb_image.h>
 void ResManager::forgeImage(
     vk::Device device,
@@ -155,12 +154,12 @@ void ResManager::recordUploadTextureImage(vk::Device device, vk::CommandBuffer c
 
 	region.setImageSubresource(source).setImageExtent(vk::Extent3D{texW, texH, 1 }).setBufferOffset(offsetBuffer);												//
 	//
-	vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+	//vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
 	cmdBuffer.copyBufferToImage(stagingBuffer.buffer, dstImage.image, vk::ImageLayout::eTransferDstOptimal, region);	//
 	//
 
-	vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+	//vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 							//
 	//
 	

@@ -20,23 +20,23 @@ glm::mat4 getNodeTransform(const tinygltf::Node& node) {
     }
     return transform;
 }
-AssetManager::ModelData AssetManager::getData(tinygltf::Model& model, ModelData& mData) {
+void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
     
      
-    // 1. Iterate over NODES instead of MESHES to access transform data
     ModelRecord record{};
-    
+    //we store in primitves local offsets, in future, model data might move around the gpu buffer therefore a global/local offset
+    //system is optimal insated of hardcoding global offsets of gpu buffer..., the record will contain global offsets set outside this func
+    uint32_t totalLocalVertices{}; 
+    uint32_t totalLocalIndices{};
+
     for (size_t n = 0; n < model.nodes.size(); n++) {
         const auto& node = model.nodes[n];
 
-        // Skip nodes that don't point to a mesh
         if (node.mesh < 0 || node.mesh >= model.meshes.size()) {
             continue;
         }
 
-        // 2. Extract the local transform matrix for this specific node
         glm::mat4 localMatrix = getNodeTransform(node);
-        // Create a Normal Matrix (inverse transpose of the top-left 3x3) to correctly transform normals
         glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(localMatrix)));
 
         Mesh meshData{};
@@ -44,8 +44,8 @@ AssetManager::ModelData AssetManager::getData(tinygltf::Model& model, ModelData&
         
         for (auto& primitive : mesh.primitives) {
             primitiveData primData{};
-            primData.indexOffset = record.indices.size();
-            primData.vertexOffset= record.vertices.size();
+            primData.indexOffset = totalLocalIndices;
+            primData.vertexOffset= totalLocalVertices;
             
             // --- POSITION DATA ---
             const tinygltf::Accessor& posAccessor = model.accessors.at(primitive.attributes.at("POSITION"));
@@ -71,26 +71,22 @@ AssetManager::ModelData AssetManager::getData(tinygltf::Model& model, ModelData&
                 texCoordData = reinterpret_cast<const float*>(&texCoordBuffer.data[texCoordView.byteOffset + texCoordAccessor.byteOffset]);
             }
 
-            uint32_t baseVertex = 0;
 
             for (size_t i = 0; i < posAccessor.count; i++) {
                 Vertex vertex{};
-
-                // 3. Transform Position: mat4 * vec4(pos, 1.0)
                 glm::vec4 rawPos = glm::vec4(posData[3 * i + 0], posData[3 * i + 1], posData[3 * i + 2], 1.0f);
                 vertex.pos = glm::vec3(localMatrix * rawPos);
 
-                // 4. Transform Normal: normalMatrix * vec3
                 if (normalData) {
                     glm::vec3 rawNorm = glm::vec3(normalData[3 * i + 0], normalData[3 * i + 1], normalData[3 * i + 2]);
                     vertex.normal = glm::normalize(normalMatrix * rawNorm);
                 } else {
                     vertex.normal = glm::vec3(0.0f);
                 }
-
                 vertex.texCoord = texCoordData ? glm::vec2(texCoordData[2 * i + 0], texCoordData[2 * i + 1]) : glm::vec2(0.0f);
 
-                data.vertices.push_back(vertex);
+                uploadData.vertices.push_back(vertex);
+                totalLocalVertices++;
             }
 
             const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
@@ -101,38 +97,50 @@ AssetManager::ModelData AssetManager::getData(tinygltf::Model& model, ModelData&
 
             if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
                 const uint16_t* indices16 = reinterpret_cast<const uint16_t*>(indexData);
-                for (size_t i = 0; i < indexAccessor.count; i++) data.indices.push_back(indices16[i]);
+                for (size_t i = 0; i < indexAccessor.count; i++){
+                    uploadData.indices.push_back(indices16[i]); 
+                    totalLocalIndices++;
+                }  
             }
             else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
                 const uint32_t* indices32 = reinterpret_cast<const uint32_t*>(indexData);
-                for (size_t i = 0; i < indexAccessor.count; i++) data.indices.push_back(indices32[i]);
+                for (size_t i = 0; i < indexAccessor.count; i++){
+                    uploadData.indices.push_back(indices32[i]);
+                    totalLocalIndices++;
+                } 
             }
             else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
                 const uint8_t* indices8 = reinterpret_cast<const uint8_t*>(indexData);
-                for (size_t i = 0; i < indexAccessor.count; i++) data.indices.push_back(indices8[i]);
+                for (size_t i = 0; i < indexAccessor.count; i++){
+                    uploadData.indices.push_back(indices8[i]);
+                    totalLocalIndices++;
+                } 
             }
 
             
             primData.indexCount = indexAccessor.count;
             
-            // --- MATERIAL DATA ---
-            if (primitive.material >= 0) {
-                auto& mat = model.materials[primitive.material];
-                int texIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
-                auto& clrFactor = mat.pbrMetallicRoughness.baseColorFactor;
-                //data.baseColor = glm::vec4(clrFactor[0], clrFactor[1], clrFactor[2], clrFactor[3]);
+            // // --- MATERIAL DATA ---
+            // if (primitive.material >= 0) {
+            //     auto& mat = model.materials[primitive.material];
+            //     int texIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
+            //     auto& clrFactor = mat.pbrMetallicRoughness.baseColorFactor;
+            //     //data.baseColor = glm::vec4(clrFactor[0], clrFactor[1], clrFactor[2], clrFactor[3]);
 
-                if (texIndex < 0) {
-                    primData.texIndex = -1;
-                } else {
-                    primData.texIndex = model.textures[texIndex].source;
-                }
-            }
+            //     if (texIndex < 0) {
+            //         primData.texIndex = -1;
+            //     } else {
+            //         primData.texIndex = model.textures[texIndex].source;
+            //     }
+            // }
+            primData.texIndex = -1;
 
             meshData.primitives.push_back(primData);
         }
+
         record.meshes.push_back(meshData);
     }
-
-    
+    record.totVertices = totalLocalVertices;
+    record.totIndices = totalLocalIndices;
+    uploadData.records.push_back(record);
 }

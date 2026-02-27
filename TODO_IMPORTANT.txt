@@ -1,0 +1,14 @@
+the modified gltf loader from vulkan tutorials: gemini keep harping 
+about interleaved buffers attributes this hasnt been problem before but should be considiered later
+
+REMEMBMER STALLING IN PLATFORMGLFW WHEN INVALID SWAPCHAIN. COMMENTS IN RETHINKSWAPCHAIN
+
+REMember offset aligment SSBO NOT HNADLED IN UPLOAD BUFFER to gpu
+
+
+remembemer material id and effect id, lasers are an effect aswell as explosion, two jsons could each define material respectively effects, 
+where THEY could refer to shaders, hot reloading shaders and materials/effects becomes possible when engien and game read/write form same json.. or rather 
+game maker writes to them...
+
+
+vkutils not wanteed therefore in image upload two transiitoniamge are commented out FIX LABMBDA 

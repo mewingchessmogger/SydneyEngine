@@ -13,7 +13,7 @@ public:
 		uint32_t texW;
 	};
 
-	struct ModelData {
+	struct UploadData {
 		std::vector<Vertex> vertices{};
 		std::vector<uint32_t> indices{};
 		std::vector<ModelRecord> records{};
@@ -68,5 +68,5 @@ public:
 	}
 
     
-    ModelData getData(tinygltf::Model &model,ModelData& mData);
+    void getData(tinygltf::Model &model,UploadData& mData);
 };
