@@ -45,7 +45,7 @@ void ResManager::forgeImage(
 
 
 
-	auto result = vmaCreateImage(allocator, imageInfo, &allocImgInfo, reinterpret_cast<VkImage*>(&img.image), &img.alloc, &img.allocInfo);
+	auto result = vmaCreateImage(allocator, imageInfo, &allocImgInfo, reinterpret_cast<VkImage*>(&img.handle), &img.alloc, &img.allocInfo);
 	
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed allocating type: " + std::string(type) + " images");
@@ -62,7 +62,7 @@ void ResManager::forgeImage(
 
 	info
 		.setViewType(viewtype)
-		.setImage(img.image)
+		.setImage(img.handle)
 		.setFormat(format)
 		.setSubresourceRange(subRange);
 
@@ -156,7 +156,7 @@ void ResManager::recordUploadTextureImage(vk::Device device, vk::CommandBuffer c
 	//
 	//vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
-	cmdBuffer.copyBufferToImage(stagingBuffer.buffer, dstImage.image, vk::ImageLayout::eTransferDstOptimal, region);	//
+	cmdBuffer.copyBufferToImage(stagingBuffer.handle, dstImage.handle, vk::ImageLayout::eTransferDstOptimal, region);	//
 	//
 
 	//vkutils::transitionImage(dstImage.image, cmdBuffer, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);

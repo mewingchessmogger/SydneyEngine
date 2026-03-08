@@ -97,7 +97,7 @@ PipelineBuilder& PipelineBuilder::setScissorAndViewport(vk::Extent2D ext)
 	return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace, bool isDepthPass)
+PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace)
 {
 
 	razInfo

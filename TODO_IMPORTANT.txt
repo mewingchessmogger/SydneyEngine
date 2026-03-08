@@ -12,3 +12,16 @@ game maker writes to them...
 
 
 vkutils not wanteed therefore in image upload two transiitoniamge are commented out FIX LABMBDA 
+
+
+finally udnerstanding over srcstage,dststage, and src acces and dst acess. it all starts with the abstracted architecture of l2 cache being shared amongst l1 caches where each l1 is coupled 
+to one streaming multiprocessor that contains many warps, where warps fight for the l1 cache space. Every l1 cache shares one definite l2 cache amongst eachother,
+because l1 cache could contain updated information that l2 cache doesnt have -> src access and dst access can write to l2 cache updating it or read from l2 cache updating l1
+the only diff is that src access happens after srcstage has been executed, dst accdess happens before dststage is executed. 
+the weird confusing thing is why you can both read or write at each access,this is a thing because your given  more unorthodox options that the standard, write after src and read before dst, 
+
+
+
+REMOVE DB RUNNING AT STARTUP THE MYSQL80 THINGY !!!! other course reminder...
+
+

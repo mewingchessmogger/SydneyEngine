@@ -16,7 +16,8 @@ PipelineBuilder& PipelineBuilder::setDynRendering(int expectedClrAttachmentsCoun
     PipelineBuilder& setAssemblyInfo(vk::PrimitiveTopology top = vk::PrimitiveTopology::eTriangleList);
 	PipelineBuilder& setScissorAndViewport(vk::Extent2D ext);
 
-	PipelineBuilder& setRasterizerInfo(vk::PolygonMode poly = vk::PolygonMode::eFill, vk::FrontFace frontFace = vk::FrontFace::eClockwise,bool isDepthPass = false);
+    PipelineBuilder &setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace);
+
 	PipelineBuilder& setMultiSampling();
 	PipelineBuilder& setBlendState(bool isDepthPass = false);
 	PipelineBuilder& setDynState();
@@ -82,4 +83,6 @@ private:
 	vk::GraphicsPipelineCreateInfo createPipelineInfo{};
 	
 	vk::Pipeline pipeline;
+	
+	
 };

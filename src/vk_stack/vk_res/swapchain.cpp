@@ -25,7 +25,7 @@
 		assert (swapchainImages.size() == 0);
 		for (int i{}; i < imagesInFlight; i++) {
 			AllocatedImage img{};
-			img.image = vkbImages[i];
+			img.handle = vkbImages[i];
 			img.view = vkbImageViews[i];
 			img.format = vk::Format::eB8G8R8A8Srgb;
 			img.extent2D = vk::Extent2D{ vkbSwapchain.extent };
@@ -41,6 +41,7 @@
 		}
 		swapchainImages.clear();
 		ctx.device.destroySwapchainKHR(ctx.swapchain);
+		
 	}
 
 	void ResManager::rethinkSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight) {

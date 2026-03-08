@@ -43,6 +43,7 @@ void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
         auto& mesh = model.meshes[node.mesh];
         
         for (auto& primitive : mesh.primitives) {
+            uint32_t vertexStartOffset = static_cast<uint32_t>(uploadData.vertices.size()); // THIS IS FOR INDICIES
             primitiveData primData{};
             primData.indexOffset = totalLocalIndices;
             primData.vertexOffset= totalLocalVertices;
@@ -76,7 +77,7 @@ void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
                 Vertex vertex{};
                 glm::vec4 rawPos = glm::vec4(posData[3 * i + 0], posData[3 * i + 1], posData[3 * i + 2], 1.0f);
                 vertex.pos = glm::vec3(localMatrix * rawPos);
-
+                
                 if (normalData) {
                     glm::vec3 rawNorm = glm::vec3(normalData[3 * i + 0], normalData[3 * i + 1], normalData[3 * i + 2]);
                     vertex.normal = glm::normalize(normalMatrix * rawNorm);
@@ -98,21 +99,21 @@ void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
             if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
                 const uint16_t* indices16 = reinterpret_cast<const uint16_t*>(indexData);
                 for (size_t i = 0; i < indexAccessor.count; i++){
-                    uploadData.indices.push_back(indices16[i]); 
+                    uploadData.indices.push_back(indices16[i] + vertexStartOffset); 
                     totalLocalIndices++;
                 }  
             }
             else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
                 const uint32_t* indices32 = reinterpret_cast<const uint32_t*>(indexData);
                 for (size_t i = 0; i < indexAccessor.count; i++){
-                    uploadData.indices.push_back(indices32[i]);
+                    uploadData.indices.push_back(indices32[i] + vertexStartOffset);
                     totalLocalIndices++;
                 } 
             }
             else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
                 const uint8_t* indices8 = reinterpret_cast<const uint8_t*>(indexData);
                 for (size_t i = 0; i < indexAccessor.count; i++){
-                    uploadData.indices.push_back(indices8[i]);
+                    uploadData.indices.push_back(indices8[i]+ vertexStartOffset);
                     totalLocalIndices++;
                 } 
             }

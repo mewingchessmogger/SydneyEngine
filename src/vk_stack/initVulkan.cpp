@@ -54,10 +54,11 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     features12.descriptorBindingPartiallyBound = true;
     features12.descriptorBindingVariableDescriptorCount = true;
     features12.descriptorBindingSampledImageUpdateAfterBind = true;
-
+    
     features1.samplerAnisotropy = true;
     features1.multiDrawIndirect = true;
     features1.textureCompressionBC = true;
+    features1.shaderInt64 = true;
     vkb::PhysicalDevice physicalDevice = physicalDeviceSelector
         .set_minimum_version(1, 3)
         .set_required_features_13(features13)
@@ -120,6 +121,8 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
         << supported12.shaderSampledImageArrayNonUniformIndexing << "\n";
     std::cout << "Extension VK_KHR_shader_draw_parameters: Enabled\n";
 	std::cout << "min SSBO offset alignment: " << physicalDevice.properties.limits.minStorageBufferOffsetAlignment << "\n";
+    std::cout << "------------------------------\n";
+    std::cout << "min UBO offset alignment: " << physicalDevice.properties.limits.minUniformBufferOffsetAlignment << "\n";
     std::cout << "------------------------------\n";
 
 }
@@ -193,12 +196,39 @@ void VulkanStack::initSyncs() {
 }
 void VulkanStack::initDescriptorStuff(){
 	res.initDescriptorPoolAndSets(ctx.device, res.MAX_IMAGES, res.MAX_SAMPLER);
-	res.initAndUpdateSamplers(ctx.device,ctx.chosenGPU.getProperties().limits.maxSamplerAnisotropy);
 	//res.delQ.add() <--------------------------------------/////////////////////////////////////////////////////////////////// add later
 }
 
+void VulkanStack::initUpdateDescriptorSets(){
+	res.initAndUpdateSamplers(ctx.device,ctx.chosenGPU.getProperties().limits.maxSamplerAnisotropy);
+
+    vk::DescriptorBufferInfo uboBufferInfo{};
+    uboBufferInfo
+        .setBuffer(res.uniformBuffer.handle)
+        .setOffset(0)            // Dynamic UBOs start at 0; offset is provided at bind time
+        .setRange(res.strideOfUBO);  // IMPORTANT: The size of ONE frame's data
+
+    vk::WriteDescriptorSet uboWrite{};
+            std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
+
+    uboWrite
+        .setDstSet(res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)])
+        .setDstBinding(0)
+        .setDstArrayElement(0)
+        .setDescriptorType(vk::DescriptorType::eUniformBufferDynamic)
+        .setBufferInfo(uboBufferInfo);
+
+    ctx.device.updateDescriptorSets(uboWrite, nullptr);
+
+    
+            std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
+
+
+}
+
 void VulkanStack::initBuffers(){
-	res.initBuffers(ctx.device);
+	res.initBuffers(ctx.device,ctx.chosenGPU.getProperties().limits.minUniformBufferOffsetAlignment,DESIRED_IMAGES_IN_FLIGHT);
+    
 }
 
 

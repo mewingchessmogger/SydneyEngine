@@ -37,8 +37,7 @@ public:
     }
 		
 	tinygltf::Model getModel(const std::string& filename){
-		std::filesystem::path base = "models/"; 
-		std::filesystem::path fullPath = base / filename;
+		std::filesystem::path fullPath =  filename;
 
 		tinygltf::Model model;
 		tinygltf::TinyGLTF loader;

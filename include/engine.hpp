@@ -10,7 +10,7 @@
 #include "file_watcher.hpp"
 #include "file_reader.hpp"
 #include "shader_compiler.hpp"
-
+#include "scene.hpp"
 class Engine{
     public:
     
@@ -22,9 +22,6 @@ class Engine{
     FileWatcher fileWatcher{"../../../../src/shaders",5};
     FileReader fileReader{};
 
-    //IO + shadercompiler + tracking changed shader files
-    //glfw instance input n window handling
-    //asset manager
     void run();
 
 };

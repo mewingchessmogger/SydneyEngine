@@ -35,14 +35,3 @@ struct VulkanContext {
     vkb::Device* vkbDevice{};
 
 };
-//    VkFormat rawSwapchainFormat{};
-
-    // vk::Pipeline phongPipeline{};
-    // vk::PipelineLayout phongLayout{};
-    // vk::Pipeline skyboxPipeline{};
-    // vk::PipelineLayout skyboxLayout{};
-    // vk::Pipeline depthSamplingPipeline{};
-    // vk::PipelineLayout depthSamplingLayout{};
-
-    // vk::Pipeline pLightPipeline{};
-    // vk::PipelineLayout pLightLayout{};

@@ -5,7 +5,7 @@
 #include "vk_context.hpp"
 #include "pipeline_builder.hpp"
 #include "shared_definitions.hpp"
-
+#include "vertex_def.hpp"
 
 class VulkanStack{
   
@@ -28,6 +28,7 @@ class VulkanStack{
         ResManager res{};
         PipelineBuilder plb{};
         PipelineBundle testPSO{};
+        PipelineBundle phongPSO{};
 
         std::vector<vk::CommandBuffer> cmdBuffers{};
 
@@ -37,20 +38,37 @@ class VulkanStack{
         void createSwapchain();
         void initCommands();
         void initDescriptorStuff();
+        void initUpdateDescriptorSets();
         void initSyncs();
         void initBuffers();
         void initSwapchain();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+
+        void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+
         
+
+        PipelineBundle createPipeline(const std::vector<uint32_t> &vertSpv, const std::vector<uint32_t> &fragSpv, CreatePipelineInfo p);
+
+        
+
+        
+
         bool acquireAndValidateImage(PlatformGLFW &plt);
+        
+        
         void render();
+        void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
+        
+
+        void uploadDataToBuffer();
         void startFrame();
-        void concludeFrame();
+        void endFrame();
+        
+
     private:
         vk::ResultValue<uint32_t> acquiredImage();
-        void submitHelper(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
-        void transitionImage(vk::Image image, vk::CommandBuffer cmdBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks mask = {}, vk::ImageAspectFlagBits aspectImage = vk::ImageAspectFlagBits::eColor);
-        void bufferBarrier(vk::Buffer buffer, vk::CommandBuffer cmdBuffer, vk::DeviceSize size, BarrierMasks mask);
-        
+        void recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
+         
 
 };

@@ -5,8 +5,10 @@
 #include "vk_del_queue.hpp"
 #include <array>
 #include "vk_context.hpp"
+#include "vertex_def.hpp"
+#include "buffer_containers.hpp"
 struct AllocatedBuffer {
-    vk::Buffer buffer{};
+    vk::Buffer handle{};
     VmaAllocation alloc{};
     VmaAllocationInfo allocInfo{};
 	vk::DeviceAddress address{};
@@ -14,7 +16,7 @@ struct AllocatedBuffer {
 };
 
 struct AllocatedImage {
-    vk::Image image{};
+    vk::Image handle{};
     vk::ImageView view;
     VmaAllocation alloc{};
     VmaAllocationInfo allocInfo{};
@@ -90,6 +92,7 @@ class ResManager{
 	AllocatedBuffer stagingBuffer{};
 	AllocatedBuffer vertexBuffer{};
 	AllocatedBuffer indexBuffer{};
+	AllocatedBuffer uniformBuffer{};
 	AllocatedBuffer GameObjUBO{};
 	std::array<AllocatedBuffer, 2> indirectBuffers{};
 	std::array<AllocatedBuffer, 2> idboStagingBuffers{};
@@ -104,6 +107,9 @@ class ResManager{
 	std::vector<AllocatedImage> sMapImages{};
 	std::vector<AllocatedImage> swapchainImages{};
 
+
+	uint32_t strideOfUBO{};
+
     void forgeImage(vk::Device device, vk::Format format, uint32_t width, uint32_t height, vk::ImageUsageFlags imageUsageIntent, AllocatedImage& img, vk::ImageAspectFlags aspectMask, std::string_view type, vk::ImageViewType viewtype, uint32_t arrLayers, bool cubeCompatible);
     void requestImage(vk::Device device, ImgType type, AllocatedImage& img, int imgW, int imgH);
     void recordUploadTextureImage(vk::Device device, vk::CommandBuffer cmdBuffer, AllocatedImage &dstImage, void *texPtr, uint32_t texW, uint32_t texH, uint32_t channels = 4);
@@ -112,10 +118,14 @@ class ResManager{
 
     void createBuffer(BufferType type, unsigned long byteSize, AllocatedBuffer &buffer);
 
-    void initBuffers(vk::Device device);
 
-    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, void *data, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
 
+    void initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight);
+
+    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
+    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
+
+    
     void initDescriptorPoolAndSets(vk::Device device, uint32_t maxImageAmount, uint32_t maxSamplers);
 	void initAndUpdateSamplers(vk::Device device, float maxAnisotropy);
 

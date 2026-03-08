@@ -1,6 +1,9 @@
 
 #include "vk_renderer.hpp"
-#include "shared_definitions.hpp"
+#include "vk_barrier.hpp"
+#include "vertex_def.hpp"
+#include "scene.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgView,  vk::Extent2D swapchainExtent) {
 
@@ -37,5 +40,21 @@ void Renderer::recordDraw(vk::CommandBuffer cmdBuffer,vk::Pipeline pipeline, vk:
 	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapchainExtent));
 	cmdBuffer.draw(3,1,0,0);
 
+
+}
+void Renderer::recordDragon(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, PushC::Base pc, vk::Extent2D extent) {
+	
+	
+
+
+
+	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
+	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));
+	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
+	
+	//cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(PushC::Base), &base);
+	
+	
+	cmdBuffer.draw(2613918,1,0,0);
 
 }

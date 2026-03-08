@@ -1,5 +1,8 @@
 
 #include "vk_mmu.hpp"
+#include "vk_barrier.hpp"
+#include "vertex_def.hpp"
+#include "iostream"
 
 void ResManager::createBuffer(BufferType type, unsigned long byteSize, AllocatedBuffer &buffer)
 {
@@ -50,6 +53,9 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 		break;
 
 		case(BufferType::UBO_DYN):
+			
+
+
 			BufferInfo.setUsage(vk::BufferUsageFlagBits::eUniformBuffer).setSharingMode(vk::SharingMode::eExclusive);
 			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; 						//keep pointer alive bit
 			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -58,7 +64,7 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 			
 	}
 	auto result = vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo*>(&BufferInfo)
-		, &allocInfo, reinterpret_cast<VkBuffer*>(&buffer.buffer), &buffer.alloc, &buffer.allocInfo);
+		, &allocInfo, reinterpret_cast<VkBuffer*>(&buffer.handle), &buffer.alloc, &buffer.allocInfo);
 		
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed creation of staging buffer");
@@ -68,47 +74,84 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 }
 
 
-void ResManager::initBuffers(vk::Device device){
+void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight){
 	createBuffer(BufferType::VBO,VBO_BYTE_SIZE,vertexBuffer);
 	createBuffer(BufferType::IBO,IBO_BYTE_SIZE,indexBuffer);
+    std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
+	vertexBuffer.address = device.getBufferAddress({vertexBuffer.handle});
+	indexBuffer.address = device.getBufferAddress({indexBuffer.handle});
+
+
+	//////////////////////////////
+	vk::DeviceSize uboStructSize = sizeof(DynUBO::Base);                 // 192
+	std::cout << "min size of UBO: " << minSizeUBO << " bytes\n";
+	size_t currStride = sizeof(DynUBO::Base);
+	//check if ubosize is less than min size 
+	if (currStride <= minSizeUBO) {
+		currStride = minSizeUBO;
+	}
+	else {
+		auto minStride = minSizeUBO;
+		auto dummySize = minSizeUBO;
+		while (currStride > dummySize) {
+			dummySize += minStride;
+		}
+		currStride = dummySize;
+	}
+	//iter over num of frames times
+
+	auto byteSize = currStride * desiredImagesInFlight;//final size of desired ubo adjusted for limitations of gpu, my gpu has a min 64 byte ubo
+	strideOfUBO = currStride;//trackkiings stride so could make one big ubo for all objects per frame
+	createBuffer(BufferType::UBO_DYN, byteSize, uniformBuffer);
 	
-	vertexBuffer.address = device.getBufferAddress({vertexBuffer.buffer});
-	indexBuffer.address = device.getBufferAddress({indexBuffer.buffer});
+
 }
 
-void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, void *data,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer)
+void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer)
 {
 
-		// BarrierMasks mask{};
+		BarrierMasks mask{};
 
-		// if (type == Buffer::SSBO) {
-		// 	mask.srcStage = vk::PipelineStageFlagBits2::eTransfer;
-		// 	mask.srcAccess = vk::AccessFlagBits2::eTransferWrite;
-		// 	mask.dstStage = vk::PipelineStageFlagBits2::eVertexShader | vk::PipelineStageFlagBits2::eFragmentShader;
-		// 	mask.dstAccess = vk::AccessFlagBits2::eShaderRead;
-		// }
-		// else if (type == Buffer::IDBO) {
-		// 	mask.srcStage = vk::PipelineStageFlagBits2::eTransfer;
-		// 	mask.srcAccess = vk::AccessFlagBits2::eTransferWrite;
-		// 	mask.dstStage = vk::PipelineStageFlagBits2::eDrawIndirect;
-		// 	mask.dstAccess = vk::AccessFlagBits2::eIndirectCommandRead;
-		// }
-		// else {
-		// 	throw std::runtime_error("not supported buffer type!!!!!!");
-		// }
+			mask.srcStage = vk::PipelineStageFlagBits2::eTransfer;
+			mask.srcAccess = vk::AccessFlagBits2::eTransferWrite;
+			mask.dstStage = vk::PipelineStageFlagBits2::eAllGraphics ;
+			mask.dstAccess = vk::AccessFlagBits2::eShaderRead;
 		
-		// //createStagingBuffer(byteSize, stagingBuffer);
+		//createStagingBuffer(byteSize, stagingBuffer);
 
-		// std::memcpy(stagingBuffer.allocInfo.pMappedData, data, byteSize);
-		// //flush it down the gpu drain so it gets visible for gpu 
-		// vmaFlushAllocation(_allocator, stagingBuffer.alloc, 0, byteSize);
+		std::memcpy(stagingBuffer.allocInfo.pMappedData, vertices.data(), byteSize);
+		//flush it down the gpu drain so it gets visible for gpu 
+		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
 
-		// vk::BufferCopy region{};																//
-		// region.setSize(byteSize);																//
-		// //
-		// cmdBuffer.copyBuffer(stagingBuffer.buffer, dstBuffer.buffer, region);	//
+		vk::BufferCopy region{};																//
+		region.setSize(byteSize);																//
+		//
+		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
+		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle, byteSize, mask);
 
-		// vkutils::bufferBarrier(dstBuffer.buffer, cmdBuffer,byteSize, mask);
+}
+
+void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer)
+{
+
+		BarrierMasks mask{};
+
+			mask.srcStage = vk::PipelineStageFlagBits2::eTransfer;
+			mask.srcAccess = vk::AccessFlagBits2::eTransferWrite;
+			mask.dstStage = vk::PipelineStageFlagBits2::eAllGraphics ;
+			mask.dstAccess = vk::AccessFlagBits2::eShaderRead;
+		
+		//createStagingBuffer(byteSize, stagingBuffer);
+
+		std::memcpy(stagingBuffer.allocInfo.pMappedData, indices.data(), byteSize);
+		//flush it down the gpu drain so it gets visible for gpu 
+		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
+
+		vk::BufferCopy region{};																//
+		region.setSize(byteSize);																//
+		//
+		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
+		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle,byteSize, mask);
 
 }
  
