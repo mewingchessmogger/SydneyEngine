@@ -134,6 +134,6 @@ class ResManager{
     void createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
     void clearSwapchain(VulkanContext &ctx, uint32_t imagesInFlight);
     void rethinkSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+    void rethinkZBufferImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
     bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
-    
 };

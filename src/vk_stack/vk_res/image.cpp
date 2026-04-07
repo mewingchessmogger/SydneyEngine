@@ -74,7 +74,6 @@ void ResManager::forgeImage(
 
 
 void ResManager::requestImage(vk::Device device, ImgType type, AllocatedImage& img, int imgW, int imgH) {
-    
     vk::Format format;
     vk::ImageUsageFlags usage;
     vk::ImageAspectFlags aspect;
@@ -82,7 +81,7 @@ void ResManager::requestImage(vk::Device device, ImgType type, AllocatedImage& i
     vk::ImageViewType view_type = vk::ImageViewType::e2D;
     uint32_t layers = 1;
     bool cube_compat = false;
-
+	
     switch (type) {
         case ImgType::DEPTH:
             format      = vk::Format::eD32Sfloat;
@@ -121,10 +120,6 @@ void ResManager::requestImage(vk::Device device, ImgType type, AllocatedImage& i
 
     forgeImage(device, format, imgW, imgH, usage, img, aspect, type_name, view_type, layers, cube_compat);
 }
-
-//pngshit
-//upload new image  -> process png, create new txt image, fill stagingbuffer with png, fill image with buffer
-//update image ->   -> process png, fill stagingbuffer with png, fill image with buffer
 
 
 
@@ -182,3 +177,18 @@ void ResManager::recordUploadTextureImage(vk::Device device, vk::CommandBuffer c
 	
 	//vmaDestroyBuffer(allocator, stagingBuffer.buffer, stagingBuffer.alloc);
 }
+
+	void ResManager::rethinkZBufferImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight) {
+
+		for(auto& img : zBufferImages){
+			vmaDestroyImage(allocator,img.handle,img.alloc);
+		}
+		zBufferImages.clear();
+		
+		for(uint32_t i{}; i < imagesInFlight; i++){
+			AllocatedImage depth{};
+			requestImage(ctx.device,ImgType::DEPTH, depth, width, height);
+			zBufferImages.push_back(depth);
+		}
+		
+	}

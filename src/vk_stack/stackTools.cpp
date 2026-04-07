@@ -59,7 +59,12 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			ctx.imageReadySemaphores[currentFrame] = ctx.device.createSemaphore(vk::SemaphoreCreateInfo{});
 
 			ctx.device.waitIdle();
-            res.rethinkSwapchain(ctx, plt.width, plt.height, DESIRED_IMAGES_IN_FLIGHT);
+			SET_WIDTH = plt.glwidth;
+			SET_HEIGHT = plt.glheight;
+            res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
+			res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+
+
 			return false;
         }
 		else if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
@@ -108,69 +113,61 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 	
 	}
 	
-	void VulkanStack::render(){
+	void VulkanStack::updateUBO(Scene::SceneData& data){
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 		auto swapchainImage = res.swapchainImages[currentImgIndex];
+		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
+		DynUBO::Base dyn = DynUBO::Base{}
+			.setVert(res.vertexBuffer.address)
+			.setIndx(res.indexBuffer.address)
+			.setView(data.view)
+			.setProj(data.proj);
 
-		BarrierMasks masks;
-		masks.srcStage = vk::PipelineStageFlagBits2::eTopOfPipe;
-		masks.dstStage = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
-		masks.srcAccess = vk::AccessFlagBits2::eNone;
-		masks.dstAccess = vk::AccessFlagBits2::eColorAttachmentWrite;
-		
-		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
-		rdr.beginRenderPass(cmdBuffer, swapchainImage.view, swapchainImage.extent2D);
-		//rdr.recordDraw(cmdBuffer, testPSO.handle, swapchainImage.extent2D, swapchainImage.extent2D.height, swapchainImage.extent2D.width);
-		
-		
-		vk::BindDescriptorSetsInfo info {};
-		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};
-		info
-		.setDynamicOffsets(dynOffset)
-		.setFirstSet(0)
-		.setDescriptorSets(res.descriptorSets[2])
-		.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
-		.setLayout(phongPSO.layout);
+		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
+	}
 	
-	// size_t offsetUBO = (ctx->currentFrame * ResMgr->strideUBO);
+	void VulkanStack::render(Scene& scn){ 
+		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
+		auto swapchainImage = res.swapchainImages[currentImgIndex];
+		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
+	
+		BarrierMasks masks = BarrierMasks{}
+			.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
+			.setDstStage(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
+			.setSrcAccess(vk::AccessFlagBits2::eNone)
+			.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);
 
-	// std::memcpy(base + offsetUBO, &ResMgr->dataUBO, sizeof(ResMgr->dataUBO));
-		Scene scn{};
-		glm::vec3 eye    = glm::vec3(0.5f, 0.0f, 1.0f);
-		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::vec3 up     = glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::mat4 view   = glm::lookAt(eye, target, up);
-		view = glm::lookAt(eye, target, scn.camera.up);
-		float aspect = (float)swapchainImage.extent2D.width / (float)swapchainImage.extent2D.height;
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-		static float timer = 0.0f;
-		timer += 0.01f; 
+		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
 
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::scale(model,glm::vec3(2.0));
-		model = glm::rotate(model, timer, glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis
-		model = glm::rotate(model, timer * 0.5f, glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis
+		masks.srcStage = vk::PipelineStageFlagBits2::eTopOfPipe;
+		masks.dstStage = vk::PipelineStageFlagBits2::eEarlyFragmentTests;
+		masks.srcAccess = vk::AccessFlagBits2::eNone;
+		masks.dstAccess = vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
 		
-		DynUBO::Base base{};
-		base.model = model;
-		base.view = view ;
-		base.proj = proj;
-		base.indxAdress = res.indexBuffer.address;
-		base.vertAdress = res.vertexBuffer.address;
+		vkutils::setPipelineBarrier(cmdBuffer, res.zBufferImages[currentFrame].handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
 
 
-		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &base, sizeof(base));
-		//cmdBuffer.bindDescriptorSets2KHR(info);
+
+		rdr.beginRenderPass(cmdBuffer, swapchainImage.view, swapchainImage.extent2D,res.zBufferImages[currentFrame]);
+		
 		cmdBuffer.bindDescriptorSets(
-    vk::PipelineBindPoint::eGraphics, 
-    phongPSO.layout, 
-    0,                                // firstSet
-    res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
-    dynOffset
-);
+			vk::PipelineBindPoint::eGraphics, 
+			phongPSO.layout, 
+			0,                                // firstSet
+			res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
+			dynOffset
+		);
 		
-		rdr.recordDragon(cmdBuffer, res.indexBuffer.address, res.vertexBuffer.address, phongPSO, {}, swapchainImage.extent2D);
+		for(auto& object : scn.gameObjects){
+			PushC::Model pc{};
+			pc.setModel(object.model);
+			rdr.recordRender(cmdBuffer, res.indexBuffer.address, res.vertexBuffer.address, phongPSO, pc, swapchainImage.extent2D);
+		}
+
+		//rdr.recordDragon(cmdBuffer, res.indexBuffer.address, res.vertexBuffer.address, phongPSO, {}, swapchainImage.extent2D);
+		
+		
 		rdr.endRenderPass(cmdBuffer);
 		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, vk::ImageAspectFlagBits::eColor);
 	}
@@ -179,7 +176,9 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
 	void VulkanStack::uploadVBOAndIBO(const std::vector<Vertex> &vertices,const std::vector<uint32_t> &indices){
 		     
-            
+            if (vertices.empty() || indices.empty()) {
+				return;
+			}
             AllocatedBuffer stageVertex{};
             AllocatedBuffer stageIndex{};
 			vk::DeviceSize bytesVertex = vertices.size() * sizeof(Vertex);

@@ -9,28 +9,31 @@ void Engine::run(){
     stk.initDescriptorStuff();
     stk.initBuffers();
     stk.initSwapchain();
+    stk.initDepthImages();
     stk.initUpdateDescriptorSets();
-    // stk.initTestPipeline(
-    //     shaderCompiler.compileFile("test_vert", shaderc_vertex_shader, fileReader.readFile("../../../../src/shaders/test.vert"),true),
-    //     shaderCompiler.compileFile("test_frag", shaderc_fragment_shader, fileReader.readFile("../../../../src/shaders/test.frag"),true)
-    // );
+    
+
      
     stk.initPhongPipeline(
         shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("../../../../src/shaders/phong.vert"),true),
         shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("../../../../src/shaders/phong.frag"),true)
     );
     
-    Scene scn{};
-
     
-
+    Scene scn{};
+    fileWatcher.setCheckTime(5);
+    fileWatcher.setFileDirectory("../../../../src/shaders");
+    fileWatcher.warmupDirectory();
     bool addModel = true;
     fileWatcher.setStandardResponse();
     
     while (plt.windowOpen()) {
+        plt.inputState.previous = plt.inputState.current;
         plt.pollEvents();
+
         fileWatcher.checkDirectoryPeriodically();
-        
+        updateGame(scn, plt.getWindowAspect(), plt.inputState);
+
         if (!stk.acquireAndValidateImage(plt)){
             continue;
         }
@@ -38,6 +41,7 @@ void Engine::run(){
         stk.startFrame();
             if (addModel){
                 addModel = false;
+                
                 AssetManager::UploadData tempData{};
                 tinygltf::Model model = ast.getModel("../../../../models/dragon.glb");
                 ast.getData(model,tempData);
@@ -47,13 +51,13 @@ void Engine::run(){
                 stk.tailIBO += tempData.records[0].totIndices;
                 // for(auto r : tempData.records){
                 //     modelStorage.storeModelRecord(r);
-                // }
-                
+                // }    
                 std::cout << "size of vert, indices " << tempData.vertices.size() << ", " << tempData.indices.size() << "\n"; 
-                stk.uploadVBOAndIBO(tempData.vertices,tempData.indices);
+            
+                stk.uploadVBOAndIBO(tempData.vertices, tempData.indices);
             }
-
-            stk.render(); //pass gameobjs, render graph genned from inside
+            stk.updateUBO(scn.data);
+            stk.render(scn); //pass gameobjs, render graph genned from inside
         stk.endFrame();
     }
     

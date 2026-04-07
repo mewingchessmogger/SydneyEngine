@@ -27,7 +27,6 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     //necessary right here otherwise crash
     plt.createWindowSurface(ctx.instance,reinterpret_cast<VkSurfaceKHR*>(&ctx.surface));
     //use vkbootstrap to select a gpu
-    //We want a gpu that can write to the SDL surface and supports vulkan 1.3 with the correct features
     vkb::PhysicalDeviceSelector physicalDeviceSelector(*ctx.vkbInstance);
 
 
@@ -39,7 +38,7 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     vk::PhysicalDeviceFeatures features1{};
 
     vk::PhysicalDeviceShaderDrawParameterFeatures shadFeat{};
-    
+    VkPhysicalDeviceMaintenance6FeaturesKHR feat6{};
 
     shadFeat.shaderDrawParameters = true;
     
@@ -66,6 +65,7 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
         .set_required_features(features1)
         .add_required_extension("VK_KHR_shader_draw_parameters")
         .add_required_extension_features(static_cast<VkPhysicalDeviceShaderDrawParameterFeatures>(shadFeat))
+       
         .set_surface(ctx.surface)
         .select()
         .value();
@@ -79,7 +79,6 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     
 
 
-    // Get the VkDevice handle used in the rest of a vulkan application
     ctx.device = vk::Device{ ctx.vkbDevice->device };
 
     auto resQueue = ctx.vkbDevice->get_queue(vkb::QueueType::graphics);
@@ -225,6 +224,21 @@ void VulkanStack::initUpdateDescriptorSets(){
 
 
 }
+
+
+void VulkanStack::initDepthImages(){
+
+    
+    AllocatedImage depth{};
+    AllocatedImage depth2{};
+    res.requestImage(ctx.device,ImgType::DEPTH, depth, SET_WIDTH,SET_HEIGHT);
+    res.requestImage(ctx.device,ImgType::DEPTH, depth2, SET_WIDTH,SET_HEIGHT);
+    res.zBufferImages.push_back(depth);
+    res.zBufferImages.push_back(depth2);
+    
+}
+
+
 
 void VulkanStack::initBuffers(){
 	res.initBuffers(ctx.device,ctx.chosenGPU.getProperties().limits.minUniformBufferOffsetAlignment,DESIRED_IMAGES_IN_FLIGHT);

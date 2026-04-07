@@ -43,7 +43,7 @@ void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
         auto& mesh = model.meshes[node.mesh];
         
         for (auto& primitive : mesh.primitives) {
-            uint32_t vertexStartOffset = static_cast<uint32_t>(uploadData.vertices.size()); // THIS IS FOR INDICIES
+            uint32_t vertexStartOffset = static_cast<uint32_t>(uploadData.vertices.size()); // THIS IS IF CMDDRAWINDEXED IS USED
             primitiveData primData{};
             primData.indexOffset = totalLocalIndices;
             primData.vertexOffset= totalLocalVertices;

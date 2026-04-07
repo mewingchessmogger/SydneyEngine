@@ -32,6 +32,7 @@
 			swapchainImages.push_back(img);
 		}
 
+		
 }
 
 	
@@ -49,8 +50,7 @@
 
 		clearSwapchain(ctx,imagesInFlight);
 		createSwapchain(ctx,width,height,imagesInFlight);
-
+		
 
 	}
-	
-
+		

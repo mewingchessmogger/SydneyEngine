@@ -6,7 +6,7 @@
 #include "pipeline_builder.hpp"
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
-
+#include "scene.hpp"
 class VulkanStack{
   
     public:
@@ -18,6 +18,8 @@ class VulkanStack{
         const int DESIRED_DEPTH_IMAGES = 4;
         int WIDTH = 1400;
         int HEIGHT = 900;
+        int SET_WIDTH = 1400;
+        int SET_HEIGHT = 900;
         bool bUseValidationLayers = true;
         bool frameBufferResized = false;
         float deltaT{};
@@ -32,6 +34,15 @@ class VulkanStack{
 
         std::vector<vk::CommandBuffer> cmdBuffers{};
 
+        struct VKSBindDescInfo{
+			vk::PipelineBindPoint bind{};
+			vk::PipelineLayout layout{};
+			uint32_t firstSet{};
+			std::array<vk::DescriptorSet,3> descSets{};
+			uint32_t dynOffset;
+		};
+
+
 
         void initInstance(PlatformGLFW& plt);
         void initDevice(PlatformGLFW& plt);
@@ -42,6 +53,7 @@ class VulkanStack{
         void initSyncs();
         void initBuffers();
         void initSwapchain();
+        void initDepthImages();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
@@ -57,16 +69,20 @@ class VulkanStack{
         bool acquireAndValidateImage(PlatformGLFW &plt);
         
         
-        void render();
+        void render(Scene& scn);
         void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
         
 
         void uploadDataToBuffer();
         void startFrame();
         void endFrame();
+
+        void updateUBO(Scene::SceneData &data);
+
         
 
     private:
+    
         vk::ResultValue<uint32_t> acquiredImage();
         void recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
          

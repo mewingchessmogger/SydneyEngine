@@ -35,7 +35,7 @@ void VulkanStack::initPhongPipeline(std::vector<uint32_t>&& vertSpv, std::vector
 		.setExtent(res.swapchainImages[0].extent2D)
 		.setPolyMode(vk::PolygonMode::eFill)
 		.setFrontFace(vk::FrontFace::eCounterClockwise)
-		.setBytesPC(sizeof(PushC::Base))
+		.setBytesPC(sizeof(PushC::Model))
 		.setStagePC(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
 		.setDepthWrite(vk::True)
 		.setDepthTest(vk::True)

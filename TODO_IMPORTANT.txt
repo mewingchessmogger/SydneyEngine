@@ -25,3 +25,4 @@ the weird confusing thing is why you can both read or write at each access,this 
 REMOVE DB RUNNING AT STARTUP THE MYSQL80 THINGY !!!! other course reminder...
 
 
+binddescrptorsets2 IS THE BANE OF MY EXISTENCE USE THE BINDDSCRIPTORSETS NON 2 ONE!!!!!!!!!!!!!

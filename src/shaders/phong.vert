@@ -27,10 +27,6 @@ layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 // Your Push Constant matches your C++ struct exactly
 layout(push_constant) uniform Constants {
     mat4 model;
-    mat4 view;
-    mat4 proj;
-    uint64_t indxAdress;
-    uint64_t vertAdress;
 } pc;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
@@ -57,11 +53,11 @@ void main() {
     Vertex v = vertexBuffer.vertices[vIndex];
 
     // Step 3: Project to Clip Space
-    gl_Position = ubo.proj * ubo.view * ubo.model* vec4(v.pos, 1.0);
+    gl_Position = ubo.proj * ubo.view * pc.model * vec4(v.pos, 1.0);
 
     
     mat3 normalMat = mat3(transpose(inverse(ubo.model)));
-    outNormal = v.normal;//normalize(normalMat * v.normal);
+    outNormal = normalize(normalMat * v.normal);
 
     
 }

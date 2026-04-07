@@ -11,6 +11,7 @@
 #include "file_reader.hpp"
 #include "shader_compiler.hpp"
 #include "scene.hpp"
+#include "input_format.hpp"
 class Engine{
     public:
     
@@ -19,9 +20,10 @@ class Engine{
     VulkanStack stk{};
     ShaderCompiler shaderCompiler{};
     ModelStorage modelStorage{};
-    FileWatcher fileWatcher{"../../../../src/shaders",5};
+    FileWatcher fileWatcher{};
     FileReader fileReader{};
 
     void run();
-
+    
+    void updateGame(Scene &scn, float aspect,Input::State &state);
 };

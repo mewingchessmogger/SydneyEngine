@@ -1,16 +1,22 @@
 #pragma once
 #include "vulkan/vulkan.hpp"
-    struct BarrierMasks {
+struct BarrierMasks {
     vk::PipelineStageFlags2 srcStage{};
     vk::PipelineStageFlags2 dstStage{};
     vk::AccessFlags2 srcAccess{};
     vk::AccessFlags2 dstAccess{};
 
+    // Chained Setters
+    BarrierMasks& setSrcStage(vk::PipelineStageFlags2 s) { srcStage = s; return *this; }
+    BarrierMasks& setDstStage(vk::PipelineStageFlags2 d) { dstStage = d; return *this; }
+    BarrierMasks& setSrcAccess(vk::AccessFlags2 a)       { srcAccess = a; return *this; }
+    BarrierMasks& setDstAccess(vk::AccessFlags2 a)       { dstAccess = a; return *this; }
+
     bool notFilled() const {
         return srcStage == vk::PipelineStageFlags2{} &&
-            dstStage == vk::PipelineStageFlags2{} &&
-            srcAccess == vk::AccessFlags2{} &&
-            dstAccess == vk::AccessFlags2{};
+               dstStage == vk::PipelineStageFlags2{} &&
+               srcAccess == vk::AccessFlags2{} &&
+               dstAccess == vk::AccessFlags2{};
     }
 };
 
