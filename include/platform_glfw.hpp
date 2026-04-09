@@ -9,6 +9,8 @@ class PlatformGLFW{
   bool frameBufferResized = false;
   int glwidth{};
   int glheight{};
+  
+
   Input::State inputState{};
   void initWindow(int width, int height);
   int windowOpen();
@@ -18,7 +20,7 @@ class PlatformGLFW{
   void shutdown();
   void stallMinimizedWindow();
   float getWindowAspect();
-  
+  void calculateDeltaTime();  
 
   
 };

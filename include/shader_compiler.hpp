@@ -2,6 +2,7 @@
 #include <filesystem>
 #include "shaderc/shaderc.hpp"
 #include <string>
+
 class ShaderCompiler {
     public:
         std::vector<uint32_t> compileFile(const std::string &source_name, shaderc_shader_kind kind, const std::string &source, bool optimize){

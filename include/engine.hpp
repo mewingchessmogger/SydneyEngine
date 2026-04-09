@@ -14,6 +14,10 @@
 #include "input_format.hpp"
 class Engine{
     public:
+    enum class EngineMode: uint32_t {
+        GAME, 
+        EDITOR,
+    };
     
     PlatformGLFW plt{};
     AssetManager ast{};
@@ -24,6 +28,8 @@ class Engine{
     FileReader fileReader{};
 
     void run();
-    
-    void updateGame(Scene &scn, float aspect,Input::State &state);
+
+    void initialize();
+
+    void updateGame(Scene &scn, float aspect,Input::State &state, ModelStorage& storage);
 };

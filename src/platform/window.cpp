@@ -89,7 +89,22 @@ static void mouseKeyCallback(GLFWwindow* window, int button, int action, int mod
     }
 }
 
+static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
+    auto plt = static_cast<PlatformGLFW*>(glfwGetWindowUserPointer(window));
+    static double lastX = xpos;
+    static double lastY = ypos;
 
+
+
+    plt->inputState.mouseDX  = xpos - lastX;
+    plt->inputState.mouseDY  = lastY - ypos;
+
+    lastX = xpos;
+    lastY = ypos;
+
+    
+
+}
 
 void PlatformGLFW::initWindow(int width,int height) {
     if (width == 0 || height == 0){
@@ -108,10 +123,24 @@ void PlatformGLFW::initWindow(int width,int height) {
 	glfwSetFramebufferSizeCallback(windowPtr, frameBufferResizeCallback);
     glfwSetKeyCallback(windowPtr,keyCallback);
     glfwSetMouseButtonCallback(windowPtr, mouseKeyCallback);
+
+    glfwSetCursorPosCallback(windowPtr,cursorPosCallback);
+    glfwSetInputMode(windowPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(windowPtr, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
    glwidth = width;
    glheight = height;
 }
 float PlatformGLFW::getWindowAspect(){
 
     return (float)glwidth/(float)glheight;
+}
+
+void PlatformGLFW::calculateDeltaTime()
+{
+    float currTime = static_cast<float>(glfwGetTime());
+    inputState.deltaTime  = currTime - inputState.lastFrame;
+    inputState.lastFrame = currTime;
+
 }

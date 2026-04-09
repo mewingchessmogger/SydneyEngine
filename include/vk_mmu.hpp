@@ -122,9 +122,10 @@ class ResManager{
 
     void initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight);
 
-    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
-    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
+    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer, uint32_t dstOffset);
+    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer, uint32_t dstOffset);
 
+    
     
     void initDescriptorPoolAndSets(vk::Device device, uint32_t maxImageAmount, uint32_t maxSamplers);
 	void initAndUpdateSamplers(vk::Device device, float maxAnisotropy);

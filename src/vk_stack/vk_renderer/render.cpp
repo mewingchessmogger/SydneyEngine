@@ -46,56 +46,18 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 	cmdBuffer.beginRendering(renderInfo);
 
 }
-void Renderer::recordDraw(vk::CommandBuffer cmdBuffer,vk::Pipeline pipeline, vk::Extent2D swapchainExtent, float extentH, float extentW) {
-	
-	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-	cmdBuffer.setViewport(0, vk::Viewport(0.0f, extentH, extentW, -extentH, 0.0f, 1.0f));
-	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), swapchainExtent));
-	cmdBuffer.draw(3,1,0,0);
-
-
-}
-// void Renderer::recordDragon(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, PushC::Base pc, vk::Extent2D extent) {
-	
-	
-
-
-
-// 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
-// 	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));
-// 	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-	
-// 	//cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(PushC::Base), &base);
-	
-	
-// 	cmdBuffer.draw(2613918,1,0,0);
-
-// }
-
-void Renderer::recordRender(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, PushC::Model pc, vk::Extent2D extent)
+void Renderer::recordRender(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, PushC::Model pc, vk::Extent2D extent, uint32_t indexCount, uint32_t offsetIBO)
 {
 
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
 	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));
 	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
 	PushC::Model base = pc;
-
+	
 	cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(pc), &base);
 	
-	
-	cmdBuffer.draw(2613918,1,0,0);
+	cmdBuffer.draw(indexCount,1,offsetIBO,0);
+	//cmdBuffer.draw(2613918,1,0,0);
 
 }
-
-// void Renderer::renderObjects(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, vk::Extent2D extent) {
-	
-// 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
-// 	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));
-// 	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-	
-// 	cmdBuffer.draw(2613918,1,0,0);
-
-// }
-
-
 

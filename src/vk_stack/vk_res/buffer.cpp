@@ -107,7 +107,7 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 
 }
 
-void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer)
+void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer, uint32_t dstOffset)
 {
 
 		BarrierMasks mask{};
@@ -124,14 +124,14 @@ void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, 
 		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
 
 		vk::BufferCopy region{};																//
-		region.setSize(byteSize);																//
+		region.setSize(byteSize).setDstOffset(dstOffset);																//
 		//
 		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
 		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle, byteSize, mask);
 
 }
 
-void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer)
+void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer,uint32_t dstOffset)
 {
 
 		BarrierMasks mask{};
@@ -148,7 +148,7 @@ void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, 
 		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
 
 		vk::BufferCopy region{};																//
-		region.setSize(byteSize);																//
+		region.setSize(byteSize).setDstOffset(dstOffset);																//
 		//
 		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
 		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle,byteSize, mask);

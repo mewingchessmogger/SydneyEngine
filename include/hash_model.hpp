@@ -36,7 +36,6 @@
             models.push_back(model);
             modelHash[model.path] = index;
             index++;
-
         }
     struct check {
         bool isFound{};
@@ -45,7 +44,7 @@
 
     check getModelID(std::string& modelPath) {
         auto potentialID = modelHash.find(modelPath);
-        if (potentialID== modelHash.end()) {
+        if (potentialID == modelHash.end()) {
             std::cout << "cant find: " << modelPath <<" hash..\n";
             return { false, 0 };
         }

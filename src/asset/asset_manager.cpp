@@ -20,9 +20,18 @@ glm::mat4 getNodeTransform(const tinygltf::Node& node) {
     }
     return transform;
 }
-void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
-    
-     
+void AssetManager::addUploadRequest(const std::string &path)
+{
+    UploadData tempData{};
+    tinygltf::Model model = getModel(path);
+    getData(model,tempData);
+
+    requests.push_back(std::move(tempData));
+
+}
+void AssetManager::getData(tinygltf::Model &model, UploadData &uploadData)
+{
+
     ModelRecord record{};
     //we store in primitves local offsets, in future, model data might move around the gpu buffer therefore a global/local offset
     //system is optimal insated of hardcoding global offsets of gpu buffer..., the record will contain global offsets set outside this func
@@ -143,5 +152,7 @@ void AssetManager::getData(tinygltf::Model& model, UploadData& uploadData) {
     }
     record.totVertices = totalLocalVertices;
     record.totIndices = totalLocalIndices;
-    uploadData.records.push_back(record);
+    uploadData.record = std::move(record);
+    //storage.storeModelRecord(record);
+    //uploadData.records.push_back(record);
 }

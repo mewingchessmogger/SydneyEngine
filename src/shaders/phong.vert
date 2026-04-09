@@ -27,6 +27,7 @@ layout(buffer_reference, scalar) readonly buffer VertexBuffer {
 // Your Push Constant matches your C++ struct exactly
 layout(push_constant) uniform Constants {
     mat4 model;
+    uint offsetVBO;
 } pc;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
@@ -47,7 +48,7 @@ void main() {
     VertexBuffer vertexBuffer = VertexBuffer(ubo.vertAdress);
 
     // Step 1: Fetch the index using the hardware counter
-    uint vIndex = indexBuffer.indices[gl_VertexIndex];
+    uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
 
     // Step 2: Fetch the actual vertex data using that index
     Vertex v = vertexBuffer.vertices[vIndex];

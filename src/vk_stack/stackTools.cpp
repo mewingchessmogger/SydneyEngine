@@ -2,6 +2,7 @@
 #include "platform_glfw.hpp"
 #include "vertex_def.hpp"
 #include "scene.hpp"
+#include "asset_manager.hpp"
 void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore,
 	vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask,vk::Queue graphicsQueue,vk::Fence fence) {
 
@@ -40,8 +41,22 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		
 		return imgResult;
 	}
+	
+	void VulkanStack::flushTransferBuffer(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
 
-
+		if (requests.empty()){
+			return;
+		}
+		for(auto& req : requests){
+			req.record.offsetVBO = tailVBO ;
+			req.record.offsetIBO = tailIBO ;
+			uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
+			tailVBO += req.record.totVertices;
+			tailIBO += req.record.totIndices ;
+			storage.storeModelRecord(req.record);
+		}		
+		requests.clear();
+	}
 
 	bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
 		vk::Fence curFence[] = {ctx.fences[currentFrame] };
@@ -126,7 +141,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 	}
 	
-	void VulkanStack::render(Scene& scn){ 
+	void VulkanStack::render(Scene& scn, ModelStorage &storage){ 
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 		auto swapchainImage = res.swapchainImages[currentImgIndex];
 		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
@@ -139,12 +154,13 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
 
 		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
-
-		masks.srcStage = vk::PipelineStageFlagBits2::eTopOfPipe;
-		masks.dstStage = vk::PipelineStageFlagBits2::eEarlyFragmentTests;
-		masks.srcAccess = vk::AccessFlagBits2::eNone;
-		masks.dstAccess = vk::AccessFlagBits2::eDepthStencilAttachmentWrite;
 		
+		masks = BarrierMasks{}
+			.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
+			.setDstStage(vk::PipelineStageFlagBits2::eEarlyFragmentTests)
+			.setSrcAccess(vk::AccessFlagBits2::eNone)
+			.setDstAccess(vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
+
 		vkutils::setPipelineBarrier(cmdBuffer, res.zBufferImages[currentFrame].handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
 
 
@@ -160,12 +176,14 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		);
 		
 		for(auto& object : scn.gameObjects){
+			auto &record = storage.models[object.meshID]; 
+			
 			PushC::Model pc{};
 			pc.setModel(object.model);
-			rdr.recordRender(cmdBuffer, res.indexBuffer.address, res.vertexBuffer.address, phongPSO, pc, swapchainImage.extent2D);
+			pc.setVertexOffset(record.offsetVBO);
+			rdr.recordRender(cmdBuffer, phongPSO, pc, swapchainImage.extent2D,record.totIndices, record.offsetIBO);
 		}
 
-		//rdr.recordDragon(cmdBuffer, res.indexBuffer.address, res.vertexBuffer.address, phongPSO, {}, swapchainImage.extent2D);
 		
 		
 		rdr.endRenderPass(cmdBuffer);
@@ -174,7 +192,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
 
 
-	void VulkanStack::uploadVBOAndIBO(const std::vector<Vertex> &vertices,const std::vector<uint32_t> &indices){
+	void VulkanStack::uploadVBOAndIBO(const std::vector<Vertex> &vertices,const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO){
 		     
             if (vertices.empty() || indices.empty()) {
 				return;
@@ -186,9 +204,13 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
             res.createBuffer(BufferType::STAGING, bytesIndex, stageIndex);
             res.createBuffer(BufferType::STAGING, bytesVertex, stageVertex);
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices,bytesVertex, stageVertex, res.vertexBuffer);
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer);
+            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices, bytesVertex, stageVertex, res.vertexBuffer,offsetVBO * sizeof(Vertex));
+            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer,offsetIBO * sizeof(uint32_t));
             //need to deestroy later staging 
+			std::cout << "UPLOAD!!!!!!!\n";
+			
 	}
+
+
 
 	

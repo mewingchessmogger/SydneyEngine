@@ -16,11 +16,10 @@ public:
 	struct UploadData {
 		std::vector<Vertex> vertices{};
 		std::vector<uint32_t> indices{};
-		std::vector<ModelRecord> records{};
-
+		ModelRecord record{};
+	
 	};
 
-	ModelStorage record{};
 
     imgInfo processImageFile(std::string_view path){
         
@@ -66,6 +65,9 @@ public:
 		return model;
 	}
 
-    
-    void getData(tinygltf::Model &model,UploadData& mData);
+    void addUploadRequest(const std::string &path);
+    void getData(tinygltf::Model &model, UploadData &mData);
+	std::vector<UploadData> requests{};
+	ModelStorage storage{};
+
 };

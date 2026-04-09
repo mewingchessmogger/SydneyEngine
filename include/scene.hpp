@@ -24,13 +24,13 @@ public:
         glm::mat4 model{};
         glm::mat4 view{};
         glm::mat4 proj{};
-        glm::vec3 eye = glm::vec3(0.0f, 1.0f, 2.0f);
+        glm::vec3 eye = glm::vec3(0.0f, 0.0f, 2.0f);
         glm::vec3 dir = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
         MousePos oldPos{};
         MousePos newPos{};
         float pitch{};
-        float yaw{ -90.0f };
+        float yaw{ };
        
     };
 
@@ -52,7 +52,7 @@ public:
     };
     
     struct GameObject{
-        glm::mat4 model{};
+        glm::mat4 model{1.0f};
         uint32_t meshID{};
     };
     struct SceneData{

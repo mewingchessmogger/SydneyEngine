@@ -7,6 +7,7 @@
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
 #include "scene.hpp"
+#include "asset_manager.hpp"
 class VulkanStack{
   
     public:
@@ -69,8 +70,8 @@ class VulkanStack{
         bool acquireAndValidateImage(PlatformGLFW &plt);
         
         
-        void render(Scene& scn);
-        void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
+        void render(Scene& scn, ModelStorage& storage);
+        void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO);
         
 
         void uploadDataToBuffer();
@@ -78,13 +79,12 @@ class VulkanStack{
         void endFrame();
 
         void updateUBO(Scene::SceneData &data);
-
+        
+        void flushTransferBuffer(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
         
 
     private:
     
         vk::ResultValue<uint32_t> acquiredImage();
         void recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
-         
-
 };
