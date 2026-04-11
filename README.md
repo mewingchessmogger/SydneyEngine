@@ -2,7 +2,8 @@ A refactor of [previous project](https://github.com/mewingchessmogger/vulkan_ren
 The libraries im using are: tinygltf, glm, vma, vkbootstrap(ive done [oovervoord's tutorial](https://vulkan-tutorial.com/) before so im not gonna search for queues again!),imgui and glfw
 
 
-Currently can spawn stanford dragons by pressing space on keyboard, The model can be changed by entering the updateGame function and changing below pictures MeshID to 0 or 1
+Currently can spawn stanford dragons by pressing space on keyboard. Basic camera movement with WASD.The model can be changed by entering the updateGame function and changing below pictures variable "MeshID" to 0 or 1 spawing currently stanford dragon or a cube.
+
 <img width="1121" height="481" alt="image" src="https://github.com/user-attachments/assets/c16678b1-4984-44f4-b99e-a638e748d0d0" />
 
 This should be the result
