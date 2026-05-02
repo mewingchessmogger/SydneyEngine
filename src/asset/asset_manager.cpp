@@ -20,10 +20,10 @@ glm::mat4 getNodeTransform(const tinygltf::Node& node) {
     }
     return transform;
 }
-void AssetManager::addUploadRequest(const std::string &path)
+void AssetManager::addUploadRequest(std::string &&path)
 {
     UploadData tempData{};
-    tinygltf::Model model = getModel(path);
+    tinygltf::Model model = getModel(std::move(path));
     getData(model,tempData);
 
     requests.push_back(std::move(tempData));

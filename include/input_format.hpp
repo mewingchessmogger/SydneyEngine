@@ -5,21 +5,17 @@ namespace Input{
     enum class Key : uint8_t {
         Forward, Backward, Left, Right, Jump, Sprint, LeftClick, RightClick,  COUNT
     };
-
+    
     struct State {
             // Bitsets: 1 bit per key. (current & ~previous) = Just Pressed.
             uint64_t current{0};
             uint64_t previous{0};
-            
+            float lastX{};
+            float lastY{};
             float mouseDX{0.0f};
             float mouseDY{0.0f};
             
-            float deltaTime = 0.0f;	
-            float lastFrame = 0.0f;
-
-
-            
-
+            bool requestCursorVisible = false;
 
             inline void clearCursorDeltas(){
                 mouseDX = 0;

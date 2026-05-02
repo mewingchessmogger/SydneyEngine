@@ -4,6 +4,7 @@
 #include <string>
 
 class ShaderCompiler {
+    //straight taken from the shaderc github examples
     public:
         std::vector<uint32_t> compileFile(const std::string &source_name, shaderc_shader_kind kind, const std::string &source, bool optimize){
             shaderc::Compiler compiler;

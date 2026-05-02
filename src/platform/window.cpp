@@ -7,9 +7,27 @@
 int PlatformGLFW::windowOpen(){
     return !glfwWindowShouldClose(windowPtr);
 } 
-void PlatformGLFW::pollEvents(){
+void PlatformGLFW::updateState(){
+    //necessary for testing holding,releasing and presssing keys
+    inputState.previous = inputState.current;
+    
     glfwPollEvents();
+    
+    //just deltaTime
+    static float lastTime = static_cast<float>(glfwGetTime());
+    float currTime = static_cast<float>(glfwGetTime());
+    deltaTime = currTime-lastTime;
+    
+    lastTime = currTime;
+    static bool incomingRequest = inputState.requestCursorVisible;
+
+    if(incomingRequest != inputState.requestCursorVisible){
+        glfwSetInputMode(windowPtr, GLFW_CURSOR, inputState.requestCursorVisible ? (GLFW_CURSOR_NORMAL) : (GLFW_CURSOR_DISABLED)); 
+
+        incomingRequest = inputState.requestCursorVisible;
+    }
 }
+
 
 const char** PlatformGLFW::getInstanceExtensions(uint32_t* count)
 {
@@ -32,6 +50,11 @@ void PlatformGLFW::stallMinimizedWindow(){
         glfwGetFramebufferSize(windowPtr, &glwidth, &glheight);
         glfwWaitEvents();
     }
+    
+    
+    aspectRatio =  (float)glwidth/(float)glheight;
+
+
     
 }
 
@@ -91,16 +114,24 @@ static void mouseKeyCallback(GLFWwindow* window, int button, int action, int mod
 
 static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
     auto plt = static_cast<PlatformGLFW*>(glfwGetWindowUserPointer(window));
-    static double lastX = xpos;
-    static double lastY = ypos;
+    if (plt->inputState.requestCursorVisible) {
+        // 1. Zero out deltas so the game doesn't process movement
+        plt->inputState.mouseDX = 0;
+        plt->inputState.mouseDY = 0;
+        
+        // 2. Keep lastX/Y updated so when we hide the cursor again, 
+        // there isn't a massive "snap" from the old position.
+        plt->inputState.lastX = xpos;
+        plt->inputState.lastY = ypos;
+        return;
+    }
 
+    plt->inputState.mouseDX  = xpos - plt->inputState.lastX;
+    plt->inputState.mouseDY  = plt->inputState.lastY - ypos;
 
-
-    plt->inputState.mouseDX  = xpos - lastX;
-    plt->inputState.mouseDY  = lastY - ypos;
-
-    lastX = xpos;
-    lastY = ypos;
+    
+    plt->inputState.lastX = xpos;
+    plt->inputState.lastY = ypos;
 
     
 
@@ -126,21 +157,11 @@ void PlatformGLFW::initWindow(int width,int height) {
 
     glfwSetCursorPosCallback(windowPtr,cursorPosCallback);
     glfwSetInputMode(windowPtr, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
-    if (glfwRawMouseMotionSupported())
-        glfwSetInputMode(windowPtr, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    // if (glfwRawMouseMotionSupported())
+    //     glfwSetInputMode(windowPtr, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
    glwidth = width;
    glheight = height;
-}
-float PlatformGLFW::getWindowAspect(){
-
-    return (float)glwidth/(float)glheight;
+   aspectRatio =  (float)glwidth/(float)glheight;
 }
 
-void PlatformGLFW::calculateDeltaTime()
-{
-    float currTime = static_cast<float>(glfwGetTime());
-    inputState.deltaTime  = currTime - inputState.lastFrame;
-    inputState.lastFrame = currTime;
-
-}

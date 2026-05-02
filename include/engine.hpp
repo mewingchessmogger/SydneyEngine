@@ -12,6 +12,7 @@
 #include "shader_compiler.hpp"
 #include "scene.hpp"
 #include "input_format.hpp"
+#include "ecs_registry.hpp"
 class Engine{
     public:
     enum class EngineMode: uint32_t {
@@ -26,10 +27,11 @@ class Engine{
     ModelStorage modelStorage{};
     FileWatcher fileWatcher{};
     FileReader fileReader{};
-
+    Registry registry{};
+     
     void run();
 
     void initialize();
-
-    void updateGame(Scene &scn, float aspect,Input::State &state, ModelStorage& storage);
+    void updateGame(Scene &scn, float aspect, float dt, Input::State &state, ModelStorage &storage);
+    void initGame(Scene &scn);
 };

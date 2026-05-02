@@ -35,7 +35,7 @@ public:
 		return {pixels, uint32_t(texHeight) , uint32_t(texWidth)};
     }
 		
-	tinygltf::Model getModel(const std::string& filename){
+	tinygltf::Model getModel(std::string&& filename){
 		std::filesystem::path fullPath =  filename;
 
 		tinygltf::Model model;
@@ -65,7 +65,7 @@ public:
 		return model;
 	}
 
-    void addUploadRequest(const std::string &path);
+    void addUploadRequest(std::string &&path);
     void getData(tinygltf::Model &model, UploadData &mData);
 	std::vector<UploadData> requests{};
 	ModelStorage storage{};

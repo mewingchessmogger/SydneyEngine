@@ -42,17 +42,19 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		return imgResult;
 	}
 	
-	void VulkanStack::flushTransferBuffer(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
+	void VulkanStack::flushRequests(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
 
-		if (requests.empty()){
-			return;
-		}
+		if (requests.empty()) return;
+
 		for(auto& req : requests){
 			req.record.offsetVBO = tailVBO ;
 			req.record.offsetIBO = tailIBO ;
+			
 			uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
+			
 			tailVBO += req.record.totVertices;
 			tailIBO += req.record.totIndices ;
+			
 			storage.storeModelRecord(req.record);
 		}		
 		requests.clear();
@@ -61,7 +63,18 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 	bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
 		vk::Fence curFence[] = {ctx.fences[currentFrame] };
 		ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 
+		 
 
+		//RAAAAAAAAAAAAAAAAAGH I DONT KNOW HOW ELSE TO DELETE ZOMBIE BUFFERS
+		static int frame = 0;
+		if (!res.zombieBuffers.empty()){
+			frame++;
+			if(frame == 3){
+				for(AllocatedBuffer& i : res.zombieBuffers) { vmaDestroyBuffer(res.allocator, i.handle, i.alloc); }
+				res.zombieBuffers.clear();
+				frame = 0;
+			}
+		}
 
 		vk::ResultValue<uint32_t> val = acquiredImage();
 		auto imgIndex = val.value;
@@ -88,6 +101,9 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		
 		currentImgIndex = imgIndex;
 		ctx.device.resetFences(curFence);
+
+
+
 		return true;
 	}
 
@@ -134,9 +150,9 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
 		DynUBO::Base dyn = DynUBO::Base{}
 			.setVert(res.vertexBuffer.address)
-			.setIndx(res.indexBuffer.address)
+			.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
 			.setView(data.view)
-			.setProj(data.proj);
+			.setProj(data.proj);//for the camera view and proj
 
 		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 	}
@@ -150,7 +166,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
 			.setDstStage(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
 			.setSrcAccess(vk::AccessFlagBits2::eNone)
-			.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);
+			.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);// these pipeline barriers blew my mind, super cool stuff
 
 
 		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
@@ -172,7 +188,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			phongPSO.layout, 
 			0,                                // firstSet
 			res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
-			dynOffset
+			dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
 		);
 		
 		for(auto& object : scn.gameObjects){
@@ -204,12 +220,17 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
             res.createBuffer(BufferType::STAGING, bytesIndex, stageIndex);
             res.createBuffer(BufferType::STAGING, bytesVertex, stageVertex);
+			
             res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices, bytesVertex, stageVertex, res.vertexBuffer,offsetVBO * sizeof(Vertex));
             res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer,offsetIBO * sizeof(uint32_t));
             //need to deestroy later staging 
 			std::cout << "UPLOAD!!!!!!!\n";
 			
-	}
+			res.zombieBuffers.push_back(stageVertex);
+			res.zombieBuffers.push_back(stageIndex);
+	
+		}
+
 
 
 

@@ -1,35 +1,37 @@
 #include "engine.hpp"
 
 void Engine::run(){
-    initialize();
+
+    initialize(); // basically all parts of the engine
+
     ast.addUploadRequest("../../../../models/dragon.glb");
     ast.addUploadRequest("../../../../models/cube_gltf.glb");
     
     Scene scn{};
+    initGame(scn);
     while (plt.windowOpen()) {
+        plt.updateState(); // update keyboard and dt
+
+        updateGame(scn, plt.aspectRatio, plt.deltaTime, plt.inputState, ast.storage);
         
-        plt.inputState.previous = plt.inputState.current;
-        plt.pollEvents();
-        plt.calculateDeltaTime();
-        updateGame(scn, plt.getWindowAspect(), plt.inputState, ast.storage);
         plt.inputState.clearCursorDeltas();
-        
         fileWatcher.checkDirectoryPeriodically();
+        
         if (stk.acquireAndValidateImage(plt)){
             stk.startFrame();
-            stk.flushTransferBuffer(ast.requests, ast.storage);
+            stk.flushRequests(ast.requests, ast.storage);
             
             stk.updateUBO(scn.data);
+            
             stk.render(scn, ast.storage); //pass gameobjs,   
             stk.endFrame();
         }
-
-        
+   
     }
-    
     plt.shutdown();
 }
 
+//transform, 
 
 void Engine::initialize(){
  
@@ -44,8 +46,6 @@ void Engine::initialize(){
     stk.initDepthImages();
     stk.initUpdateDescriptorSets();
     
-
-     
     stk.initPhongPipeline(
         shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("../../../../src/shaders/phong.vert"),true),
         shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("../../../../src/shaders/phong.frag"),true)
@@ -57,3 +57,4 @@ void Engine::initialize(){
     fileWatcher.warmupDirectory();
     fileWatcher.setStandardResponse();
 }
+

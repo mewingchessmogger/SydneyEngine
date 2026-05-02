@@ -94,6 +94,7 @@ class ResManager{
 	AllocatedBuffer indexBuffer{};
 	AllocatedBuffer uniformBuffer{};
 	AllocatedBuffer GameObjUBO{};
+	std::vector<AllocatedBuffer> zombieBuffers{};
 	std::array<AllocatedBuffer, 2> indirectBuffers{};
 	std::array<AllocatedBuffer, 2> idboStagingBuffers{};
 

@@ -34,7 +34,7 @@ class VulkanStack{
         PipelineBundle phongPSO{};
 
         std::vector<vk::CommandBuffer> cmdBuffers{};
-
+        
         struct VKSBindDescInfo{
 			vk::PipelineBindPoint bind{};
 			vk::PipelineLayout layout{};
@@ -80,7 +80,7 @@ class VulkanStack{
 
         void updateUBO(Scene::SceneData &data);
         
-        void flushTransferBuffer(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
+        void flushRequests(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
         
 
     private:
