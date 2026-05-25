@@ -1,19 +1,22 @@
 #include "engine.hpp"
-
 void Engine::run(){
 
     initialize(); // basically all parts of the engine
 
     ast.addUploadRequest("../../../../models/dragon.glb");
-    ast.addUploadRequest("../../../../models/cube_gltf.glb");
+    ast.addUploadRequest("../../../../models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
     
     Scene scn{};
     initGame(scn);
+
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
 
         updateGame(scn, plt.aspectRatio, plt.deltaTime, plt.inputState, ast.storage);
         
+       // updatePhysics(scn, plt.deltaTime);
+        
+
         plt.inputState.clearCursorDeltas();
         fileWatcher.checkDirectoryPeriodically();
         
@@ -57,4 +60,3 @@ void Engine::initialize(){
     fileWatcher.warmupDirectory();
     fileWatcher.setStandardResponse();
 }
-

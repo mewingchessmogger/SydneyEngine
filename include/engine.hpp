@@ -13,25 +13,27 @@
 #include "scene.hpp"
 #include "input_format.hpp"
 #include "ecs_registry.hpp"
+#include "fysik_motor.hpp"
 class Engine{
     public:
     enum class EngineMode: uint32_t {
         GAME, 
         EDITOR,
     };
-    
+
     PlatformGLFW plt{};
     AssetManager ast{};
     VulkanStack stk{};
+    ECS::Registry registry{};
     ShaderCompiler shaderCompiler{};
     ModelStorage modelStorage{};
     FileWatcher fileWatcher{};
     FileReader fileReader{};
-    Registry registry{};
      
     void run();
 
     void initialize();
     void updateGame(Scene &scn, float aspect, float dt, Input::State &state, ModelStorage &storage);
+    void updatePhysics(Scene &scn, float dt);
     void initGame(Scene &scn);
 };

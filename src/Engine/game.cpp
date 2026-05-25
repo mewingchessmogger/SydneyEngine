@@ -78,6 +78,7 @@ void Engine::updateGame(Scene& scn, float aspect, float dt, Input::State &state,
 			obj.model = glm::translate(glm::mat4(1.0f),eyeFloor+floorForward);
 			obj.model = glm::scale(obj.model,glm::vec3(2.0f));
 			obj.meshID = 0; 
+			
 			scn.gameObjects.push_back(obj);
 
 		}
@@ -93,11 +94,11 @@ void Engine::updateGame(Scene& scn, float aspect, float dt, Input::State &state,
 }
 
 void Engine::initGame(Scene& scn){
+	
 	Scene::GameObject floor{};
 	floor.meshID = 1;
     floor.model = glm::translate(floor.model, glm::vec3(0.0, -1.0, 0.0));
 	floor.model = glm::scale(floor.model, glm::vec3(3.0, 0.2, 3.0));
-	
 	scn.gameObjects.push_back(floor);
 
 }

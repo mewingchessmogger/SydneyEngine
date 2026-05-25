@@ -1,117 +1,108 @@
 #include <unordered_map>
 #include <typeindex>
-#include <memory>
 
 
+namespace ECS{
+    using Entity = int;
 
-enum class PoolDomain{
-    Engine, 
-    GameDLL,
-};
-
-const uint32_t MAX_ENTITY = 100;
-
-using Entity = int;
-struct IComponentPool {
-    virtual ~IComponentPool() = default;
-    virtual void remove(Entity e) = 0;
-};
-
-
-template <typename T>
-struct ComponentPool : public IComponentPool{
-    std::array<Entity, MAX_ENTITY> sparse{};
-    std::array<Entity, MAX_ENTITY> dense{};
-    std::array<T, MAX_ENTITY> data{};
-    Entity count = 0;
-    ComponentPool(){
-        std::fill(sparse.begin(), sparse.end(), -1);
-    }
-
-    void assign(Entity e, T val){
-        sparse[e] = count;
-        dense[count] = e;
-        data[count] = val;
-        count++;
-    }
-
-    T& get(Entity e){
-        int id = sparse[e];
-        if (id < 0 ) throw std::out_of_range("Entity ID is out of bounds for this pool.");
-
-        return data[id];
-    }
-    
-    
-
-    void remove(Entity e){
-        //if  count == 0 throw error 
-        if(count == 0) throw std::out_of_range("NO values exist to be removed");
-
-        
-        int idx = sparse[e];
-        int lastIdx = count - 1;
-        
-        if(lastIdx == idx) {sparse[e] = -1; count--; return;}
-        
-        int lastEntity = dense[lastIdx];
-        data[idx] = data[lastIdx];
-        dense[idx] = dense[lastIdx];
-
-        sparse[lastEntity] = idx;
-
-        sparse[e] = -1;
-        count--;
-    }
-
-};
-
-class Registry {
-    
-private:
-    struct PoolMetaData {
-        PoolDomain domain;
-        std::unique_ptr<IComponentPool> pool;
+    struct IComponentPool{
+        virtual ~IComponentPool() = default;
+        virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
     };
-    std::unordered_map<std::type_index, PoolMetaData> pools;
-    Entity entityCounter = 0;
 
-public:
-    Entity create() {
-        return entityCounter++;
+
+    template<typename T>
+    struct Pool : public IComponentPool{
+        constexpr static int MAX_E = 100; 
+        std::array<int, MAX_E> sparse{};
+        std::array<int, MAX_E> dense{};
+        std::array<T, MAX_E> data{};
+        int count{};
+
+        Pool() {
+            sparse.fill(-1);
+        }
+                
+        void assign(Entity e, T p){
+            if (sparse[e] != -1) {
+                data[sparse[e]] = p; 
+                return;              
+            }
+
+            sparse[e] = count;
+            dense[count] = e;
+            data[count] = p;
+            count++;
+        }
+
+        T& get(Entity e){
+            int i = sparse[e];
+            return data[i];
+        }
+
+        void remove(Entity e) override{
+            if (sparse[e] == -1) {
+                return; //throw std::runtime_error("THERES NOTHING TO REMOVE");
+            }
+
+            int trash = sparse[e];
+            int last = count - 1;
+
+            if(trash != last){
+                Entity lastEntity = dense[last];
+                dense[trash] = dense[last];
+                data[trash] = data[last];
+                sparse[lastEntity] = trash;
+            }
+            sparse[e] = -1;
+            count--;
+        }
+
+    };
+    class Registry{
+        private:
+        std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
+        Entity counter{};
         
-    }
-
-    template<typename T>
-    ComponentPool<T>& getPool(PoolDomain domain) {
-        PoolMetaData& meta = pools[std::type_index(typeid(T))];
-
-        if(!meta.pool) meta = {domain, std::make_unique<ComponentPool<T>>()};
-
-        auto* rawBasePtr = meta.pool.get();
-        auto* derivedPtr = static_cast<ComponentPool<T>*>(rawBasePtr);
-        return *derivedPtr;
-
-    }
-    
-    template<typename T>
-    void add(Entity e, T value, PoolDomain targetDomain) {
-        getPool<T>(targetDomain).assign(e, value);
-    }
-    
-
-    
-    void clearDomain(PoolDomain targetDomain){
-        std::unordered_map<std::type_index, PoolMetaData>::iterator it = pools.begin();
-        while(it != pools.end()){
-            if(it->second.domain == targetDomain){
-                std::cout << "clearing... " << it->first.name();
-                it = pools.erase(it);
-            }
-            else{
-                ++it;
-            }
+        public:
+        Entity createEntity(){
+            return counter++;
         }
         
-    }
+        template<typename T>
+        void createPool(){
+            std::type_index typeKey = std::type_index(typeid(T));
+
+            if (pools.find(typeKey) != pools.end()){
+                throw std::runtime_error("POOL ALREADY EXIST!!!");
+            } 
+            pools[typeKey] = std::make_unique<Pool<T>>();
+
+        }
+
+        template<typename T>
+        Pool<T>& getPool(){
+            std::type_index typeKey = std::type_index(typeid(T));
+
+            if (pools.find(typeKey) == pools.end()){
+                throw std::runtime_error("POOL DOES NOT EXIST!!!");
+            } 
+
+            IComponentPool* purePtr = pools[typeKey].get();
+            Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
+            return *specificPoolPtr;
+        }
+
+        template<typename T>
+        void add(Entity e, T componentData){
+            getPool<T>().assign(e, componentData);
+        }
+
+        void destroy(Entity e){
+            for(auto& [type,poolPtr] : pools){
+                poolPtr->remove(e);
+            }
+        }
+    };
+
 };
