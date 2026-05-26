@@ -1,7 +1,8 @@
+#pragma once  
 #include <unordered_map>
 #include <typeindex>
-
-
+#include <memory>
+#include <array>
 namespace ECS{
     using Entity = int;
 
@@ -10,10 +11,9 @@ namespace ECS{
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
     };
 
-
     template<typename T>
     struct Pool : public IComponentPool{
-        constexpr static int MAX_E = 100; 
+        constexpr static int MAX_E = 30; 
         std::array<int, MAX_E> sparse{};
         std::array<int, MAX_E> dense{};
         std::array<T, MAX_E> data{};
@@ -57,52 +57,54 @@ namespace ECS{
             sparse[e] = -1;
             count--;
         }
-
     };
     class Registry{
-        private:
-        std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
-        Entity counter{};
-        
-        public:
-        Entity createEntity(){
-            return counter++;
-        }
-        
-        template<typename T>
-        void createPool(){
-            std::type_index typeKey = std::type_index(typeid(T));
-
-            if (pools.find(typeKey) != pools.end()){
-                throw std::runtime_error("POOL ALREADY EXIST!!!");
-            } 
-            pools[typeKey] = std::make_unique<Pool<T>>();
-
-        }
-
-        template<typename T>
-        Pool<T>& getPool(){
-            std::type_index typeKey = std::type_index(typeid(T));
-
-            if (pools.find(typeKey) == pools.end()){
-                throw std::runtime_error("POOL DOES NOT EXIST!!!");
-            } 
-
-            IComponentPool* purePtr = pools[typeKey].get();
-            Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
-            return *specificPoolPtr;
-        }
-
-        template<typename T>
-        void add(Entity e, T componentData){
-            getPool<T>().assign(e, componentData);
-        }
-
-        void destroy(Entity e){
-            for(auto& [type,poolPtr] : pools){
-                poolPtr->remove(e);
+            private:
+            std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
+            Entity counter{};
+            
+            public:
+            Entity createEntity(){
+                return counter++;
             }
-        }
-    };
+            
+            template<typename T>
+            void createPool(){
+                std::type_index typeKey = std::type_index(typeid(T));
 
+                if (pools.find(typeKey) != pools.end()){
+                    throw std::runtime_error("POOL ALREADY EXIST!!!");
+                } 
+                pools[typeKey] = std::make_unique<Pool<T>>();
+
+            }
+
+            template<typename T>
+            Pool<T>& getPool(){
+                std::type_index typeKey = std::type_index(typeid(T));
+
+                if (pools.find(typeKey) == pools.end()){
+                    throw std::runtime_error("POOL DOES NOT EXIST!!!");
+                } 
+
+                IComponentPool* purePtr = pools[typeKey].get();
+                Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
+                return *specificPoolPtr;
+            }
+
+            template<typename... Components>
+            void add(Entity e, Components... comps){
+                (getPool<Components>().assign(e, comps), ...);
+            }
+            template<typename... Components>
+            void emplace(Entity e){
+                (getPool<Components>().assign(e, Components{}), ...);
+            }
+
+             void destroy(Entity e){
+                for(auto& [type,poolPtr] : pools){
+                    poolPtr->remove(e);
+                }
+            }
+        };
 };

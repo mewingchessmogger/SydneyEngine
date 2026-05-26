@@ -35,10 +35,10 @@ public:
     };
 
     struct Transform {
+        glm::mat4 model{1.0f};
         glm::vec3 position{ 0.0f };
         glm::vec3 rotation{ 1.0f, 0.0f, 0.0f };
         glm::vec3 scale{ 1.0f };
-        glm::mat4 model{1.0f};
 
         glm::mat4 matrix() const {
             glm::mat4 m{ 1.0f };
@@ -50,7 +50,7 @@ public:
             return m;
         }
     };
-    
+
     struct GameObject{
         glm::mat4 model{1.0f};
         uint32_t meshID{};

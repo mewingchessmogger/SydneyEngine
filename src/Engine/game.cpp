@@ -1,20 +1,13 @@
-#include "engine.hpp"
-#include "hash_model.hpp"
-// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
- 
-// #define  GLM_FORCE_RADIANS
-// #define  GLM_ENABLE_EXPERIMENTAL
-
-#include "glm/gtc/quaternion.hpp"
-#include "glm/gtx/quaternion.hpp"
-#include <glm/gtx/projection.hpp>
+#include "game.hpp"
+#include "fysik_motor.hpp"
+#include "engine_components.hpp"
 /*
 "../../../../models/dragon.glb");
     ast.addUploadRequest("../../../../models/cube_gltf.glb"
 	*/
 
 
-void Engine::updateGame(Scene& scn, float aspect, float dt, Input::State &state, ModelStorage& storage){
+void updateGame(Scene& scn, float aspect, float dt, Input::State &state, ModelStorage& storage, ECS::Registry& reg){
 		
 		static float pitch = 0.0;
 		static float yaw = 0.0;
@@ -69,17 +62,32 @@ void Engine::updateGame(Scene& scn, float aspect, float dt, Input::State &state,
 
 
 		
-		if (state.keyPressed(Input::Key::Jump)){
+		if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
 			std::cout<< "ADDED OBJECT!!\n";
-			Scene::GameObject obj{};
+			int dragon = reg.createEntity();
+
+			Transform T{};
 			glm::vec3 floorForward = glm::normalize(glm::vec3(cameraFront.x, 0.0f, cameraFront.z));
 			glm::vec3 eyeFloor = glm::vec3(eye.x,0.0,eye.z);
+			T.position = eyeFloor+floorForward;
+			T.scale = glm::vec3(2.0f);
 			
-			obj.model = glm::translate(glm::mat4(1.0f),eyeFloor+floorForward);
-			obj.model = glm::scale(obj.model,glm::vec3(2.0f));
-			obj.meshID = 0; 
+			Particle p{};
+			p.pos = eyeFloor;
+			p.vel = floorForward * 2.0f;
 			
-			scn.gameObjects.push_back(obj);
+			p.damping = 0.5;
+			p.inverseMass = 10;
+			Renderable R = Renderable{0};
+			
+			reg.add(dragon,T,p,R);
+
+			// obj.model = glm::translate(glm::mat4(1.0f),eyeFloor+floorForward);
+			// obj.model = glm::scale(obj.model,glm::vec3(2.0f));
+			// obj.meshID = 0; 
+			
+
+			// scn.gameObjects.push_back(obj);
 
 		}
 
@@ -93,12 +101,27 @@ void Engine::updateGame(Scene& scn, float aspect, float dt, Input::State &state,
 		
 }
 
-void Engine::initGame(Scene& scn){
-	
-	Scene::GameObject floor{};
-	floor.meshID = 1;
-    floor.model = glm::translate(floor.model, glm::vec3(0.0, -1.0, 0.0));
-	floor.model = glm::scale(floor.model, glm::vec3(3.0, 0.2, 3.0));
-	scn.gameObjects.push_back(floor);
+void initGame(Scene& scn, ECS::Registry& reg){
+	int floor = reg.createEntity();
 
+	
+	Renderable r{};
+	r.meshID = 1;
+	Transform t{};
+	t.scale = {3.0, 0.2, 3.0};
+	t.position = glm::vec3(0.0, -1.0, 0.0);
+	reg.add(floor, t , r);
+
+	
+	
+	
+	
+	
+	// floor.meshID = 1;
+    // floor.model = glm::translate(floor.model, glm::vec3(0.0, -1.0, 0.0));
+	// floor.model = glm::scale(floor.model, glm::vec3(3.0, 0.2, 3.0));
+	
+	
+	// scn.gameObjects.push_back(floor);
+	
 }

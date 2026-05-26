@@ -1,4 +1,6 @@
 #include "engine.hpp"
+#include "game.hpp"
+
 void Engine::run(){
 
     initialize(); // basically all parts of the engine
@@ -7,14 +9,42 @@ void Engine::run(){
     ast.addUploadRequest("../../../../models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
     
     Scene scn{};
-    initGame(scn);
+    
+    reg.createPool<Particle>();
+    reg.createPool<Transform>();
+    reg.createPool<Renderable>();
+    initGame(scn,reg);
 
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
 
-        updateGame(scn, plt.aspectRatio, plt.deltaTime, plt.inputState, ast.storage);
+        updateGame(scn, plt.aspectRatio, plt.deltaTime, plt.inputState, ast.storage, reg);
         
-       // updatePhysics(scn, plt.deltaTime);
+
+        
+        auto& TPool = reg.getPool<Transform>();
+        auto& PPool = reg.getPool<Particle>();
+        auto& RPool = reg.getPool<Renderable>();
+        
+        for (int i{}; i < PPool.count; i++){
+            ECS::Entity e = PPool.dense[i];
+            Particle& p = PPool.data[i];
+            p.integrate(plt.deltaTime,true);
+            TPool.get(e).position = p.pos;
+            std::cout << "VELOCITY of entity " << (int)e << ": " <<  p.vel.x << "\n";
+        }
+
+
+        scn.gameObjects.resize((uint32_t)RPool.count);
+
+        for (int i{}; i < RPool.count; i++){
+            ECS::Entity e = RPool.dense[i];
+            const Renderable& rend = RPool.data[i];
+            scn.gameObjects[i].meshID = rend.meshID;
+            scn.gameObjects[i].model = TPool.get(e).matrix();
+            
+        }
+        
         
 
         plt.inputState.clearCursorDeltas();
