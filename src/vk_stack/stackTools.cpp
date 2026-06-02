@@ -144,15 +144,15 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 	
 	}
 	
-	void VulkanStack::updateUBO(Scene::SceneData& data){
+	void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 		auto swapchainImage = res.swapchainImages[currentImgIndex];
 		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
 		DynUBO::Base dyn = DynUBO::Base{}
 			.setVert(res.vertexBuffer.address)
 			.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
-			.setView(data.view)
-			.setProj(data.proj);//for the camera view and proj
+			.setView(view)
+			.setProj(proj);//for the camera view and proj
 
 		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 	}

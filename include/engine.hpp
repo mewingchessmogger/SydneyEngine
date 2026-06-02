@@ -15,7 +15,10 @@
 #include "ecs_registry.hpp"
 #include "fysik_motor.hpp"
 #include "engine_components.hpp"
+#include <windows.h>
 class Engine{
+    private:
+   
     public:
     enum class EngineMode: uint32_t {
         GAME, 

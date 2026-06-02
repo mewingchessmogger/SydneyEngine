@@ -78,7 +78,7 @@ class VulkanStack{
         void startFrame();
         void endFrame();
 
-        void updateUBO(Scene::SceneData &data);
+        void updateUBO(glm::mat4& view, glm::mat4& proj);
         
         void flushRequests(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
         

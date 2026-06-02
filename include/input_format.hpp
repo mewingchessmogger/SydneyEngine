@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstdint>
 
 namespace Input{
     enum class Key : uint8_t {

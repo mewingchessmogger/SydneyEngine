@@ -1,14 +1,22 @@
 #include "game.hpp"
-#include "fysik_motor.hpp"
-#include "engine_components.hpp"
-/*
-"../../../../models/dragon.glb");
-    ast.addUploadRequest("../../../../models/cube_gltf.glb"
-	*/
+
+using Particle = physics::Particle;
 
 
-void updateGame(Scene& scn, float aspect, float dt, Input::State &state, ModelStorage& storage, ECS::Registry& reg){
-		
+void Tetris::init(ECS::Registry& reg){
+	int floor = reg.createEntity();
+	Renderable r{};
+	r.meshID = 1;
+	Transform t{};
+	t.scale = {3.0, 0.2, 3.0};
+	t.position = glm::vec3(0.0, -1.0, 0.0);
+	reg.add(floor, t , r);
+	
+}
+
+void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg)
+{
+
 		static float pitch = 0.0;
 		static float yaw = 0.0;
 
@@ -57,9 +65,9 @@ void updateGame(Scene& scn, float aspect, float dt, Input::State &state, ModelSt
 		glm::mat4 view   = glm::lookAt(eye, cameraFront+eye, cameraUp);
 		glm::mat4 proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-		
-		scn.data = {view, proj};
-
+		auto& cam0 = reg.getPool<Camera>().data[0];
+		cam0.view = view;
+		cam0.proj = proj;
 
 		
 		if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
@@ -71,57 +79,39 @@ void updateGame(Scene& scn, float aspect, float dt, Input::State &state, ModelSt
 			glm::vec3 eyeFloor = glm::vec3(eye.x,0.0,eye.z);
 			T.position = eyeFloor+floorForward;
 			T.scale = glm::vec3(2.0f);
-			
+			T.rotation = {0.0,1.0,0.0};
 			Particle p{};
 			p.pos = eyeFloor;
 			p.vel = floorForward * 2.0f;
-			
+			p.acc = {0.0,-4.0,0.0};
 			p.damping = 0.5;
 			p.inverseMass = 10;
 			Renderable R = Renderable{0};
 			
 			reg.add(dragon,T,p,R);
 
-			// obj.model = glm::translate(glm::mat4(1.0f),eyeFloor+floorForward);
-			// obj.model = glm::scale(obj.model,glm::vec3(2.0f));
-			// obj.meshID = 0; 
-			
-
-			// scn.gameObjects.push_back(obj);
 
 		}
 
-		// for(auto& object : scn.gameObjects){
-		// 	if(object.meshID == storage.getModelID("../../../../models/dragon.glb").modelID){
-		// 		object.model = glm::rotate(object.model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		// 	}
-		// }
-
 		
-		
-}
 
-void initGame(Scene& scn, ECS::Registry& reg){
-	int floor = reg.createEntity();
 
-	
-	Renderable r{};
-	r.meshID = 1;
-	Transform t{};
-	t.scale = {3.0, 0.2, 3.0};
-	t.position = glm::vec3(0.0, -1.0, 0.0);
-	reg.add(floor, t , r);
 
-	
-	
-	
-	
-	
-	// floor.meshID = 1;
-    // floor.model = glm::translate(floor.model, glm::vec3(0.0, -1.0, 0.0));
-	// floor.model = glm::scale(floor.model, glm::vec3(3.0, 0.2, 3.0));
-	
-	
-	// scn.gameObjects.push_back(floor);
+
+		auto& PPool = reg.getPool<physics::Particle>();
+
+        for (int i{}; i < PPool.count; i++){
+            ECS::Entity e = PPool.dense[i];
+            Particle& p = PPool.data[i];
+			glm::vec3 vel =p.vel;
+			
+            // if ((vel.x *vel.x + vel.y* vel.y +vel.z* vel.z) < 0.1f) {
+            //     reg.destroy(e);
+        	// }
+			// if (p.pos.y <= -1.0){
+			// 	p.forceAccumulator = p.forceAccumulator + glm::vec3{0.0,4.0,0.0};
+            //std::cout << "VELOCITY of entity " << (int)e << ": " <<  p.vel.x << "\n";
+        }
+
 	
 }

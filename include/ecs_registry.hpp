@@ -3,6 +3,7 @@
 #include <typeindex>
 #include <memory>
 #include <array>
+#include <tuple>
 namespace ECS{
     using Entity = int;
 
@@ -22,8 +23,10 @@ namespace ECS{
         Pool() {
             sparse.fill(-1);
         }
-                
-        void assign(Entity e, T p){
+        /// @brief FOR COMPONENTS thata arent unique_ptr<Script>
+        /// @param e 
+        /// @param p 
+        void assign(Entity e, T& p){
             if (sparse[e] != -1) {
                 data[sparse[e]] = p; 
                 return;              
@@ -34,6 +37,22 @@ namespace ECS{
             data[count] = p;
             count++;
         }
+        /// @brief ONLY FOR UNIQUE_PTR<sCRIPT> COMPONENTS!!!!!!!
+        /// @param e 
+        /// @param p 
+        void assign(Entity e, T&& p){
+            if (sparse[e] != -1) {
+                data[sparse[e]] = std::move(p); 
+                return;              
+            }
+
+            sparse[e] = count;
+            dense[count] = e;
+            data[count] = std::move(p);
+            count++;
+        }
+
+
 
         T& get(Entity e){
             int i = sparse[e];
@@ -51,60 +70,83 @@ namespace ECS{
             if(trash != last){
                 Entity lastEntity = dense[last];
                 dense[trash] = dense[last];
-                data[trash] = data[last];
+                data[trash] = std::move(data[last]);
                 sparse[lastEntity] = trash;
             }
             sparse[e] = -1;
             count--;
         }
     };
+    
     class Registry{
-            private:
-            std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
-            Entity counter{};
-            
-            public:
-            Entity createEntity(){
+        private:
+        std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
+        Entity counter{};
+        std::vector<Entity> deadIds{};
+        public:
+
+        Entity createEntity(){
+            if (deadIds.empty()){
                 return counter++;
             }
-            
-            template<typename T>
-            void createPool(){
-                std::type_index typeKey = std::type_index(typeid(T));
+            Entity zombie = deadIds.back(); //  because sparse only takes ent ID and ID is ever increasing even if we kill ents, we save dead ents and reuse them
+            deadIds.pop_back(); //incredibly simple to implement graveyard only a vecotr, popping here and adding them to grave in registry's destroy func, 
+            return zombie;
+        }
+        
+        template<typename T>
+        void createPool(){
+            std::type_index typeKey = std::type_index(typeid(T));
 
-                if (pools.find(typeKey) != pools.end()){
-                    throw std::runtime_error("POOL ALREADY EXIST!!!");
-                } 
-                pools[typeKey] = std::make_unique<Pool<T>>();
+            if (pools.find(typeKey) != pools.end()){
+                throw std::runtime_error("POOL ALREADY EXIST!!!");
+            } 
+            pools[typeKey] = std::make_unique<Pool<T>>();
 
+        }
+
+        template<typename T>
+        Pool<T>& getPool(){
+            std::type_index typeKey = std::type_index(typeid(T));
+
+            if (pools.find(typeKey) == pools.end()){
+                throw std::runtime_error("POOL DOES NOT EXIST!!!");
+            } 
+
+            IComponentPool* purePtr = pools[typeKey].get();
+            Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
+            return *specificPoolPtr;
+        }
+
+        template<typename... Components>
+        std::tuple<Pool<Components>&...> getPools(){
+            return std::tie(getPool<Components>()...);
+        }
+
+
+        // template<typename... Components>
+        // void add(Entity e, Components... comps){
+        //     (getPool<Components>().assign(e, comps), ...);
+        // }
+
+        template<typename... Components>
+        void add(Entity e, Components&&... comps) {
+            // Perfectly forward each component as an rvalue reference to its pool
+            (getPool<std::decay_t<Components>>().assign(e, std::forward<Components>(comps)), ...);
+        }
+
+
+        template<typename... Components>
+        void emplace(Entity e){
+            (getPool<Components>().assign(e, Components{}), ...);
+        }
+
+            void destroy(Entity e){
+            for(auto& [type,poolPtr] : pools){
+                poolPtr->remove(e);
             }
-
-            template<typename T>
-            Pool<T>& getPool(){
-                std::type_index typeKey = std::type_index(typeid(T));
-
-                if (pools.find(typeKey) == pools.end()){
-                    throw std::runtime_error("POOL DOES NOT EXIST!!!");
-                } 
-
-                IComponentPool* purePtr = pools[typeKey].get();
-                Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
-                return *specificPoolPtr;
-            }
-
-            template<typename... Components>
-            void add(Entity e, Components... comps){
-                (getPool<Components>().assign(e, comps), ...);
-            }
-            template<typename... Components>
-            void emplace(Entity e){
-                (getPool<Components>().assign(e, Components{}), ...);
-            }
-
-             void destroy(Entity e){
-                for(auto& [type,poolPtr] : pools){
-                    poolPtr->remove(e);
-                }
-            }
-        };
+            deadIds.push_back(e);
+            //push e into dead id
+        }
+    };
 };
