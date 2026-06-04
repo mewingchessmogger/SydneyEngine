@@ -5,37 +5,37 @@ using Particle = physics::Particle;
 
 typedef IScript* (*CreateScriptFunc)();
 
-void loadAndRegisterTetris(ECS::Registry& reg) {
-    // 1. Load the compiled game binary from the runtime folder
-    HMODULE dllHandle = LoadLibraryA("../../../../games/tetris/Debug/TetrisDLL.dll");
-    if (!dllHandle) {
-        std::cerr << "Failed to load Tetris DLL\n";
-        return;
-    }
+// void loadAndRegisterTetris(ECS::Registry& reg) {
+//     // 1. Load the compiled game binary from the runtime folder
+//     HMODULE dllHandle = LoadLibraryA("../../../../games/tetris/Debug/TetrisDLL.dll");
+//     if (!dllHandle) {
+//         std::cerr << "Failed to load Tetris DLL\n";
+//         return;
+//     }
 
-    // 2. Get the address of the factory function
-    CreateScriptFunc createInstance = (CreateScriptFunc)GetProcAddress(dllHandle, "CreateScriptInstance");
-    if (!createInstance) {
-        std::cerr << "Failed to locate factory function\n";
-        FreeLibrary(dllHandle);
-        return;
-    }
+//     // 2. Get the address of the factory function
+//     CreateScriptFunc createInstance = (CreateScriptFunc)GetProcAddress(dllHandle, "CreateScriptInstance");
+//     if (!createInstance) {
+//         std::cerr << "Failed to locate factory function\n";
+//         FreeLibrary(dllHandle);
+//         return;
+//     }
 
-    // 3. Instantiate the Tetris class across the DLL boundary
-    IScript* rawGamePointer = createInstance();
+//     // 3. Instantiate the Tetris class across the DLL boundary
+//     IScript* rawGamePointer = createInstance();
 
-    // 4. Wrap it in a unique_ptr and create the component container
-    Script scriptComponent;
-    scriptComponent.ptr = std::unique_ptr<IScript>(rawGamePointer);
+//     // 4. Wrap it in a unique_ptr and create the component container
+//     Script scriptComponent;
+//     scriptComponent.ptr = std::unique_ptr<IScript>(rawGamePointer);
 
-    // 5. Initialize the game logic module
-    scriptComponent.ptr->init(reg);
+//     // 5. Initialize the game logic module
+//     scriptComponent.ptr->init(reg);
 
-    // 6. Create an entity and push the script component straight into the pool
-    // (Uses your upgraded move-only perfect forwarding add function)
-    int tetrisEntity = reg.createEntity();
-    reg.add(tetrisEntity, std::move(scriptComponent));
-}
+//     // 6. Create an entity and push the script component straight into the pool
+//     // (Uses your upgraded move-only perfect forwarding add function)
+//     int tetrisEntity = reg.createEntity();
+//     reg.add(tetrisEntity, std::move(scriptComponent));
+// }
 
 
 
@@ -56,17 +56,18 @@ void Engine::run(){
     int cam0 = reg.createEntity();
 	reg.emplace<Camera>(cam0);
     
-
-    loadAndRegisterTetris(reg);
-    
-    //initGame(reg);
+    Script script{};
+    script.ptr = loader.acquireScriptPtr(loader.loadGameDLL("../../../../games/tetris/Debug/TetrisDLL.dll"),"CreateScriptInstance");
+    script.ptr->init(reg);
 
     while (plt.windowOpen()) {
+        //check 
+
+
         plt.updateState(); // update keyboard and dt
 
-       // updateGame(plt.aspectRatio, plt.deltaTime, plt.inputState, ast.storage, reg);
-       
-        reg.getPool<Script>().data[0].ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg);
+        script.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg);
+        //reg.getPool<Script>().data[0].ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg);
         
         
         auto [transPool, particPool, rendPool] = reg.getPools<Transform, Particle, Renderable>();

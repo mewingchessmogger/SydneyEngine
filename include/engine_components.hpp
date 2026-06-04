@@ -38,7 +38,7 @@ struct IScript{
 };
 
 struct Script{
-    std::unique_ptr<IScript> ptr{};
+    IScript* ptr{};
 };
 
 struct Renderable{

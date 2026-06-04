@@ -16,6 +16,7 @@
 #include "fysik_motor.hpp"
 #include "engine_components.hpp"
 #include <windows.h>
+#include "loader_dll.hpp"
 class Engine{
     private:
    
@@ -33,7 +34,7 @@ class Engine{
     ModelStorage modelStorage{};
     FileWatcher fileWatcher{};
     FileReader fileReader{};
-     
+    LoaderDLL loader{};
     void run();
 
     void initialize();
