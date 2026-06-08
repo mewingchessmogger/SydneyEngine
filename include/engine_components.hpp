@@ -4,6 +4,7 @@
 #include "ecs_registry.hpp"
 #include "input_format.hpp"
 #include "memory"
+#include "game_memory.hpp"
 struct Transform {
     //glm::mat4 model{1.0f};
     glm::vec3 position{ 0.0f };
@@ -33,8 +34,8 @@ struct Camera {
 
 struct IScript{
     virtual ~IScript() = default;
-    virtual void init(ECS::Registry& reg) = 0;
-    virtual void update(float aspect, float dt, Input::State& state, ECS::Registry& reg) = 0;
+    virtual void init(ECS::Registry& reg, GameContext& ctx) = 0;
+    virtual void update(float aspect, float dt, Input::State& state, ECS::Registry& reg, GameContext& ctx) = 0;
 };
 
 struct Script{

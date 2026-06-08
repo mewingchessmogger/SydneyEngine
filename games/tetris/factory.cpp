@@ -12,3 +12,12 @@ extern "C" {
         return new Tetris();
     }
 }
+
+
+extern "C" {
+    DLL_EXPORT void GetGameScripts(std::vector<IScript*>& scripts){
+        std::vector<IScript*> scriptsDLL{};
+        
+        scripts.push_back(new Tetris{});
+    }
+}

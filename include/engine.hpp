@@ -17,6 +17,8 @@
 #include "engine_components.hpp"
 #include <windows.h>
 #include "loader_dll.hpp"
+#include "game_memory.hpp"
+#include "editor.hpp"
 class Engine{
     private:
    
@@ -26,10 +28,12 @@ class Engine{
         EDITOR,
     };
 
+    GameContext ctx{};
     PlatformGLFW plt{};
     AssetManager ast{};
     VulkanStack stk{};
     ECS::Registry reg{};
+    Editor edt{};
     ShaderCompiler shaderCompiler{};
     ModelStorage modelStorage{};
     FileWatcher fileWatcher{};

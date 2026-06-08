@@ -8,9 +8,9 @@ class LoaderDLL{
     public:
     //Script* getScriptFromDLL()
     using scriptPtr = IScript* (*)(); // (*) can be sen as the variable name
-    HMODULE loadGameDLL(const char *nameDLL);
-    IScript* acquireScriptPtr(HMODULE handle, const char *factoryFunctionName);
-
-
+    using voidPtr = void* (*)(std::vector<IScript*>& scripts);
+//    HMODULE loadGameDLL(const char *nameDLL);
+    HMODULE loadDLL(const char *nameDLL);
+    IScript *acquireScriptPtr(HMODULE handle, const char *factoryFunctionName);
+    voidPtr getGameContextPtr(HMODULE handle, const char *factoryFunctionName);
 };
-

@@ -2,8 +2,7 @@
 
 using Particle = physics::Particle;
 
-
-void Tetris::init(ECS::Registry& reg){
+void Tetris::init(ECS::Registry& reg, GameContext& ctx){
 	int floor = reg.createEntity();
 	Renderable r{};
 	r.meshID = 1;
@@ -14,12 +13,12 @@ void Tetris::init(ECS::Registry& reg){
 	
 }
 
-void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg)
+void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg, GameContext& ctx)
 {
 
 		static float pitch = 0.0;
 		static float yaw = 0.0;
-
+		
 		pitch += state.mouseDY * 0.3;
 		yaw += state.mouseDX * 0.3;
 

@@ -1,7 +1,7 @@
 
 #include "loader_dll.hpp"
 #include <stdexcept>
-HMODULE LoaderDLL::loadGameDLL(const char* nameDLL){
+HMODULE LoaderDLL::loadDLL(const char* nameDLL){
     //SetDllDirectoryW(L".\\games");
     HMODULE dllHandle = LoadLibraryA(nameDLL);
     
@@ -12,17 +12,26 @@ HMODULE LoaderDLL::loadGameDLL(const char* nameDLL){
     return dllHandle;
 }
 
+// IScript* LoaderDLL::acquireScriptPtr(HMODULE handle, const char* factoryFunctionName){
+//     scriptPtr factory = reinterpret_cast<scriptPtr>(GetProcAddress(handle, factoryFunctionName));
 
-IScript* LoaderDLL::acquireScriptPtr(HMODULE handle, const char* factoryFunctionName){
-    scriptPtr factory = reinterpret_cast<scriptPtr>(GetProcAddress(handle, factoryFunctionName));
+//     if (!factory){
+//         FreeLibrary(handle);
+//         throw std::runtime_error("Failed to locate factory function\n");  
+//     }
+//     return factory();
+// }
+
+
+LoaderDLL::voidPtr LoaderDLL::getGameContextPtr(HMODULE handle, const char* factoryFunctionName){
+    voidPtr factory = reinterpret_cast<voidPtr>(GetProcAddress(handle, factoryFunctionName));
 
     if (!factory){
         FreeLibrary(handle);
         throw std::runtime_error("Failed to locate factory function\n");  
     }
-    return factory();
+    return factory;
 }
-
 
     // 6. Create an entity and push the script component straight into the pool
     // (Uses your upgraded move-only perfect forwarding add function)
