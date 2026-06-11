@@ -26,7 +26,7 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 	pool = stk.ctx.device.createDescriptorPool(poolInfo);
 
 	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	edtContext = ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
@@ -71,21 +71,32 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 
 
 
-void Editor::render(vk::CommandBuffer buffer, GameContext& ctx){
+void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& ctx, bool showEditor){
 	
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-    ImGui::Begin("Debug Window"); // <--- Must add this
-    ImGui::Text("Debug View");
-    ImGui::End();
+
+	
+    if (showEditor){
+		ImGui::Begin("Debug Window"); // <--- Must add this
+		ImGui::Text("Debug View");
+		ImGui::End();
+	}
+
 	ImGui::Render();
 
-
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
+	if (showEditor){
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
+	}
 
 	ImGui::UpdatePlatformWindows();
 	ImGui::RenderPlatformWindowsDefault();
 
+
+}
+
+void Editor::buildUI()
+{
 
 }

@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "input_format.hpp"
+
 class PlatformGLFW{
   public:
   float deltaTime{};
@@ -21,5 +22,5 @@ class PlatformGLFW{
   void stallMinimizedWindow();
   float getWindowAspect();
   float getDeltaTime();
-  
+
 };

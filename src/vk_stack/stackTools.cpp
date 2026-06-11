@@ -91,7 +91,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			SET_HEIGHT = plt.glheight;
             res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
 			res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-
+			res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
 
 			return false;
         }
@@ -196,6 +196,8 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
 			dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
 		);
+		
+
 		
 		for(auto& object : scn.gameObjects){
 			auto &record = storage.models[object.meshID]; 

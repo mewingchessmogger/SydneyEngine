@@ -29,7 +29,8 @@ enum class ImgType: uint32_t{
 	RENDER_TARGET,
 	TEXTURE,
 	CUBE_DEPTH,
-	CUBE_TEXTURE
+	CUBE_TEXTURE,
+	CLR_PICKING,
 };
 enum class BufferType: uint32_t{
 	STAGING,
@@ -38,6 +39,7 @@ enum class BufferType: uint32_t{
 	SSBO,
 	IDBO,
 	UBO_DYN,
+	
 
 };
 enum class DescriptorSetType: uint32_t{
@@ -93,6 +95,7 @@ class ResManager{
 	AllocatedBuffer vertexBuffer{};
 	AllocatedBuffer indexBuffer{};
 	AllocatedBuffer uniformBuffer{};
+	AllocatedBuffer clrPickBuffer{};
 	AllocatedBuffer GameObjUBO{};
 	std::vector<AllocatedBuffer> zombieBuffers{};
 	std::array<AllocatedBuffer, 2> indirectBuffers{};
@@ -107,7 +110,7 @@ class ResManager{
 	std::vector<AllocatedImage> zBufferImages{};
 	std::vector<AllocatedImage> sMapImages{};
 	std::vector<AllocatedImage> swapchainImages{};
-
+	AllocatedImage colorPickImage{};
 
 	uint32_t strideOfUBO{};
 
@@ -137,5 +140,6 @@ class ResManager{
     void clearSwapchain(VulkanContext &ctx, uint32_t imagesInFlight);
     void rethinkSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
     void rethinkZBufferImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+	void rethinkClrPickImage(VulkanContext &ctx, uint32_t width, uint32_t height);
     bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
 };

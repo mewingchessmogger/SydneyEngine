@@ -12,16 +12,6 @@ HMODULE LoaderDLL::loadDLL(const char* nameDLL){
     return dllHandle;
 }
 
-// IScript* LoaderDLL::acquireScriptPtr(HMODULE handle, const char* factoryFunctionName){
-//     scriptPtr factory = reinterpret_cast<scriptPtr>(GetProcAddress(handle, factoryFunctionName));
-
-//     if (!factory){
-//         FreeLibrary(handle);
-//         throw std::runtime_error("Failed to locate factory function\n");  
-//     }
-//     return factory();
-// }
-
 
 LoaderDLL::voidPtr LoaderDLL::getGameContextPtr(HMODULE handle, const char* factoryFunctionName){
     voidPtr factory = reinterpret_cast<voidPtr>(GetProcAddress(handle, factoryFunctionName));

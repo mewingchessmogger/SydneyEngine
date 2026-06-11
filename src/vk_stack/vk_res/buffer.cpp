@@ -53,9 +53,7 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 		break;
 
 		case(BufferType::UBO_DYN):
-			
-
-
+		
 			BufferInfo.setUsage(vk::BufferUsageFlagBits::eUniformBuffer).setSharingMode(vk::SharingMode::eExclusive);
 			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST; 						//keep pointer alive bit
 			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -103,7 +101,7 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 	auto byteSize = currStride * desiredImagesInFlight;//final size of desired ubo adjusted for limitations of gpu, my gpu has a min 64 byte ubo
 	strideOfUBO = currStride;//trackkiings stride so could make one big ubo for all objects per frame
 	createBuffer(BufferType::UBO_DYN, byteSize, uniformBuffer);
-	
+	//createBuffer(BufferType::UBO_DYN, sizeof(DynUBO::ClrPick), clrPickBuffer);// maybe not dyn ubo but whatever eeh..
 
 }
 

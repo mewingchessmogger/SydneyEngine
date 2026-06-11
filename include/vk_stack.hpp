@@ -32,7 +32,7 @@ class VulkanStack{
         PipelineBuilder plb{};
         PipelineBundle testPSO{};
         PipelineBundle phongPSO{};
-
+        PipelineBundle PickPSO{};
         std::vector<vk::CommandBuffer> cmdBuffers{};
         
         struct VKSBindDescInfo{
@@ -55,9 +55,11 @@ class VulkanStack{
         void initBuffers();
         void initSwapchain();
         void initDepthImages();
+        void initColorPickImage();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+        void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         
 

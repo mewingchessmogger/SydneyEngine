@@ -26,19 +26,20 @@ struct PipelineBundle{
 };
 
 struct CreatePipelineInfo {
-    int clrAttachCount{};
+    std::vector<vk::DescriptorSetLayout> descSetLayouts{};
     vk::Format clrFormat{};
     vk::Format depthFormat{};
-    bool isDepthPass{};
     vk::PrimitiveTopology top{};
     vk::Extent2D viewportExtent{};
     vk::PolygonMode polyMode{};
     vk::FrontFace fFace{};
-    size_t bytesPC{};
     vk::ShaderStageFlags stagePC{};
     vk::Bool32 depthTestEnable{};
     vk::Bool32 depthWriteEnable{};
-    std::vector<vk::DescriptorSetLayout> descSetLayouts{};
+    size_t bytesPC{};
+    int clrAttachCount{};
+    vk::Bool32 isDepthPass{};
+    vk::Bool32 blendEnable{};
     // Fluent Setters
     CreatePipelineInfo& setClrAttachCount(uint32_t count) { clrAttachCount = count; return *this; }
     CreatePipelineInfo& setClrFormat(vk::Format format) { clrFormat = format; return *this; }
@@ -53,6 +54,7 @@ struct CreatePipelineInfo {
     CreatePipelineInfo& setDepthTest(vk::Bool32 enable) { depthTestEnable = enable; return *this; }
     CreatePipelineInfo& setDepthWrite(vk::Bool32 enable) { depthWriteEnable = enable; return *this; }
     CreatePipelineInfo& setDescSetLayout(std::vector<vk::DescriptorSetLayout> layouts) { descSetLayouts = layouts; return *this; }
+    CreatePipelineInfo& setBlendState(vk::Bool32 isDpthPass, vk::Bool32 blndEnable) {isDepthPass = isDpthPass; blendEnable = blndEnable ; return *this; }
 
     
 };

@@ -42,7 +42,6 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint pickedID;
 } ubo;
 
-layout(location = 0) out vec3 outNormal;
 
 void main() {
     // Cast the raw 64-bit uints to our buffer types
@@ -58,9 +57,5 @@ void main() {
     // Step 3: Project to Clip Space
     gl_Position = ubo.proj * ubo.view * pc.model * vec4(v.pos, 1.0);
 
-    
-    mat3 normalMat = mat3(transpose(inverse(ubo.model)));
-    outNormal = normalize(normalMat * v.normal);
 
-    
 }

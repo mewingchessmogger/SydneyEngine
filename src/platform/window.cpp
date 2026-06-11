@@ -76,6 +76,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         case GLFW_KEY_D:      genericKey = Input::Key::Right;    break;
         case GLFW_KEY_SPACE:  genericKey = Input::Key::Jump;     break;
         case GLFW_KEY_LEFT_SHIFT: genericKey = Input::Key::Sprint; break;
+        case GLFW_KEY_ESCAPE: genericKey = Input::Key::Escape; break;
         default: return; // Ignore unmapped keys
     }
 

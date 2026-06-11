@@ -19,7 +19,7 @@ PipelineBuilder& PipelineBuilder::setDynRendering(int expectedClrAttachmentsCoun
     PipelineBuilder &setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace);
 
 	PipelineBuilder& setMultiSampling();
-	PipelineBuilder& setBlendState(bool isDepthPass = false);
+	PipelineBuilder& setBlendState(bool isDepthPass = false, bool blendEnable = true);
 	PipelineBuilder& setDynState();
 	PipelineBuilder& setPCRange(size_t sizePC, int offset = 0, vk::ShaderStageFlags stage = vk::ShaderStageFlagBits::eVertex);
 	PipelineBuilder& setDescLayout(std::vector<vk::DescriptorSetLayout> descLayouts);

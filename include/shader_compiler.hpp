@@ -18,10 +18,10 @@ class ShaderCompiler {
                 compiler.CompileGlslToSpv(source, kind, source_name.c_str(), options);
 
             if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-                throw std::runtime_error("dont work shader");
-                //return std::vector<uint32_t>();
-            }
-
+            // Print the actual GLSL compilation error to the console
+            std::cerr << "Shader compilation failed:\n" << module.GetErrorMessage() << std::endl;
+            throw std::runtime_error("dont work shader");
+        }
             return {module.cbegin(), module.cend()};
         }
 

@@ -1,6 +1,8 @@
 #pragma once
 #include "glm/mat4x4.hpp"
 
+
+
 namespace PushC {
     struct Base {
         glm::mat4 model{1.0f};
@@ -15,6 +17,7 @@ namespace PushC {
     struct Model {
         glm::mat4 model{1.0f};
         uint32_t offsetVBO{};
+        uint32_t entityID{};
         Model& setModel(const glm::mat4& m) { model = m; return *this; }
         Model& setVertexOffset(const uint32_t m) { offsetVBO = m; return *this;}
     };
@@ -33,7 +36,8 @@ namespace DynUBO {
         glm::mat4 lightOrtho{1.0f};
         uint64_t indxAdress{0};
         uint64_t vertAdress{0};
-
+        uint32_t pickedID{};
+        
         Base& setModel(const glm::mat4& m)       { model = m;  return *this; }
         Base& setView(const glm::mat4& v)       { view = v;  return *this; }
         Base& setProj(const glm::mat4& p)       { proj = p;  return *this; }
@@ -42,4 +46,10 @@ namespace DynUBO {
         Base& setIndx(uint64_t addr)            { indxAdress = addr; return *this; }
         Base& setVert(uint64_t addr)            { vertAdress = addr; return *this; }
     };
+
+    struct ClrPick{
+      uint32_t pickedID{};
+      uint32_t padding[6];//cuz min size of ubo is 64 bytes on 3070 (mine)  
+    }; //ABANDONED NEEDEDC VIEW AND PROJ SO WHATEVER
+
 }

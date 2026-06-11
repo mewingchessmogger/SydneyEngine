@@ -238,6 +238,10 @@ void VulkanStack::initDepthImages(){
     
 }
 
+void VulkanStack::initColorPickImage(){
+    res.requestImage(ctx.device,ImgType::CLR_PICKING, res.colorPickImage, SET_WIDTH,SET_HEIGHT);
+}
+
 
 
 void VulkanStack::initBuffers(){

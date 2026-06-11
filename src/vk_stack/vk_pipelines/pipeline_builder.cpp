@@ -123,7 +123,7 @@ PipelineBuilder& PipelineBuilder::setMultiSampling()
 	return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setBlendState(bool isDepthPass)
+PipelineBuilder& PipelineBuilder::setBlendState(bool isDepthPass, bool blendEnable)
 {
 
 
@@ -132,7 +132,9 @@ PipelineBuilder& PipelineBuilder::setBlendState(bool isDepthPass)
 		return *this;
 	}
 
-	attachment.colorWriteMask =
+
+	if (blendEnable){
+		attachment.colorWriteMask =
 		vk::ColorComponentFlagBits::eR |
 		vk::ColorComponentFlagBits::eG |
 		vk::ColorComponentFlagBits::eB |
@@ -144,6 +146,13 @@ PipelineBuilder& PipelineBuilder::setBlendState(bool isDepthPass)
 	attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
 	attachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
 	attachment.alphaBlendOp = vk::BlendOp::eAdd;
+ 	}
+	else{
+		attachment.blendEnable = vk::False;
+		attachment.colorWriteMask = vk::ColorComponentFlagBits::eR;
+	}
+	
+
 	blendInfo.setAttachments(attachment);
 	return *this;
 }

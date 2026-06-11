@@ -19,9 +19,9 @@
 #include "loader_dll.hpp"
 #include "game_memory.hpp"
 #include "editor.hpp"
+
 class Engine{
-    private:
-   
+
     public:
     enum class EngineMode: uint32_t {
         GAME, 
@@ -42,7 +42,7 @@ class Engine{
     void run();
 
     void initialize();
-    //void updateGame(Scene &scn, float aspect, float dt, Input::State &state, ModelStorage &storage);
-    //void updatePhysics(Scene &scn, float dt);
-    //void initGame(Scene &scn);
+    void updateCamera(Camera& cam, EngineMode context, float sens = 0.3);
+    void updatePhysics();
+    void prepareRenderables(Scene& scn);
 };

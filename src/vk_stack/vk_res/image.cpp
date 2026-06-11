@@ -104,6 +104,13 @@ void ResManager::requestImage(vk::Device device, ImgType type, AllocatedImage& i
             type_name   = "texture";
             break;
 
+		case ImgType::CLR_PICKING:
+            format      = vk::Format::eR32Uint; 
+            usage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
+            aspect      = vk::ImageAspectFlagBits::eColor;
+            type_name   = "clr_picking";
+            break;
+
         // case ImgType::CUBE_TEXTURE:
         //     format      = vk::Format::eR8G8B8A8Srgb;
         //     usage       = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
@@ -190,5 +197,10 @@ void ResManager::recordUploadTextureImage(vk::Device device, vk::CommandBuffer c
 			requestImage(ctx.device,ImgType::DEPTH, depth, width, height);
 			zBufferImages.push_back(depth);
 		}
-		
-	}
+	
+		}
+	
+void ResManager::rethinkClrPickImage(VulkanContext &ctx, uint32_t width, uint32_t height){
+	vmaDestroyImage(allocator,colorPickImage.handle, colorPickImage.alloc);
+	requestImage(ctx.device, ImgType::CLR_PICKING, colorPickImage, width, height);
+}
