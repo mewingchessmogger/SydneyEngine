@@ -5,6 +5,7 @@
 #include "input_format.hpp"
 #include "memory"
 #include "game_memory.hpp"
+#include "string"
 struct Transform {
     //glm::mat4 model{1.0f};
     glm::vec3 position{ 0.0f };
@@ -43,9 +44,16 @@ struct Script{
 };
 
 struct Renderable{
-    uint32_t meshID;
+    uint32_t meshID{};
 };
 
+struct Parent{
+    uint32_t parentID{};
+    uint32_t level{};
+};
 
+struct Name{
+ std::string name{};
+};
     
     

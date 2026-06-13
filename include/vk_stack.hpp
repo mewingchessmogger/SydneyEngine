@@ -54,6 +54,7 @@ class VulkanStack{
         void initSyncs();
         void initBuffers();
         void initSwapchain();
+        void initRenderTargetImages();
         void initDepthImages();
         void initColorPickImage();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);

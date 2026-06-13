@@ -217,12 +217,42 @@ void VulkanStack::initUpdateDescriptorSets(){
         .setDescriptorType(vk::DescriptorType::eUniformBufferDynamic)
         .setBufferInfo(uboBufferInfo);
 
-    ctx.device.updateDescriptorSets(uboWrite, nullptr);
-
     
-            std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
+    // FIX: Swapped .view calls into the handle tracking assignments
+    vk::DescriptorImageInfo renderTargetInfo{};
+    renderTargetInfo
+        .setImageView(res.renderTargetImages[0].view)
+        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
+    vk::DescriptorImageInfo secRenderTargetInfo{};    
+    secRenderTargetInfo
+        .setImageView(res.renderTargetImages[1].view)
+        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
+    vk::DescriptorImageInfo colorPickInfo{};
+    colorPickInfo
+        .setImageView(res.colorPickImage.view)
+        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    // Build the structural array configuration matching your consecutive bindless slot layouts
+    std::array<vk::DescriptorImageInfo, 3> bindlessImages = {
+        renderTargetInfo,    // Slot index 0 -> Main Viewport Color Target
+        secRenderTargetInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
+        colorPickInfo        // Slot index 2 -> GPU Color Picking Registry Image
+    };
+
+    vk::WriteDescriptorSet bindlessWrite{};
+    bindlessWrite
+        .setDstSet(res.descriptorSets[static_cast<size_t>(DescriptorSetType::IMAGE)]) // Targeting Set 1
+        .setDstBinding(0)                                                           // Target Layout Binding 0
+        .setDstArrayElement(0)                                                      // Start writing at array index slot 0
+        .setDescriptorType(vk::DescriptorType::eSampledImage)                       // Explicit non-combined sampled specifier
+        .setDescriptorCount(static_cast<uint32_t>(bindlessImages.size()))           // Update all 3 slots simultaneously
+        .setPImageInfo(bindlessImages.data());
+
+    // 3. Complete Pipeline Updates Synchronously
+    std::array<vk::WriteDescriptorSet, 2> pipelineWrites = { uboWrite, bindlessWrite };
+    ctx.device.updateDescriptorSets(pipelineWrites, nullptr);
 }
 
 
@@ -254,4 +284,17 @@ void VulkanStack::initSwapchain(){
 	
 	res.createSwapchain(ctx,WIDTH,HEIGHT,DESIRED_IMAGES_IN_FLIGHT);
 	
+}
+
+void VulkanStack::initRenderTargetImages()
+{
+     
+    AllocatedImage target{};
+    AllocatedImage target2{};
+    
+    res.requestImage(ctx.device,ImgType::RENDER_TARGET, target, SET_WIDTH,SET_HEIGHT);
+    res.requestImage(ctx.device,ImgType::RENDER_TARGET, target2, SET_WIDTH,SET_HEIGHT);
+    res.renderTargetImages.push_back(target);
+    res.renderTargetImages.push_back(target2);
+    
 }

@@ -91,8 +91,9 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			SET_HEIGHT = plt.glheight;
             res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
 			res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-			res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
-
+			//res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
+			res.rethinkRenderTargets(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+			res.updateRenderTargetDescriptor(ctx);
 			return false;
         }
 		else if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
@@ -124,12 +125,51 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];//read below same shtick
 		vk::Semaphore renderFinishedSemaph = ctx.renderFinishedSemaphores[imageIndex];
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];//this is indx currentFrame cuz the fence above 
-		auto swapchainImage = res.swapchainImages[currentImgIndex];
+		auto& swapchainImage = res.swapchainImages[currentImgIndex];
+		auto& renderTarget = res.renderTargetImages[currentImgIndex];
 
 
 
-		 rdr.endRenderPass(cmdBuffer);
-	    vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::ePresentSrcKHR, vk::ImageAspectFlagBits::eColor);
+	    vkutils::setPipelineBarrier(cmdBuffer, renderTarget.handle, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eTransferSrcOptimal, vk::ImageAspectFlagBits::eColor);
+		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, vk::ImageAspectFlagBits::eColor);
+
+			// 3. REGIONS: Define how the pixels stretch from the offscreen target to the screen size
+		vk::ImageBlit blitRegion{};
+		blitRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		blitRegion.srcSubresource.layerCount = 1;
+		blitRegion.srcOffsets[1] = vk::Offset3D(renderTarget.extent3D.width, renderTarget.extent3D.height, 1);
+		
+		blitRegion.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		blitRegion.dstSubresource.layerCount = 1;
+		blitRegion.dstOffsets[1] = vk::Offset3D(SET_WIDTH, SET_HEIGHT, 1); // Stretches to current GLFW window size
+
+		// 4. THE ACTUAL BLIT: Scale and copy pixels directly via GPU hardware blocks
+		cmdBuffer.blitImage(
+			renderTarget.handle, vk::ImageLayout::eTransferSrcOptimal,
+			swapchainImage.handle, vk::ImageLayout::eTransferDstOptimal,
+			1, &blitRegion,
+			vk::Filter::eLinear
+		);
+
+		// 5. BARRIER: Transition the Swapchain Image from Copy Destination to Presentation Mode
+		vkutils::setPipelineBarrier(
+			cmdBuffer, 
+			swapchainImage.handle, 
+			vk::ImageLayout::eTransferDstOptimal, 
+			vk::ImageLayout::ePresentSrcKHR, 
+			vk::ImageAspectFlagBits::eColor
+		);
+
+		// 6. BARRIER: Reset this frame's render target back to optimal for the next loop's 3D pass
+		vkutils::setPipelineBarrier(
+			cmdBuffer, 
+			renderTarget.handle, 
+			vk::ImageLayout::eTransferSrcOptimal, 
+			vk::ImageLayout::eColorAttachmentOptimal, 
+			vk::ImageAspectFlagBits::eColor
+		);
+
+
 		cmdBuffer.end();
 
 		recordSubmit(cmdBuffer, imageReadySemaph, renderFinishedSemaph, vk::PipelineStageFlagBits2::eColorAttachmentOutput
@@ -165,7 +205,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 	
 	void VulkanStack::render(Scene& scn, ModelStorage &storage){ 
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
-		auto swapchainImage = res.swapchainImages[currentImgIndex];
+		auto& renderTarget = res.renderTargetImages[currentImgIndex];
 		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
 	
 		BarrierMasks masks = BarrierMasks{}
@@ -175,7 +215,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);// these pipeline barriers blew my mind, super cool stuff
 
 
-		vkutils::setPipelineBarrier(cmdBuffer, swapchainImage.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
+		vkutils::setPipelineBarrier(cmdBuffer, renderTarget.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor, masks);
 		
 		masks = BarrierMasks{}
 			.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
@@ -187,7 +227,7 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 
 
 
-		rdr.beginRenderPass(cmdBuffer, swapchainImage.view, swapchainImage.extent2D,res.zBufferImages[currentFrame]);
+		rdr.beginRenderPass(cmdBuffer, renderTarget.view, renderTarget.extent2D,res.zBufferImages[currentFrame]);
 		
 		cmdBuffer.bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics, 
@@ -205,11 +245,11 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 			PushC::Model pc{};
 			pc.setModel(object.model);
 			pc.setVertexOffset(record.offsetVBO);
-			rdr.recordRender(cmdBuffer, phongPSO, pc, swapchainImage.extent2D,record.totIndices, record.offsetIBO);
+			rdr.recordRender(cmdBuffer, phongPSO, pc, renderTarget.extent2D,record.totIndices, record.offsetIBO);
 		}
 
-		
-		
+		rdr.endRenderPass(cmdBuffer);
+
 	}
 
 

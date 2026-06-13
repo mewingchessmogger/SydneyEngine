@@ -67,8 +67,8 @@ void ResManager::forgeImage(
 		.setSubresourceRange(subRange);
 
 	img.view = device.createImageView(info);
-
-
+	img.extent2D = vk::Extent2D(width, height);
+    img.extent3D = vk::Extent3D(width, height, 1);
 	
 }
 
@@ -91,15 +91,15 @@ void ResManager::requestImage(vk::Device device, ImgType type, AllocatedImage& i
             break;
 
         case ImgType::RENDER_TARGET:
-            format      = vk::Format::eR16G16B16A16Sfloat;
-            usage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+            format      = vk::Format::eB8G8R8A8Srgb;
+            usage       = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled |vk::ImageUsageFlagBits::eTransferSrc;
             aspect      = vk::ImageAspectFlagBits::eColor;
             type_name   = "rendertarget";
             break;
 
         case ImgType::TEXTURE:
             format      = vk::Format::eR8G8B8A8Srgb;
-            usage       = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+            usage       = vk::ImageUsageFlagBits::eTransferDst  |  vk::ImageUsageFlagBits::eSampled;
             aspect      = vk::ImageAspectFlagBits::eColor;
             type_name   = "texture";
             break;
@@ -198,9 +198,57 @@ void ResManager::recordUploadTextureImage(vk::Device device, vk::CommandBuffer c
 			zBufferImages.push_back(depth);
 		}
 	
-		}
+	}
 	
 void ResManager::rethinkClrPickImage(VulkanContext &ctx, uint32_t width, uint32_t height){
 	vmaDestroyImage(allocator,colorPickImage.handle, colorPickImage.alloc);
 	requestImage(ctx.device, ImgType::CLR_PICKING, colorPickImage, width, height);
+	
 }
+void ResManager::rethinkRenderTargets(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight) {
+
+		for(auto& img : renderTargetImages){
+			vmaDestroyImage(allocator,img.handle,img.alloc);
+		}
+		renderTargetImages.clear();
+		
+		for(uint32_t i{}; i < imagesInFlight; i++){
+			AllocatedImage depth{};
+			requestImage(ctx.device,ImgType::RENDER_TARGET, depth, width, height);
+			renderTargetImages.push_back(depth);
+		}
+}
+void ResManager::updateRenderTargetDescriptor(VulkanContext &ctx){
+		
+		
+		// FIX: Swapped .view calls into the handle tracking assignments
+		vk::DescriptorImageInfo renderTargetInfo{};
+		renderTargetInfo
+			.setImageView(renderTargetImages[0].view)
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		vk::DescriptorImageInfo secRenderTargetInfo{};    
+		secRenderTargetInfo
+			.setImageView(renderTargetImages[1].view)
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		// Build the structural array configuration matching your consecutive bindless slot layouts
+		std::array<vk::DescriptorImageInfo, 2> bindlessImages = {
+			renderTargetInfo,    // Slot index 0 -> Main Viewport Color Target
+			secRenderTargetInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
+		};
+
+		vk::WriteDescriptorSet bindlessWrite{};
+		bindlessWrite
+			.setDstSet(descriptorSets[static_cast<size_t>(DescriptorSetType::IMAGE)]) // Targeting Set 1
+			.setDstBinding(0)                                                           // Target Layout Binding 0
+			.setDstArrayElement(0)                                                      // Start writing at array index slot 0
+			.setDescriptorType(vk::DescriptorType::eSampledImage)                       // Explicit non-combined sampled specifier
+			.setDescriptorCount(static_cast<uint32_t>(bindlessImages.size()))           // Update all 3 slots simultaneously
+			.setPImageInfo(bindlessImages.data());
+
+		// 3. Complete Pipeline Updates Synchronously
+		ctx.device.updateDescriptorSets(bindlessWrite, nullptr);
+	}
+
+	

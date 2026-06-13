@@ -1,16 +1,20 @@
 #include "game.hpp"
 
 using Particle = physics::Particle;
-
+struct Bullet{
+	int foo{};
+};
 void Tetris::init(ECS::Registry& reg, GameContext& ctx){
 	int floor = reg.createEntity();
+	int bullet = reg.createEntity();
 	Renderable r{};
 	r.meshID = 1;
 	Transform t{};
 	t.scale = {3.0, 0.2, 3.0};
 	t.position = glm::vec3(0.0, -1.0, 0.0);
 	reg.add(floor, t , r);
-	
+	reg.createPool<Bullet>();
+	reg.emplace<Bullet>(bullet);
 }
 
 void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg, GameContext& ctx)

@@ -81,8 +81,62 @@ void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& c
     if (showEditor){
 		ImGui::Begin("Debug Window"); // <--- Must add this
 		ImGui::Text("Debug View");
+
+		ImGui::Separator();
+		if(ImGui::Button("Save Game to File")){
+			std::cout <<" SAVING !!...\n";
+		}
+
 		ImGui::End();
+	
+		ImGui::Begin("Scene Hierarchy");
+		ImGui::Separator();
+		auto& IDs = reg.getLiveIDs();
+		ImGui::BeginChild("Entities");
+		for (auto e : IDs){
+			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_Leaf;
+			
+			// Format raw integer text string
+			std::string label = "Entity ID: " + std::to_string(e);
+
+			
+			// Render the row onto the ImGui draw stream
+			bool opened = ImGui::TreeNodeEx((void*)(uint64_t)e, flags, "%s", label.c_str());
+			
+			if (ImGui::IsItemClicked()) {
+            	selectedEntity = e;
+        	}
+
+			if (opened) {
+				ImGui::TreePop();
+			}
+		}
+
+		ImGui::EndChild();
+		ImGui::End();
+	
+		ImGui::Begin("Entity Inspector");
+		ImGui::Separator();
+		if (selectedEntity == -1) {
+			ImGui::Text("Select an entity from the hierarchy to view properties.");
+		} 
+		else {
+		ImGui::Text("Editing Entity ID: %d", selectedEntity);	
+			for (const auto& [key, pool] : reg.getPoolMap()){
+				if (pool.get()->hasEntity(selectedEntity)){
+					ImGui::BulletText("%s",key.name());
+				}
+			}
+
+		}
+		
+		ImGui::End();
+	
 	}
+
+	 
+
+
 
 	ImGui::Render();
 

@@ -10,6 +10,7 @@ namespace ECS{
     struct IComponentPool{
         virtual ~IComponentPool() = default;
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
+        virtual bool hasEntity(Entity e) = 0;
     };
 
     template<typename T>
@@ -76,24 +77,58 @@ namespace ECS{
             sparse[e] = -1;
             count--;
         }
+
+        bool hasEntity(Entity e) override{
+            return sparse[e] != -1;
+        }
+
+
     };
     
     class Registry{
         private:
         std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
+        //std::unordered_map<std::string, IComponentPool> poolNames{};
+        std::vector<Entity> deadIDs{};
+        std::vector<Entity> liveIDs{};
+
         Entity counter{};
-        std::vector<Entity> deadIds{};
+        bool registryDirty = false;
         public:
 
+        std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>>& getPoolMap(){
+            return pools;
+        }
+
+
         Entity createEntity(){
-            if (deadIds.empty()){
+            registryDirty = true;
+
+            if (deadIDs.empty()){
+
                 return counter++;
             }
-            Entity zombie = deadIds.back(); //  because sparse only takes ent ID and ID is ever increasing even if we kill ents, we save dead ents and reuse them
-            deadIds.pop_back(); //incredibly simple to implement graveyard only a vecotr, popping here and adding them to grave in registry's destroy func, 
+            Entity zombie = deadIDs.back(); //  because sparse only takes ent ID and ID is ever increasing even if we kill ents, we save dead ents and reuse them
+            deadIDs.pop_back(); //incredibly simple to implement graveyard only a vecotr, popping here and adding them to grave in registry's destroy func, 
             return zombie;
         }
-        
+
+        std::vector<Entity> getLiveIDs() {
+            if (!registryDirty){
+                return liveIDs;
+            }
+            liveIDs.clear();
+            liveIDs.reserve(counter - deadIDs.size());
+            for (Entity i{}; i < counter; ++i){
+                if(std::find(deadIDs.begin(), deadIDs.end(), i) == deadIDs.end()){
+                    liveIDs.push_back(i);
+                }
+            }
+            registryDirty = false;
+            return liveIDs;
+        }
+
+
         template<typename T>
         void createPool(){
             std::type_index typeKey = std::type_index(typeid(T));
@@ -142,11 +177,16 @@ namespace ECS{
         }
 
             void destroy(Entity e){
+            registryDirty = true;
+
             for(auto& [type,poolPtr] : pools){
                 poolPtr->remove(e);
             }
-            deadIds.push_back(e);
+            deadIDs.push_back(e);
             //push e into dead id
         }
     };
+
+
+
 };

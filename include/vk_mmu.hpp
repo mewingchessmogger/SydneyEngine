@@ -104,7 +104,7 @@ class ResManager{
 	std::array<AllocatedBuffer, 2> StorageBuffers{};
 	std::array<AllocatedBuffer, 2> ssboStagingBuffers{};
 
-	std::vector<AllocatedImage> renderTargets{};
+	std::vector<AllocatedImage> renderTargetImages{};
 	std::vector<AllocatedImage> txtImages{};
 	std::vector<AllocatedImage> cubeImages{};
 	std::vector<AllocatedImage> zBufferImages{};
@@ -141,5 +141,7 @@ class ResManager{
     void rethinkSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
     void rethinkZBufferImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
 	void rethinkClrPickImage(VulkanContext &ctx, uint32_t width, uint32_t height);
+    void rethinkRenderTargets(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+    void updateRenderTargetDescriptor(VulkanContext &ctx);
     bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
 };

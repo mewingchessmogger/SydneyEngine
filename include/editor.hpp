@@ -8,15 +8,12 @@
 #include "engine_components.hpp"
 #include <functional>
 class Editor{
-    public:
     
+    public:
+    int selectedEntity = -1;
     vk::DescriptorPool pool{};    
     
     ImGuiContext* edtContext{};
-    ImGuiMemAllocFunc alloc_func = nullptr;
-    ImGuiMemFreeFunc  free_func  = nullptr;
-
-    void* user_data  = nullptr;
     void init(VulkanStack &stk, PlatformGLFW &plt);
     void render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& ctx, bool showEditor);
     void buildUI();
