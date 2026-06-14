@@ -26,13 +26,17 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 	//setup for dynrenderin
 	
 	vk::RenderingAttachmentInfo depthInfo{};
-	depthInfo
+	vk::RenderingAttachmentInfo* depthInfoPtr = nullptr;
+	if (zBufferImage.handle != nullptr){
+
+		depthInfo
 		.setImageView(zBufferImage.view)
 		.setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
 		.setClearValue(vk::ClearDepthStencilValue{ 1,0 })
 		.setLoadOp(vk::AttachmentLoadOp::eClear)
 		.setStoreOp(vk::AttachmentStoreOp::eStore);
-
+		depthInfoPtr = &depthInfo;
+	}
 	vk::Rect2D area;
 
 	area.setOffset(vk::Offset2D(0, 0)).setExtent(swapchainExtent);
@@ -41,7 +45,7 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 		.setLayerCount(1)
 		.setColorAttachments(attachInfo)
 		
-		.setPDepthAttachment(&depthInfo);
+		.setPDepthAttachment(depthInfoPtr);
 	
 	cmdBuffer.beginRendering(renderInfo);
 

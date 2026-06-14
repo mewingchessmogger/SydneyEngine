@@ -1,17 +1,17 @@
 #pragma once
 #include <variant>
-struct Variable{
+struct GameVars{
     char name[16];
     std::variant<uint32_t, int , float, std::vector<uint32_t>> type{};
 };
 
 struct ScriptContext{
-    std::vector<Variable> vars{};
+    std::vector<GameVars> vars{};
 
 };
 
 struct GameContext{
-    std::vector<Variable> globalVariables{};
+    std::vector<GameVars> globalVariables{};
     std::vector<ScriptContext> scripts{};
     
 };

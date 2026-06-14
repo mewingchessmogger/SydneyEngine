@@ -2,8 +2,10 @@
 
 using Particle = physics::Particle;
 struct Bullet{
-	int foo{};
+	int speed{};
+	REFLECT_1(speed);
 };
+
 void Tetris::init(ECS::Registry& reg, GameContext& ctx){
 	int floor = reg.createEntity();
 	int bullet = reg.createEntity();

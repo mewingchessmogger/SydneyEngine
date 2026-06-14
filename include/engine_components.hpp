@@ -1,11 +1,16 @@
 #pragma once
 //#include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/quaternion.hpp"
 #include "ecs_registry.hpp"
 #include "input_format.hpp"
 #include "memory"
 #include "game_memory.hpp"
 #include "string"
+
+#include "reflections.hpp"
+
+
 struct Transform {
     //glm::mat4 model{1.0f};
     glm::vec3 position{ 0.0f };
@@ -15,12 +20,15 @@ struct Transform {
     glm::mat4 matrix() const {
         glm::mat4 m{ 1.0f };
         m = glm::translate(m, position);
-        m = glm::rotate(m, rotation.y, { 0,1,0 });
-        m = glm::rotate(m, rotation.x, { 1,0,0 });
-        m = glm::rotate(m, rotation.z, { 0,0,1 });
+        glm::quat qRotation = glm::quat(glm::vec3(rotation.x, rotation.y, rotation.z));
+        m = m * glm::mat4_cast(qRotation);
         m = glm::scale(m, scale);
         return m;
     }
+
+    REFLECT_3(position, rotation, scale);
+
+
 };
 struct Camera {
     glm::mat4 model{};
@@ -45,6 +53,8 @@ struct Script{
 
 struct Renderable{
     uint32_t meshID{};
+
+    REFLECT_1(meshID);
 };
 
 struct Parent{

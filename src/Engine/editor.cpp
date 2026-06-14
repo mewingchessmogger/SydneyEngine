@@ -69,88 +69,176 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 
 }
 
+#include <imgui_internal.h> // Required for DockBuilder API access
 
-
-void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& ctx, bool showEditor){
-	
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	
-    if (showEditor){
-		ImGui::Begin("Debug Window"); // <--- Must add this
-		ImGui::Text("Debug View");
-
-		ImGui::Separator();
-		if(ImGui::Button("Save Game to File")){
-			std::cout <<" SAVING !!...\n";
-		}
-
-		ImGui::End();
-	
-		ImGui::Begin("Scene Hierarchy");
-		ImGui::Separator();
-		auto& IDs = reg.getLiveIDs();
-		ImGui::BeginChild("Entities");
-		for (auto e : IDs){
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_Leaf;
-			
-			// Format raw integer text string
-			std::string label = "Entity ID: " + std::to_string(e);
-
-			
-			// Render the row onto the ImGui draw stream
-			bool opened = ImGui::TreeNodeEx((void*)(uint64_t)e, flags, "%s", label.c_str());
-			
-			if (ImGui::IsItemClicked()) {
-            	selectedEntity = e;
-        	}
-
-			if (opened) {
-				ImGui::TreePop();
-			}
-		}
-
-		ImGui::EndChild();
-		ImGui::End();
-	
-		ImGui::Begin("Entity Inspector");
-		ImGui::Separator();
-		if (selectedEntity == -1) {
-			ImGui::Text("Select an entity from the hierarchy to view properties.");
-		} 
-		else {
-		ImGui::Text("Editing Entity ID: %d", selectedEntity);	
-			for (const auto& [key, pool] : reg.getPoolMap()){
-				if (pool.get()->hasEntity(selectedEntity)){
-					ImGui::BulletText("%s",key.name());
-				}
-			}
-
-		}
-		
-		ImGui::End();
-	
-	}
-
-	 
-
-
-
-	ImGui::Render();
-
-	if (showEditor){
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
-	}
-
-	ImGui::UpdatePlatformWindows();
-	ImGui::RenderPlatformWindowsDefault();
-
-
-}
-
-void Editor::buildUI()
+void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& ctx, uint32_t currentFrame)
 {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // 1. Get current GLFW window footprint
+    ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(mainViewport->WorkPos);
+    ImGui::SetNextWindowSize(mainViewport->WorkSize);
+    ImGui::SetNextWindowViewport(mainViewport->ID);
+
+    // Lock the background canvas completely flat
+    ImGuiWindowFlags hostFlags = 
+        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | 
+        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | 
+        ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    ImGui::Begin("MasterCanvas", nullptr, hostFlags);
+    ImGui::PopStyleVar(3);
+
+        ImGuiID dockspaceId = ImGui::GetID("MainAppDockSpace");
+        ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+        
+        // ----------------------------------------------------------------
+        // FIRST RUN INITIALIZER: BUILD THE DEFAULT ENGINE SPLITS
+        // ----------------------------------------------------------------
+        if (isFirstFrame) {
+            isFirstFrame = false;
+
+            // Clear any old layout memory cache strings
+            ImGui::DockBuilderRemoveNode(dockspaceId); 
+            ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+            ImGui::DockBuilderSetNodeSize(dockspaceId, mainViewport->WorkSize);
+
+            ImGuiID leftNodeId;
+            ImGuiID rightNodeId;
+            ImGuiID topRightNodeId;
+            ImGuiID bottomRightNodeId;
+
+            // Split 1: Split the screen horizontally (70% Left for Game, 30% Right for tools)
+            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.70f, &leftNodeId, &rightNodeId);
+
+            // Split 2: Take the right tools column and split it vertically (50% Top, 50% Bottom)
+            ImGui::DockBuilderSplit(rightNodeId, ImGuiDir_Up, 0.50f, &topRightNodeId, &bottomRightNodeId);
+
+            // Fasten your individual window names to the generated layout slots permanently
+            ImGui::DockBuilderDockWindow("Game Viewport 0", leftNodeId);
+            ImGui::DockBuilderDockWindow("Scene Hierarchy", topRightNodeId);
+            ImGui::DockBuilderDockWindow("Entity Inspector", bottomRightNodeId);
+
+            ImGui::DockBuilderFinish(dockspaceId);
+        }
+    
+    ImGui::End(); // Close MasterCanvas Container
+
+    // ----------------------------------------------------------------
+    // THE WINDOWS (Zero constraints, zero lock flags! Clean and resizable)
+    // ----------------------------------------------------------------
+    
+    // Left Pane
+    ImGui::Begin("Game Viewport 0");
+        if (cachedDescriptors[currentFrame] != VK_NULL_HANDLE) {
+            ImVec2 size = ImGui::GetContentRegionAvail();
+            ImGui::Image((ImTextureID)(VkDescriptorSet)cachedDescriptors[currentFrame], size);
+        }
+    ImGui::End();
+
+    // Top Right Pane
+    ImGui::Begin("Scene Hierarchy");
+        ImGui::Separator();
+        auto& IDs = reg.getLiveIDs();
+        for (auto e : IDs){
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_Leaf;
+            std::string label = "Entity ID: " + std::to_string(e);
+            bool opened = ImGui::TreeNodeEx((void*)(uint64_t)e, flags, "%s", label.c_str());
+            if (ImGui::IsItemClicked()) { selectedEntity = e; }
+            if (opened) { ImGui::TreePop(); }
+        }
+    ImGui::End();
+
+    // Bottom Right Pane
+    ImGui::Begin("Entity Inspector");
+        if(ImGui::Button("Save Game to File")){
+            std::cout <<" SAVING !!...\n";
+        }
+        ImGui::Separator();
+
+        if (selectedEntity == -1) {
+            ImGui::Text("Select an entity.");
+        } 
+        else {
+            ImGui::Text("Editing Entity ID: %d", selectedEntity);   
+            for (auto& [key, pool] : reg.getPoolMap()){
+                if (!pool->hasEntity(selectedEntity)) continue; 
+                
+                auto fields = pool->getComponentFields(selectedEntity);
+                for (const auto& field : fields) {
+                    std::string label = std::string(field.name);
+                    switch (field.ptr.index()) {
+                        case 0: {
+                            glm::vec3* val = std::get<0>(field.ptr);
+                            ImGui::DragFloat3(label.c_str(), &val->x, 0.1f);
+                            break;
+                        }
+                        case 1: {
+                            int* val = std::get<1>(field.ptr);
+                            ImGui::DragInt(label.c_str(), val, 1);
+                            break;
+                        }
+                        case 2: {
+                            float* val = std::get<2>(field.ptr);
+                            ImGui::DragFloat(label.c_str(), val, 0.1f);
+                            break;
+                        }
+                        case 3: {
+                            uint32_t* val = std::get<3>(field.ptr);
+                            int tempVal = static_cast<int>(*val);
+                            if (ImGui::DragInt(label.c_str(), &tempVal, 1, 0, 99999)) {
+                                *val = static_cast<uint32_t>(tempVal);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    ImGui::End();
+
+    // Final frame execution steps
+    ImGui::Render();
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
+}
+void Editor::updateEditorInput(){
+	ImGui::UpdatePlatformWindows();
+}
+void Editor::evalViewport(vk::Sampler sampler, std::vector<AllocatedImage>& inputTargets)
+{
+
+	std::array<vk::ImageView,2> targets = {inputTargets[0].view, inputTargets[1].view} ;
+	//vk::Sampler sampler = stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)];
+
+	
+	for (int i {}; i < 2; i++){
+		if (targets[i] != cachedViews[i]) {
+            
+            if (cachedDescriptors[i] != VK_NULL_HANDLE) {
+                ImGui_ImplVulkan_RemoveTexture(cachedDescriptors[i]);
+                cachedDescriptors[i] = VK_NULL_HANDLE;
+            }
+
+            // Allocate a stable new descriptor handle if the incoming target is valid
+            if (targets[i]) {
+                cachedDescriptors[i] = ImGui_ImplVulkan_AddTexture(
+                    (VkSampler)sampler, 
+                    (VkImageView)targets[i], 
+                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                );
+            }
+            
+            // Update the static tracking cache pointer
+            cachedViews[i] = targets[i];
+        }
+	}
 
 }

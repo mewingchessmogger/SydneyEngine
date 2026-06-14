@@ -72,13 +72,26 @@ void Engine::run(){
         
         
         /*RENDERER */
-        if (stk.acquireAndValidateImage(plt)){
+        bool validViewport = stk.acquireAndValidateImage(plt);
+        if (validViewport){
             stk.startFrame();
             stk.flushRequests(ast.requests, ast.storage);
             stk.updateUBO(activeCam.view, activeCam.proj);
             stk.render(scn, ast.storage); //pass gameobjs,   
+            //begin render asss
+
+            if(mode == EngineMode::EDITOR){
+                stk.startEditorToSwapchain();
+                edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.renderTargetImages);
+                edt.render(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentFrame);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
+                stk.endEditorToSwapchain();
+                edt.updateEditorInput();
+            }else{
+                stk.blitTargetToSwapchain();
+            }
             
-            edt.render(stk.cmdBuffers[stk.currentFrame], reg, ctx, (mode == EngineMode::EDITOR));// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
+            
+
             stk.endFrame();
         }
 

@@ -4,6 +4,14 @@
 #include <memory>
 #include <array>
 #include <tuple>
+#include <variant>
+#include <type_traits>
+#include "reflections.hpp"
+
+#include "has_member.hpp"
+
+
+
 namespace ECS{
     using Entity = int;
 
@@ -11,6 +19,7 @@ namespace ECS{
         virtual ~IComponentPool() = default;
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
         virtual bool hasEntity(Entity e) = 0;
+        virtual std::vector<Variable> getComponentFields(Entity e) = 0;
     };
 
     template<typename T>
@@ -82,6 +91,21 @@ namespace ECS{
             return sparse[e] != -1;
         }
 
+        
+        
+
+        std::vector<Variable> getComponentFields(Entity e) override{
+            auto& comp = get(e);
+
+
+            if constexpr (has_member(comp, reflect())){
+                return comp.reflect();
+            }else{
+                return {};
+            }
+
+
+        }
 
     };
     

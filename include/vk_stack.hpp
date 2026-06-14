@@ -8,6 +8,7 @@
 #include "vertex_def.hpp"
 #include "scene.hpp"
 #include "asset_manager.hpp"
+
 class VulkanStack{
   
     public:
@@ -79,6 +80,11 @@ class VulkanStack{
 
         void uploadDataToBuffer();
         void startFrame();
+
+        void startEditorToSwapchain();
+        void endEditorToSwapchain();
+        void blitTargetToSwapchain();
+
         void endFrame();
 
         void updateUBO(glm::mat4& view, glm::mat4& proj);
