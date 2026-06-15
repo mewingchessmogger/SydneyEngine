@@ -69,7 +69,6 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 
 }
 
-#include <imgui_internal.h> // Required for DockBuilder API access
 
 void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& ctx, uint32_t currentFrame)
 {
@@ -77,75 +76,47 @@ void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& c
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // 1. Get current GLFW window footprint
+    // Get GLFW window metrics
     ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(mainViewport->WorkPos);
-    ImGui::SetNextWindowSize(mainViewport->WorkSize);
+    ImVec2 screenPos = mainViewport->WorkPos;
+    ImVec2 screenSize = mainViewport->WorkSize;
+
+    // Split widths: 70% Left for Game, 30% Right for everything else
+    float leftWidth = screenSize.x * 0.70f;
+    float rightWidth = screenSize.x * 0.30f;
+    float halfHeight = screenSize.y * 0.5f;
+
+    // Strict clamping flags to pin windows to the GLFW frame borders
+    ImGuiWindowFlags lockFlags = 
+        ImGuiWindowFlags_NoCollapse | 
+        ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    // ----------------------------------------------------------------
+    // HARD CLAMP GAME VIEWPORT TO THE LEFT SIDE
+    // ----------------------------------------------------------------
+    ImGui::SetNextWindowPos(screenPos);
+    ImGui::SetNextWindowSize(ImVec2(leftWidth, screenSize.y));
     ImGui::SetNextWindowViewport(mainViewport->ID);
-
-    // Lock the background canvas completely flat
-    ImGuiWindowFlags hostFlags = 
-        ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | 
-        ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | 
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | 
-        ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-    ImGui::Begin("MasterCanvas", nullptr, hostFlags);
-    ImGui::PopStyleVar(3);
-
-        ImGuiID dockspaceId = ImGui::GetID("MainAppDockSpace");
-        ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-        
-        // ----------------------------------------------------------------
-        // FIRST RUN INITIALIZER: BUILD THE DEFAULT ENGINE SPLITS
-        // ----------------------------------------------------------------
-        if (isFirstFrame) {
-            isFirstFrame = false;
-
-            // Clear any old layout memory cache strings
-            ImGui::DockBuilderRemoveNode(dockspaceId); 
-            ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
-            ImGui::DockBuilderSetNodeSize(dockspaceId, mainViewport->WorkSize);
-
-            ImGuiID leftNodeId;
-            ImGuiID rightNodeId;
-            ImGuiID topRightNodeId;
-            ImGuiID bottomRightNodeId;
-
-            // Split 1: Split the screen horizontally (70% Left for Game, 30% Right for tools)
-            ImGui::DockBuilderSplitNode(dockspaceId, ImGuiDir_Left, 0.70f, &leftNodeId, &rightNodeId);
-
-            // Split 2: Take the right tools column and split it vertically (50% Top, 50% Bottom)
-            ImGui::DockBuilderSplit(rightNodeId, ImGuiDir_Up, 0.50f, &topRightNodeId, &bottomRightNodeId);
-
-            // Fasten your individual window names to the generated layout slots permanently
-            ImGui::DockBuilderDockWindow("Game Viewport 0", leftNodeId);
-            ImGui::DockBuilderDockWindow("Scene Hierarchy", topRightNodeId);
-            ImGui::DockBuilderDockWindow("Entity Inspector", bottomRightNodeId);
-
-            ImGui::DockBuilderFinish(dockspaceId);
-        }
     
-    ImGui::End(); // Close MasterCanvas Container
-
-    // ----------------------------------------------------------------
-    // THE WINDOWS (Zero constraints, zero lock flags! Clean and resizable)
-    // ----------------------------------------------------------------
-    
-    // Left Pane
-    ImGui::Begin("Game Viewport 0");
+    ImGui::Begin("Game Viewport 0", nullptr, lockFlags);
         if (cachedDescriptors[currentFrame] != VK_NULL_HANDLE) {
             ImVec2 size = ImGui::GetContentRegionAvail();
             ImGui::Image((ImTextureID)(VkDescriptorSet)cachedDescriptors[currentFrame], size);
         }
     ImGui::End();
 
-    // Top Right Pane
-    ImGui::Begin("Scene Hierarchy");
+    // ----------------------------------------------------------------
+    // TOOLS: CLAMPED TO THE RIGHT SIDE
+    // ----------------------------------------------------------------
+    
+    // Top Right Panel
+    ImGui::SetNextWindowPos(ImVec2(screenPos.x + leftWidth, screenPos.y));
+    ImGui::SetNextWindowSize(ImVec2(rightWidth, halfHeight));
+    ImGui::SetNextWindowViewport(mainViewport->ID);
+
+    ImGui::Begin("Scene Hierarchy", nullptr, lockFlags);
         ImGui::Separator();
         auto& IDs = reg.getLiveIDs();
         for (auto e : IDs){
@@ -157,8 +128,12 @@ void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& c
         }
     ImGui::End();
 
-    // Bottom Right Pane
-    ImGui::Begin("Entity Inspector");
+    // Bottom Right Panel
+    ImGui::SetNextWindowPos(ImVec2(screenPos.x + leftWidth, screenPos.y + halfHeight));
+    ImGui::SetNextWindowSize(ImVec2(rightWidth, halfHeight));
+    ImGui::SetNextWindowViewport(mainViewport->ID);
+
+    ImGui::Begin("Entity Inspector", nullptr, lockFlags);
         if(ImGui::Button("Save Game to File")){
             std::cout <<" SAVING !!...\n";
         }
@@ -205,10 +180,11 @@ void Editor::render(vk::CommandBuffer buffer, ECS::Registry& reg, GameContext& c
         }
     ImGui::End();
 
-    // Final frame execution steps
+    // Compile and draw main window pass elements
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), buffer);
 }
+
 void Editor::updateEditorInput(){
 	ImGui::UpdatePlatformWindows();
 }

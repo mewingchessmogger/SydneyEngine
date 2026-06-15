@@ -15,7 +15,6 @@ void Engine::run(){
     reg.createPool<Transform>();
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
-    reg.createPool<Script>();
 
     int gameCamID = reg.createEntity();
     int editorCamID = reg.createEntity();

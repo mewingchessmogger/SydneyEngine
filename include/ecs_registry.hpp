@@ -24,71 +24,132 @@ namespace ECS{
 
     template<typename T>
     struct Pool : public IComponentPool{
-        constexpr static int MAX_E = 30; 
-        std::array<int, MAX_E> sparse{};
-        std::array<int, MAX_E> dense{};
-        std::array<T, MAX_E> data{};
+        constexpr static int PAGE_SIZE = 32;
+        std::vector<int*> sparse{};
+        std::vector<int> dense{};
+        std::vector<T> data{};
         int count{};
 
-        Pool() {
-            sparse.fill(-1);
-        }
+        ~Pool() {
+            for (int* page : sparse) {
+                delete[] page;
+            }
+}
         /// @brief FOR COMPONENTS thata arent unique_ptr<Script>
         /// @param e 
         /// @param p 
         void assign(Entity e, T& p){
-            if (sparse[e] != -1) {
-                data[sparse[e]] = p; 
-                return;              
+            
+            int page = e / PAGE_SIZE;
+            int offset = e % PAGE_SIZE;
+
+            if (page >= sparse.size()){
+                sparse.resize(page + 1, nullptr);
+            
+            }
+            if (sparse[page] ==  nullptr){
+                sparse[page] = new int[PAGE_SIZE];
+                std::fill_n(sparse[page], PAGE_SIZE, -1);
             }
 
-            sparse[e] = count;
+
+            if (sparse[page][offset] != -1) {
+                data[sparse[page][offset]] = p; // Update existing data
+                return;
+             }
+
+
+            if (count >= dense.size()) {
+                dense.resize(count + 1);
+                data.resize(count + 1);
+            }
+
+
+            sparse[page][offset] = count;
             dense[count] = e;
             data[count] = p;
             count++;
-        }
-        /// @brief ONLY FOR UNIQUE_PTR<sCRIPT> COMPONENTS!!!!!!!
-        /// @param e 
-        /// @param p 
-        void assign(Entity e, T&& p){
-            if (sparse[e] != -1) {
-                data[sparse[e]] = std::move(p); 
-                return;              
-            }
 
-            sparse[e] = count;
-            dense[count] = e;
-            data[count] = std::move(p);
-            count++;
         }
+
+        void assign(Entity e, T&& p) {
+            assign(e, p); // Inside here, 'p' now has a name, so it cleanly binds to T& p
+        }
+
+        // /// @brief ONLY FOR UNIQUE_PTR<sCRIPT> COMPONENTS!!!!!!!
+        // /// @param e 
+        // /// @param p 
+        // void assign(Entity e, T&& p){
+        //     if (sparse[e] != -1) {
+        //         data[sparse[e]] = std::move(p); 
+        //         return;              
+        //     }
+
+        //     sparse[e] = count;
+        //     dense[count] = e;
+        //     data[count] = std::move(p);
+        //     count++;
+        // }
 
 
 
         T& get(Entity e){
-            int i = sparse[e];
+            int page = e / PAGE_SIZE;
+            int offset = e % PAGE_SIZE;
+
+            if (page >= sparse.size() || sparse[page] == nullptr){
+              throw std::runtime_error ("page not allocated for this");
+            }
+              
+            int i = sparse[page][offset];
+            if (i == -1) throw std::runtime_error("entity does not own component");
+
+            
             return data[i];
+            
+
+
+            // int i = sparse[e]; // int i = sparse[i / PAGE_SIZE][i % PAGE_SIZE]
+            // return data[i];
         }
 
         void remove(Entity e) override{
-            if (sparse[e] == -1) {
+            
+            int page = e / PAGE_SIZE;
+            int offset = e % PAGE_SIZE;
+
+            if (page >= sparse.size()){
+               return;
+            }
+              
+            if (sparse[page][offset] == -1) {
                 return; //throw std::runtime_error("THERES NOTHING TO REMOVE");
             }
 
-            int trash = sparse[e];
+            int trash = sparse[page][offset];
             int last = count - 1;
-
+            
             if(trash != last){
                 Entity lastEntity = dense[last];
                 dense[trash] = dense[last];
                 data[trash] = std::move(data[last]);
-                sparse[lastEntity] = trash;
+                sparse[lastEntity / PAGE_SIZE][lastEntity % PAGE_SIZE] = trash;
             }
-            sparse[e] = -1;
+            sparse[page][offset] = -1;
             count--;
         }
 
         bool hasEntity(Entity e) override{
-            return sparse[e] != -1;
+            
+            int page = e / PAGE_SIZE;
+            int offset = e % PAGE_SIZE;
+
+            if (page >= sparse.size()){
+                return false;
+            }
+
+            return sparse[page][offset] !=  -1;
+
         }
 
         
@@ -137,6 +198,10 @@ namespace ECS{
             return zombie;
         }
 
+        /*//interesting tradeoff here, this is called in editor(will do aswell in save/laoding later) ONLY, either you do this 
+        or you keep track over live ids gaining overhead in ecs usage but making liveids trivial, isnt this the simpler one?
+        if this is called only during editor or saving, do you care about the performance? i dont..
+        */
         std::vector<Entity> getLiveIDs() {
             if (!registryDirty){
                 return liveIDs;
@@ -148,6 +213,7 @@ namespace ECS{
                     liveIDs.push_back(i);
                 }
             }
+            liveIDs.shrink_to_fit();
             registryDirty = false;
             return liveIDs;
         }
@@ -183,10 +249,6 @@ namespace ECS{
         }
 
 
-        // template<typename... Components>
-        // void add(Entity e, Components... comps){
-        //     (getPool<Components>().assign(e, comps), ...);
-        // }
 
         template<typename... Components>
         void add(Entity e, Components&&... comps) {
@@ -200,7 +262,7 @@ namespace ECS{
             (getPool<Components>().assign(e, Components{}), ...);
         }
 
-            void destroy(Entity e){
+        void destroy(Entity e){
             registryDirty = true;
 
             for(auto& [type,poolPtr] : pools){
@@ -208,6 +270,7 @@ namespace ECS{
             }
             deadIDs.push_back(e);
             //push e into dead id
+            
         }
     };
 
