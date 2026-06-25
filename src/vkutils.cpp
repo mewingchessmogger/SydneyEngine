@@ -1,10 +1,9 @@
 #pragma once
 #include "vk_barrier.hpp"
-
 namespace vkutils{
 
 void setPipelineBarrier(vk::CommandBuffer cmdBuffer, vk::Image image,  vk::ImageLayout oldLayout, vk::ImageLayout newLayout,vk::ImageAspectFlagBits aspectImage, BarrierMasks mask){
-
+	
 	vk::ImageSubresourceRange subRange{};
 	subRange.setAspectMask(aspectImage)
 		.setLayerCount(vk::RemainingArrayLayers)

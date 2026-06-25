@@ -110,6 +110,7 @@ class ResManager{
 	std::vector<AllocatedImage> zBufferImages{};
 	std::vector<AllocatedImage> sMapImages{};
 	std::vector<AllocatedImage> swapchainImages{};
+	std::vector<AllocatedImage> viewportImages{};
 	AllocatedImage colorPickImage{};
 
 	uint32_t strideOfUBO{};
@@ -142,6 +143,8 @@ class ResManager{
     void rethinkZBufferImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
 	void rethinkClrPickImage(VulkanContext &ctx, uint32_t width, uint32_t height);
     void rethinkRenderTargets(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
-    void updateRenderTargetDescriptor(VulkanContext &ctx);
+    void rethinkViewportImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight);
+    void updateViewportDescriptor(VulkanContext &ctx);
+    //void updateRenderTargetDescriptor(VulkanContext &ctx);
     bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
 };

@@ -19,6 +19,7 @@ namespace ECS{
         virtual ~IComponentPool() = default;
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
         virtual bool hasEntity(Entity e) = 0;
+        virtual void reset() = 0;
         virtual std::vector<Variable> getComponentFields(Entity e) = 0;
     };
 
@@ -31,10 +32,9 @@ namespace ECS{
         int count{};
 
         ~Pool() {
-            for (int* page : sparse) {
-                delete[] page;
-            }
-}
+            reset();
+        }
+
         /// @brief FOR COMPONENTS thata arent unique_ptr<Script>
         /// @param e 
         /// @param p 
@@ -154,6 +154,22 @@ namespace ECS{
 
         
         
+        void reset() override{
+            for (int* page : sparse) {
+                if(page != nullptr){
+                    delete[] page;
+                }
+            }
+
+            sparse.clear();
+            sparse.shrink_to_fit();
+
+            dense.clear();
+            dense.shrink_to_fit();
+            data.clear();
+            data.shrink_to_fit();
+            count = 0;
+        }
 
         std::vector<Variable> getComponentFields(Entity e) override{
             auto& comp = get(e);

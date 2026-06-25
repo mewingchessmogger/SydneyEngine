@@ -6,8 +6,8 @@ void Engine::run(){
 
     initialize(); // basically all parts of the engine
 
-    ast.addUploadRequest("../../../../models/dragon.glb");
-    ast.addUploadRequest("../../../../models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
+    ast.addUploadRequest("models/dragon.glb");
+    ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
     
     Scene scn{};
     
@@ -22,7 +22,7 @@ void Engine::run(){
     reg.emplace<Camera>(editorCamID);
 
     EngineMode mode = EngineMode::EDITOR;
-    HMODULE GameModule = loader.loadDLL("../../../../games/tetris/Debug/TetrisDLL.dll");
+    HMODULE GameModule = loader.loadDLL("games/tetris/Debug/TetrisDLL.dll");
     ctx = GameContext{};
 
     std::vector<IScript*> IScripts{};
@@ -41,38 +41,22 @@ void Engine::run(){
                 plt.inputState.requestCursorVisible = false;    
             }
         }
-
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? gameCamID : editorCamID);
-        
+
         if (mode == EngineMode::GAME){         
-               
             updateCamera(activeCam,EngineMode::GAME);
             game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, ctx);
             updatePhysics();
-        
         }
 
-
-        else if (mode == EngineMode::EDITOR){
-            updateCamera(activeCam,EngineMode::EDITOR);        
-            if(plt.inputState.keyPressed(Input::Key::RightClick)){
-                plt.inputState.requestCursorVisible = !plt.inputState.requestCursorVisible;
-                plt.updateState();
-            }
-        }
         
-        
-        
-        plt.inputState.clearCursorDeltas();
         fileWatcher.checkDirectoryPeriodically();
         
         prepareRenderables(scn);
-        
-        
-        
-        /*RENDERER */
-        bool validViewport = stk.acquireAndValidateImage(plt);
-        if (validViewport){
+    
+        if (stk.acquireAndValidateImage(plt))
+        {
+            edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages);
             stk.startFrame();
             stk.flushRequests(ast.requests, ast.storage);
             stk.updateUBO(activeCam.view, activeCam.proj);
@@ -80,20 +64,25 @@ void Engine::run(){
             //begin render asss
 
             if(mode == EngineMode::EDITOR){
+                stk.blitTargetToViewport();
                 stk.startEditorToSwapchain();
-                edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.renderTargetImages);
-                edt.render(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentFrame);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
+
+                edt.messingAround(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentImgIndex, activeCam,plt);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
                 stk.endEditorToSwapchain();
                 edt.updateEditorInput();
-            }else{
+            }
+            else{
                 stk.blitTargetToSwapchain();
             }
             
-            
-
             stk.endFrame();
         }
+         
+        
+             
+        plt.inputState.clearCursorDeltas();
 
+        
     }
     plt.shutdown();
 }
@@ -111,23 +100,31 @@ void Engine::initialize(){
     stk.initSwapchain();
     stk.initDepthImages();
     stk.initRenderTargetImages();
+    stk.initViewportImages();
     stk.initColorPickImage();
     stk.initUpdateDescriptorSets();
     
     edt.init(stk,plt);
+    std::cout << "Processing phong...";
+
 
     stk.initPhongPipeline(
-        shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("../../../../src/shaders/phong.vert"),true),
-        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("../../../../src/shaders/phong.frag"),true)
+        shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true),
+        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true)
     );
-    stk.initPickPipeline(
-        shaderCompiler.compileFile("pick_vert", shaderc_vertex_shader, fileReader.readFile("../../../../src/shaders/pick.vert"),true),
-        shaderCompiler.compileFile("pick_frag", shaderc_fragment_shader, fileReader.readFile("../../../../src/shaders/pick.frag"),true)
-    );
-    
+
+    std::cout << "Done!\n";
+
+    // std::cout << "Processing pick...";
+    // stk.initPickPipeline(
+    //     shaderCompiler.compileFile("pick_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/pick.vert"),true),
+    //     shaderCompiler.compileFile("pick_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/pick.frag"),true)
+    // );
+    //     std::cout << "Done!\n";
+
     
     fileWatcher.setCheckTime(5);
-    fileWatcher.setFileDirectory("../../../../src/shaders");
+    fileWatcher.setFileDirectory("src/shaders");
     fileWatcher.warmupDirectory();
     fileWatcher.setStandardResponse();
 

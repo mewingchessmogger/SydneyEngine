@@ -18,10 +18,10 @@ class VulkanStack{
         const int MAX_OBJECTS = 2;
         const int DESIRED_IMAGES_IN_FLIGHT = 2;
         const int DESIRED_DEPTH_IMAGES = 4;
-        int WIDTH = 1400;
-        int HEIGHT = 900;
-        int SET_WIDTH = 1400;
-        int SET_HEIGHT = 900;
+        int WIDTH = 1900;
+        int HEIGHT = 1080;
+        int SET_WIDTH = 1900;
+        int SET_HEIGHT = 1080;
         bool bUseValidationLayers = true;
         bool frameBufferResized = false;
         float deltaT{};
@@ -56,6 +56,9 @@ class VulkanStack{
         void initBuffers();
         void initSwapchain();
         void initRenderTargetImages();
+        void initViewportImages();
+        void ImmediateTransitionViewport();
+        void initImGuiViewportImages();
         void initDepthImages();
         void initColorPickImage();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
@@ -83,12 +86,16 @@ class VulkanStack{
 
         void startEditorToSwapchain();
         void endEditorToSwapchain();
+        void blitTargetToViewport();
         void blitTargetToSwapchain();
 
         void endFrame();
 
         void updateUBO(glm::mat4& view, glm::mat4& proj);
-        
+
+        void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
+
+
         void flushRequests(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
         
 

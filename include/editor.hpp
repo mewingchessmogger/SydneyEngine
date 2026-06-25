@@ -7,6 +7,7 @@
 #include "ecs_registry.hpp"
 #include "engine_components.hpp"
 #include <functional>
+#include "glm/common.hpp"
 class Editor{
     std::array<vk::ImageView, 2> cachedViews = {};
     std::array<vk::DescriptorSet, 2> cachedDescriptors = {};
@@ -21,5 +22,8 @@ class Editor{
     void render(vk::CommandBuffer buffer, ECS::Registry &reg, GameContext &ctx, uint32_t currentFrame);
     void updateEditorInput();
     void evalViewport(vk::Sampler sampler, std::vector<AllocatedImage> &inputTargets);
-    
+
+    void messingAround(vk::CommandBuffer buffer, ECS::Registry &reg, GameContext &ctx, uint32_t currentImgIndex, Camera &edtCam, PlatformGLFW &plt);
+
+    void updateCamera(Camera &cam, PlatformGLFW& plt, float sens);
 };

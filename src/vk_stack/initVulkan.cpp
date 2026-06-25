@@ -218,15 +218,14 @@ void VulkanStack::initUpdateDescriptorSets(){
         .setBufferInfo(uboBufferInfo);
 
     
-    // FIX: Swapped .view calls into the handle tracking assignments
-    vk::DescriptorImageInfo renderTargetInfo{};
-    renderTargetInfo
-        .setImageView(res.renderTargetImages[0].view)
+    vk::DescriptorImageInfo viewportInfo{};
+    viewportInfo
+        .setImageView(res.viewportImages[0].view)
         .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    vk::DescriptorImageInfo secRenderTargetInfo{};    
-    secRenderTargetInfo
-        .setImageView(res.renderTargetImages[1].view)
+    vk::DescriptorImageInfo secviewportInfo{};    
+    secviewportInfo
+        .setImageView(res.viewportImages[1].view)
         .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
     vk::DescriptorImageInfo colorPickInfo{};
@@ -236,8 +235,8 @@ void VulkanStack::initUpdateDescriptorSets(){
 
     // Build the structural array configuration matching your consecutive bindless slot layouts
     std::array<vk::DescriptorImageInfo, 3> bindlessImages = {
-        renderTargetInfo,    // Slot index 0 -> Main Viewport Color Target
-        secRenderTargetInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
+        viewportInfo,    // Slot index 0 -> Main Viewport Color Target
+        secviewportInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
         colorPickInfo        // Slot index 2 -> GPU Color Picking Registry Image
     };
 
@@ -297,4 +296,50 @@ void VulkanStack::initRenderTargetImages()
     res.renderTargetImages.push_back(target);
     res.renderTargetImages.push_back(target2);
     
+}
+
+
+void VulkanStack::initViewportImages()
+{
+     
+    AllocatedImage target{};
+    AllocatedImage target2{};
+    
+    res.requestImage(ctx.device,ImgType::TEXTURE, target, SET_WIDTH,SET_HEIGHT);
+    res.requestImage(ctx.device,ImgType::TEXTURE, target2, SET_WIDTH,SET_HEIGHT);
+    res.viewportImages.push_back(target);
+    res.viewportImages.push_back(target2);
+    
+    ImmediateTransitionViewport();
+
+}
+
+void VulkanStack::ImmediateTransitionViewport(){
+    // 1. Grab your raw graphics queue and command buffer
+    // (Assuming currentFrame is 0 or you just want to use the first buffer)
+    vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
+
+    // 2. Begin recording on the command buffer
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    cmdBuffer.begin(beginInfo);
+
+    // 3. Record your actual layout changes
+    transitionImage(res.viewportImages[0], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+    transitionImage(res.viewportImages[1], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    // 4. End recording
+    cmdBuffer.end();
+
+    // 5. Submit directly to the GPU queue
+    vk::SubmitInfo submitInfo{};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmdBuffer;
+    ctx.graphicsQueue.handle.submit(submitInfo, nullptr); // No fence needed because we waitIdle right after
+    // 6. Block the CPU until the GPU executes the transitions
+    ctx.device.waitIdle();
+    
+    // 7. Reset the command buffer so it's fresh and ready for your normal frame loop
+    cmdBuffer.reset();
+
 }

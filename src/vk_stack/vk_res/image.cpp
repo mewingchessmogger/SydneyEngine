@@ -218,24 +218,41 @@ void ResManager::rethinkRenderTargets(VulkanContext &ctx, uint32_t width, uint32
 			renderTargetImages.push_back(depth);
 		}
 }
-void ResManager::updateRenderTargetDescriptor(VulkanContext &ctx){
+
+void ResManager::rethinkViewportImages(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight) {
+
+		for(auto& img : viewportImages){
+			vmaDestroyImage(allocator,img.handle,img.alloc);
+		}
+		viewportImages.clear();
+		
+		for(uint32_t i{}; i < imagesInFlight; i++){
+			AllocatedImage depth{};
+			requestImage(ctx.device,ImgType::TEXTURE, depth, width, height);
+			viewportImages.push_back(depth);
+		}
+		
+}
+
+
+void ResManager::updateViewportDescriptor(VulkanContext &ctx){
 		
 		
 		// FIX: Swapped .view calls into the handle tracking assignments
-		vk::DescriptorImageInfo renderTargetInfo{};
-		renderTargetInfo
-			.setImageView(renderTargetImages[0].view)
+		vk::DescriptorImageInfo viewportInfo{};
+		viewportInfo
+			.setImageView(viewportImages[0].view)
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
-		vk::DescriptorImageInfo secRenderTargetInfo{};    
-		secRenderTargetInfo
-			.setImageView(renderTargetImages[1].view)
+		vk::DescriptorImageInfo secviewportInfo{};    
+		secviewportInfo
+			.setImageView(viewportImages[1].view)
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
 		// Build the structural array configuration matching your consecutive bindless slot layouts
 		std::array<vk::DescriptorImageInfo, 2> bindlessImages = {
-			renderTargetInfo,    // Slot index 0 -> Main Viewport Color Target
-			secRenderTargetInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
+			viewportInfo,    // Slot index 0 -> Main Viewport Color Target
+			secviewportInfo, // Slot index 1 -> Alternate Viewport Frame / Target 2
 		};
 
 		vk::WriteDescriptorSet bindlessWrite{};
