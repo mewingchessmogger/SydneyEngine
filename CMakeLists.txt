@@ -30,6 +30,8 @@ file(GLOB_RECURSE SOURCE_FILES
 add_executable( ${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} glfw)
 
+# 2. Define the path to the DLL
+
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -46,4 +48,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     tinygltf
     stb
     glm
+    assimp_lib
+)
+
+
+set(ASSIMP_DLL "${CMAKE_CURRENT_SOURCE_DIR}/library/assimp/assimp-vc145-mt.dll")
+
+# 3. Use add_custom_command to handle the copy
+add_custom_command(TARGET SydneyEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${ASSIMP_DLL}"
+    $<TARGET_FILE_DIR:SydneyEngine>
 )

@@ -1,9 +1,9 @@
 #include "engine.hpp"
-
+#include "assimp/Importer.hpp"
 using Particle = physics::Particle;
 
 void Engine::run(){
-
+    Assimp::Importer importer{};
     initialize(); // basically all parts of the engine
 
     ast.addUploadRequest("models/dragon.glb");

@@ -195,7 +195,8 @@ void Editor::messingAround(vk::CommandBuffer buffer, ECS::Registry& reg, GameCon
 		ImGui::Text(label.c_str());
 		ImGui::Separator();
 
-		
+		// add components game/scene
+		// review components
 
 	}
     

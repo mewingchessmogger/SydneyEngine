@@ -20,6 +20,21 @@ target_include_directories(imgui_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui
 )
 
+#  ASSIMP
+# Define the library as an imported target
+add_library(assimp_lib SHARED IMPORTED GLOBAL) #FUCK THIS FUCKING GLOBAL MISSING DUMB FCKING CMAKE
+
+# Set the binary locations
+set_target_properties(assimp_lib PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/assimp/assimp-vc145-mt.dll"
+    IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/assimp/assimp-vc145-mt.lib"
+)
+
+# Tell CMake where to find the headers for anyone linking to this
+target_include_directories(assimp_lib INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/assimp/include")
+
+
+
 # --- Vulkan Memory Allocator (VMA) ---
 add_library(vma INTERFACE)
 target_include_directories(vma INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/vma")
