@@ -3,7 +3,6 @@
 #include "platform_glfw.hpp"
 #include "vulkan/vulkan.hpp"
 #include "vk_stack.hpp"
-#include "asset_manager.hpp"
 #include "hash_model.hpp"
 #include <filesystem>
 #include <string>
@@ -30,7 +29,6 @@ class Engine{
 
     GameContext ctx{};
     PlatformGLFW plt{};
-    AssetManager ast{};
     VulkanStack stk{};
     ECS::Registry reg{};
     Editor edt{};

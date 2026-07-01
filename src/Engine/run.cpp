@@ -1,14 +1,20 @@
 #include "engine.hpp"
-#include "assimp/Importer.hpp"
+#include "asset_loader.hpp"
+
+
 using Particle = physics::Particle;
 
 void Engine::run(){
-    Assimp::Importer importer{};
-    initialize(); // basically all parts of the engine
 
-    ast.addUploadRequest("models/dragon.glb");
-    ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
     
+    initialize(); // basically all parts of the engine
+    //models/shibahu.glb
+    // ast.addUploadRequest("models/dragon.glb");
+    // ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
+    AssetLoader ldr{};
+   
+    //ldr.loadScene("models/cube_gltf.glb");
+    ldr.loadScene("models/dragon.glb");
     Scene scn{};
     
     reg.createPool<Particle>();
@@ -53,20 +59,21 @@ void Engine::run(){
         fileWatcher.checkDirectoryPeriodically();
         
         prepareRenderables(scn);
-    
+        //stk.fillRenderQueue(reg, ldr.getAssetReg());
+        
         if (stk.acquireAndValidateImage(plt))
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages);
             stk.startFrame();
-            stk.flushRequests(ast.requests, ast.storage);
+            //stk.flushRequests(ast.requests, ast.storage);
+            stk.flushRequests(ldr.getAssetReg());
             stk.updateUBO(activeCam.view, activeCam.proj);
-            stk.render(scn, ast.storage); //pass gameobjs,   
+            stk.render(scn, ldr.getAssetReg());
             //begin render asss
 
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport();
                 stk.startEditorToSwapchain();
-
                 edt.messingAround(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentImgIndex, activeCam,plt);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
                 stk.endEditorToSwapchain();
                 edt.updateEditorInput();

@@ -7,8 +7,9 @@
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
 #include "scene.hpp"
-#include "asset_manager.hpp"
-
+#include "asset_registry.hpp"
+#include "ecs_registry.hpp"
+#include "engine_components.hpp"
 class VulkanStack{
   
     public:
@@ -43,8 +44,15 @@ class VulkanStack{
 			std::array<vk::DescriptorSet,3> descSets{};
 			uint32_t dynOffset;
 		};
+        struct RenderCommand{
+            PushC::Model pc{};
+            PipelineBundle pipeline{};
+            vk::Extent2D extent{};
+            uint32_t indiceCount{};
+            uint32_t totalOffsetIBO{};
+        };
 
-
+        std::vector<RenderCommand> renderQueue{};
 
         void initInstance(PlatformGLFW& plt);
         void initDevice(PlatformGLFW& plt);
@@ -77,7 +85,6 @@ class VulkanStack{
         bool acquireAndValidateImage(PlatformGLFW &plt);
         
         
-        void render(Scene& scn, ModelStorage& storage);
         void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO);
         
 
@@ -95,9 +102,12 @@ class VulkanStack{
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 
+        void render(Scene &scn, AssetRegistry &astReg);
 
-        void flushRequests(std::vector<AssetManager::UploadData> &requests, ModelStorage &storage);
-        
+        void fillRenderQueue(ECS::Registry &reg, AssetRegistry &assetReg);
+
+
+        void flushRequests(AssetRegistry &astReg);
 
     private:
     

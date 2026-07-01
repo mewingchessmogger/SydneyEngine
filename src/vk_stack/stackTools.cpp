@@ -2,7 +2,6 @@
 #include "platform_glfw.hpp"
 #include "vertex_def.hpp"
 #include "scene.hpp"
-#include "asset_manager.hpp"
 void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore,
 	vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask,vk::Queue graphicsQueue,vk::Fence fence) {
 
@@ -42,23 +41,54 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 		return imgResult;
 	}
 	
-	void VulkanStack::flushRequests(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
+	// void VulkanStack::flushRequests(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
 
-		if (requests.empty()) return;
+	// 	if (requests.empty()) return;
 
-		for(auto& req : requests){
-			req.record.offsetVBO = tailVBO ;
-			req.record.offsetIBO = tailIBO ;
+	// 	for(auto& req : requests){
+	// 		req.record.offsetVBO = tailVBO ;
+	// 		req.record.offsetIBO = tailIBO ;
 			
-			uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
+	// 		uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
 			
-			tailVBO += req.record.totVertices;
-			tailIBO += req.record.totIndices ;
+	// 		tailVBO += req.record.totVertices;
+	// 		tailIBO += req.record.totIndices ;
 			
-			storage.storeModelRecord(req.record);
-		}		
-		requests.clear();
-	}
+	// 		storage.storeModelRecord(req.record);
+	// 	}		
+	// 	requests.clear();
+	// }
+	void VulkanStack::flushRequests(AssetRegistry& astReg){
+		for(auto&[name, model] : astReg.staticModelMap){
+			if(model.transientVertices.empty()){
+				return;
+			}
+			model.baseOffsetGlobalVBO = tailVBO;
+			model.baseOffsetGlobalIBO = tailIBO;
+			uploadVBOAndIBO(model.transientVertices, model.transientIndices, tailVBO, tailIBO);
+			tailVBO += model.transientVertices.size();
+			tailIBO += model.transientIndices.size();
+			model.DestroyTransients();
+			}
+		}
+	
+		// if (requests.empty()) return;
+
+		// for(auto& req : requests){
+		// 	req.record.offsetVBO = tailVBO ;
+		// 	req.record.offsetIBO = tailIBO ;
+			
+		// 	uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
+			
+		// 	tailVBO += req.record.totVertices;
+		// 	tailIBO += req.record.totIndices ;
+			
+		// 	storage.storeModelRecord(req.record);
+		// }		
+		// requests.clear();
+	
+
+
 
 	bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
 		vk::Fence curFence[] = {ctx.fences[currentFrame] };
@@ -273,7 +303,7 @@ void VulkanStack::blitTargetToSwapchain(){
 		vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 	}
 
-	void VulkanStack::render(Scene& scn, ModelStorage &storage){ 
+	void VulkanStack::render(Scene& scn, AssetRegistry &astReg){ 
 		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 		auto& renderTarget = res.renderTargetImages[currentImgIndex];
 		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
@@ -292,10 +322,8 @@ void VulkanStack::blitTargetToSwapchain(){
 		// 	.setDstStage(vk::PipelineStageFlagBits2::eEarlyFragmentTests)
 		// 	.setSrcAccess(vk::AccessFlagBits2::eNone)
 		// 	.setDstAccess(vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
-
+	
 		vkutils::setPipelineBarrier(cmdBuffer, res.zBufferImages[currentFrame].handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
-
-
 
 		rdr.beginRenderPass(cmdBuffer, renderTarget.view, renderTarget.extent2D,res.zBufferImages[currentFrame]);
 		
@@ -306,24 +334,60 @@ void VulkanStack::blitTargetToSwapchain(){
 			res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
 			dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
 		);
-		
+		// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 
-		
 		for(auto& object : scn.gameObjects){
-			auto &record = storage.models[object.meshID]; 
-			
-			PushC::Model pc{};
-			pc.setModel(object.model);
-			pc.setVertexOffset(record.offsetVBO);
-			rdr.recordRender(cmdBuffer, phongPSO, pc, renderTarget.extent2D,record.totIndices, record.offsetIBO);
+			auto& mdl = astReg.getStaticModelFromID(0);
+			for(auto& mesh: mdl.meshes){
+				PushC::Model pc{};
+				glm::mat4 finalMatrix = glm::mat4{1.0f} * object.model ;//* mesh.modelMat
+				pc.setModel(finalMatrix);
+				pc.setVertexOffset(mdl.baseOffsetGlobalVBO);
+				rdr.renderMesh(cmdBuffer, phongPSO, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetGlobalIBO + mesh.baseIndexLocalIBO);
+			}
 		}
-
-		
-		
 		rdr.endRenderPass(cmdBuffer); 
 	}
 
+	void VulkanStack::fillRenderQueue(ECS::Registry& reg, AssetRegistry& assetReg){
+				
+		
 
+
+			// /*FILL renderobjects array*/
+			// scn.gameObjects.resize((uint32_t)rendPool.count);
+			// for (int i{}; i < rendPool.count; i++){
+			// 	ECS::Entity e = rendPool.dense[i];
+			// 	const Renderable& rend = rendPool.data[i];
+			// 	scn.gameObjects[i].meshID = rend.meshID;
+			// 	scn.gameObjects[i].model = transPool.get(e).matrix();
+				
+			// }
+		/*
+		for(auto& object : scn.gameObjects){
+			auto& mdl = astReg.staticModelMap["models/dragon.glb"];
+			for(auto& mesh: mdl.meshes){
+				PushC::Model pc{};
+				glm::mat4 finalMatrix = object.model * mesh.modelMat;
+				pc.setModel(finalMatrix);
+				pc.setVertexOffset(mdl.baseOffsetGlobalVBO);
+				rdr.renderMesh(cmdBuffer, phongPSO, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetGlobalIBO + mesh.baseIndexLocalIBO);
+			}*/
+
+
+
+		renderQueue.clear();
+		auto [transPool, rendPool] = reg.getPools<Transform, Renderable>(); // not copying whole shit, its copy of references
+		for(int r{}; r < rendPool.count; r++){
+			ECS::Entity e = rendPool.dense[r];
+
+		}
+		
+
+
+		
+
+	}
 
 	void VulkanStack::uploadVBOAndIBO(const std::vector<Vertex> &vertices,const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO){
 		     
@@ -338,11 +402,10 @@ void VulkanStack::blitTargetToSwapchain(){
             res.createBuffer(BufferType::STAGING, bytesIndex, stageIndex);
             res.createBuffer(BufferType::STAGING, bytesVertex, stageVertex);
 			
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices, bytesVertex, stageVertex, res.vertexBuffer,offsetVBO * sizeof(Vertex));
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer,offsetIBO * sizeof(uint32_t));
+            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices, bytesVertex, stageVertex, res.vertexBuffer, offsetVBO * sizeof(Vertex));
+            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer, offsetIBO * sizeof(uint32_t));
             //need to deestroy later staging 
-			std::cout << "UPLOAD!!!!!!!\n";
-			
+			printf("UPLOAD!!! \n");
 			res.zombieBuffers.push_back(stageVertex);
 			res.zombieBuffers.push_back(stageIndex);
 	

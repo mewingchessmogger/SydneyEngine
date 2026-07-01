@@ -1,5 +1,5 @@
 #include "editor.hpp"
-
+#include <iostream>
 void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 {
 	// 1. Descriptor pool creation using Vulkan-Hpp

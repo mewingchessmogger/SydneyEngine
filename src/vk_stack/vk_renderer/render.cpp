@@ -50,7 +50,8 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 	cmdBuffer.beginRendering(renderInfo);
 
 }
-void Renderer::recordRender(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, PushC::Model pc, vk::Extent2D extent, uint32_t indexCount, uint32_t offsetIBO)
+
+void Renderer::renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, PushC::Model pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO)
 {
 
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
@@ -59,9 +60,8 @@ void Renderer::recordRender(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline
 	PushC::Model base = pc;
 	
 	cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(pc), &base);
+	cmdBuffer.draw(indexCount,1,totalOffsetIBO,0);
 	
-	cmdBuffer.draw(indexCount,1,offsetIBO,0);
 	//cmdBuffer.draw(2613918,1,0,0);
 
 }
-

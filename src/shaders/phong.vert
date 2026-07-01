@@ -39,6 +39,8 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 lightOrtho;
     uint64_t indxAdress;
     uint64_t vertAdress;
+    uint64_t skinnedVertexAdress;
+    uint64_t boneMatrixAdress;
     uint pickedID;
 } ubo;
 

@@ -36,6 +36,9 @@ namespace DynUBO {
         glm::mat4 lightOrtho{1.0f};
         uint64_t indxAdress{0};
         uint64_t vertAdress{0};
+        uint64_t skinnedVertAdress{0}; 
+        uint64_t boneMatrixAdress{0};
+        
         uint32_t pickedID{};
         
         Base& setModel(const glm::mat4& m)       { model = m;  return *this; }
@@ -45,6 +48,8 @@ namespace DynUBO {
         Base& setLightOrtho(const glm::mat4& lo){ lightOrtho = lo; return *this; }
         Base& setIndx(uint64_t addr)            { indxAdress = addr; return *this; }
         Base& setVert(uint64_t addr)            { vertAdress = addr; return *this; }
+        Base& setSkinVert(uint64_t addr)            { skinnedVertAdress = addr; return *this; }
+        Base& setBoneMatricesAddr(uint64_t addr)            { boneMatrixAdress = addr; return *this; }    
     };
 
     struct ClrPick{

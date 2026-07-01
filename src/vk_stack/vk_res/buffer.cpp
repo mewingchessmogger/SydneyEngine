@@ -32,6 +32,16 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 			allocInfo.flags = {};			
 		break;
 
+		case(BufferType::SKIN_VBO):
+			BufferInfo
+			.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress)
+			.setSharingMode(vk::SharingMode::eExclusive);
+			
+			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; 						//keep pointer alive bit
+			allocInfo.flags = {};			
+		break;
+
+
 		case(BufferType::SSBO):
 			BufferInfo
 			.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress)
@@ -75,10 +85,12 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight){
 	createBuffer(BufferType::VBO,VBO_BYTE_SIZE,vertexBuffer);
 	createBuffer(BufferType::IBO,IBO_BYTE_SIZE,indexBuffer);
+	createBuffer(BufferType::SKIN_VBO, BONE_BYTE_SIZE, boneBuffer);
+
     std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
 	vertexBuffer.address = device.getBufferAddress({vertexBuffer.handle});
 	indexBuffer.address = device.getBufferAddress({indexBuffer.handle});
-
+	boneBuffer.address = device.getBufferAddress({boneBuffer.handle});
 
 	//////////////////////////////
 	vk::DeviceSize uboStructSize = sizeof(DynUBO::Base);                 // 192

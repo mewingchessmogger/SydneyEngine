@@ -123,7 +123,9 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
     std::cout << "------------------------------\n";
     std::cout << "min UBO offset alignment: " << physicalDevice.properties.limits.minUniformBufferOffsetAlignment << "\n";
     std::cout << "------------------------------\n";
-
+     std::cout << "------------------------------\n";
+    std::cout << "max push constant size: " << physicalDevice.properties.limits.maxPushConstantsSize << "\n";
+    std::cout << "------------------------------\n";
 }
 
 

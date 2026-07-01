@@ -39,6 +39,8 @@ enum class BufferType: uint32_t{
 	SSBO,
 	IDBO,
 	UBO_DYN,
+	SKIN_VBO,
+	COUNT,
 	
 
 };
@@ -80,6 +82,9 @@ class ResManager{
 	const uint32_t CURR_DESC_SETS = 3;
 	const uint64_t VBO_BYTE_SIZE = 1048576ULL * 250ULL;  //250 MBs
 	const uint64_t IBO_BYTE_SIZE = 1048576ULL * 100ULL;  //100 MBs
+	const uint64_t BONE_BYTE_SIZE = 1048576ULL * 100ULL;  //100 MBs
+
+
 	std::array<vk::DescriptorSetLayout,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSetLayouts{};
 	std::array<vk::DescriptorSet,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSets{};
 	std::array<uint32_t,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSetVariableDescriptorCount{0u, MAX_IMAGES, 0u };
@@ -94,6 +99,7 @@ class ResManager{
 	AllocatedBuffer stagingBuffer{};
 	AllocatedBuffer vertexBuffer{};
 	AllocatedBuffer indexBuffer{};
+	AllocatedBuffer boneBuffer{};
 	AllocatedBuffer uniformBuffer{};
 	AllocatedBuffer clrPickBuffer{};
 	AllocatedBuffer GameObjUBO{};
