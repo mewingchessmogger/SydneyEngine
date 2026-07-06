@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{75B11962-3C6C-3E14-A9E7-41E80E3A2554}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{46FD24E4-EF32-3479-80F2-6083F6B7D052}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

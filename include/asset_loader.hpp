@@ -7,12 +7,12 @@
 #include <array>
 #include "vertex_def.hpp"
 #include "asset_registry.hpp"
-
+#include "glm/vec3.hpp"
 class AssetLoader{
     
     AssetRegistry reg{};
-    
-    
+    glm::vec3 targetSize = {0.5,0.5,0.5};
+
     static constexpr int MAX_BONES_PER_VERTEX = 4;
     
     enum class ModelType{
@@ -43,12 +43,14 @@ class AssetLoader{
     std::vector<BoneVertexData> vertexToBones{};
     std::vector<int> meshBaseVertex{};
     std::map<std::string, uint32_t> boneNameToIndexMap{};
-    uint32_t modelCounter{};
+    uint32_t StaticModelCounter{};
+    uint32_t SkinnedModelCounter{};
 
 
     public: 
     void parseScene(const aiScene *scn);
     void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl);
+    void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);
     void parseScene(const aiScene *scn, std::string &path);
@@ -56,7 +58,8 @@ class AssetLoader{
     int getBoneID(const aiBone *bone);
     //void parseMeshes(const aiScene *scn);
     Vertex parseVertex(const aiMesh *mesh, int i);
-    AssetRegistry& getAssetReg();
+    SkinnedVertex parseSkinnedVertex(const aiMesh *mesh, int i);
+    AssetRegistry &getAssetReg();
     const aiScene*  getScene(std::string path);
 
 

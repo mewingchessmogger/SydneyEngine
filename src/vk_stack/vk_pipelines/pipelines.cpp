@@ -42,35 +42,35 @@ void VulkanStack::initPhongPipeline(std::vector<uint32_t>&& vertSpv, std::vector
 		.setBlendState(false, true)
 		.setDescSetLayout({res.descriptorSetLayouts[2]});//res.descriptorSetLayouts[0], res.descriptorSetLayouts[1],
 		
-		phongPSO = createPipeline(vertSpv,fragSpv,pInfo);
+		pipelines.phong = createPipeline(vertSpv,fragSpv,pInfo);
 		
 }
 
-void VulkanStack::initPickPipeline(std::vector<uint32_t>&& vertSpv, std::vector<uint32_t>&& fragSpv){
+// void VulkanStack::initPickPipeline(std::vector<uint32_t>&& vertSpv, std::vector<uint32_t>&& fragSpv){
 	
 	
 
-	CreatePipelineInfo pInfo{};
+// 	CreatePipelineInfo pInfo{};
 	
-	pInfo
-		.setClrAttachCount(1)
-		.setClrFormat(res.colorPickImage.format)
-		.setDepthFormat(vk::Format::eD32Sfloat)
-		.setIsDepthPass(false)
-		.setTopology(vk::PrimitiveTopology::eTriangleList)
-		.setExtent(res.colorPickImage.extent2D)
-		.setPolyMode(vk::PolygonMode::eFill)
-		.setFrontFace(vk::FrontFace::eCounterClockwise)
-		.setBytesPC(sizeof(PushC::Model))
-		.setBlendState(false, false)
-		.setStagePC(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
-		.setDepthWrite(vk::True)
-		.setDepthTest(vk::True)
-		.setDescSetLayout({res.descriptorSetLayouts[2]});//res.descriptorSetLayouts[0], res.descriptorSetLayouts[1],
+// 	pInfo
+// 		.setClrAttachCount(1)
+// 		.setClrFormat(res.colorPickImage.format)
+// 		.setDepthFormat(vk::Format::eD32Sfloat)
+// 		.setIsDepthPass(false)
+// 		.setTopology(vk::PrimitiveTopology::eTriangleList)
+// 		.setExtent(res.colorPickImage.extent2D)
+// 		.setPolyMode(vk::PolygonMode::eFill)
+// 		.setFrontFace(vk::FrontFace::eCounterClockwise)
+// 		.setBytesPC(sizeof(PushC::Model))
+// 		.setBlendState(false, false)
+// 		.setStagePC(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
+// 		.setDepthWrite(vk::True)
+// 		.setDepthTest(vk::True)
+// 		.setDescSetLayout({res.descriptorSetLayouts[2]});//res.descriptorSetLayouts[0], res.descriptorSetLayouts[1],
 
-		PickPSO = createPipeline(vertSpv,fragSpv,pInfo);
+// 		PickPSO = createPipeline(vertSpv,fragSpv,pInfo);
 
-}
+// }
 
 
 PipelineBundle VulkanStack::createPipeline(const std::vector<uint32_t>& vertSpv, const std::vector<uint32_t>& fragSpv,CreatePipelineInfo p){

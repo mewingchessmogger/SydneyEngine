@@ -12,7 +12,6 @@ void Tetris::init(ECS::Registry& reg, GameContext& ctx){
 	Renderable r{};
 	r.meshID = 1;
 	Transform t{};
-	t.scale = {3.0, 0.2, 3.0};
 	t.position = glm::vec3(0.0, -1.0, 0.0);
 	reg.add(floor, t , r);
 	reg.createPool<Bullet>();
@@ -33,7 +32,7 @@ void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& 
 			glm::vec3 floorForward = glm::normalize(glm::vec3(cam0.dir.x, 0.0f, cam0.dir.z));
 			glm::vec3 eyeFloor = glm::vec3(cam0.eye.x,0.0,cam0.eye.z);
 			T.position = eyeFloor+floorForward;
-			T.scale = glm::vec3(2.0f);
+			
 			T.rotation = {0.0,1.0,0.0};
 			Particle p{};
 			p.pos = eyeFloor;

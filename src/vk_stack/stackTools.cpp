@@ -32,123 +32,104 @@ void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSe
 	graphicsQueue.submit2(subInfo, fence);
 	}
 
+
+vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
+	vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];//read below same shtick
+
+	auto imgResult = ctx.device.acquireNextImageKHR(ctx.swapchain, 1000000000, imageReadySemaph);// signal semaphore when monitor is done scanning image and its ready to be drawn to 
 	
-	vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
-		vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];//read below same shtick
+	return imgResult;
+}
+
 	
-		auto imgResult = ctx.device.acquireNextImageKHR(ctx.swapchain, 1000000000, imageReadySemaph);// signal semaphore when monitor is done scanning image and its ready to be drawn to 
-		
-		return imgResult;
-	}
-	
-	// void VulkanStack::flushRequests(std::vector<AssetManager::UploadData>& requests, ModelStorage& storage){
+	void VulkanStack::flushUploads(AssetRegistry& astReg){
 
-	// 	if (requests.empty()) return;
-
-	// 	for(auto& req : requests){
-	// 		req.record.offsetVBO = tailVBO ;
-	// 		req.record.offsetIBO = tailIBO ;
-			
-	// 		uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
-			
-	// 		tailVBO += req.record.totVertices;
-	// 		tailIBO += req.record.totIndices ;
-			
-	// 		storage.storeModelRecord(req.record);
-	// 	}		
-	// 	requests.clear();
-	// }
-	void VulkanStack::flushRequests(AssetRegistry& astReg){
-		for(auto&[name, model] : astReg.staticModelMap){
-			if(model.transientVertices.empty()){
-				return;
-			}
-			model.baseOffsetGlobalVBO = tailVBO;
-			model.baseOffsetGlobalIBO = tailIBO;
-			uploadVBOAndIBO(model.transientVertices, model.transientIndices, tailVBO, tailIBO);
-			tailVBO += model.transientVertices.size();
-			tailIBO += model.transientIndices.size();
-			model.DestroyTransients();
-			}
-		}
-	
-		// if (requests.empty()) return;
-
-		// for(auto& req : requests){
-		// 	req.record.offsetVBO = tailVBO ;
-		// 	req.record.offsetIBO = tailIBO ;
-			
-		// 	uploadVBOAndIBO(req.vertices, req.indices, tailVBO, tailIBO);
-			
-		// 	tailVBO += req.record.totVertices;
-		// 	tailIBO += req.record.totIndices ;
-			
-		// 	storage.storeModelRecord(req.record);
-		// }		
-		// requests.clear();
-	
-
-
-
-	bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
-		vk::Fence curFence[] = {ctx.fences[currentFrame] };
-		ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 
-		 
-
-		//RAAAAAAAAAAAAAAAAAGH I DONT KNOW HOW ELSE TO DELETE ZOMBIE BUFFERS
-		static int frame = 0;
-		if (!res.zombieBuffers.empty()){
-			frame++;
-			if(frame == 3){
-				for(AllocatedBuffer& i : res.zombieBuffers) { vmaDestroyBuffer(res.allocator, i.handle, i.alloc); }
-				res.zombieBuffers.clear();
-				frame = 0;
-			}
+		for(auto& [name, staticModel] : astReg.staticModelMap){
+			if(staticModel.transientVertices.empty() || staticModel.transientIndices.empty()){
+					continue;
+				}
+				staticModel.setGlobalOffsets(res.vertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
+				
+				uploadToBufferT(staticModel.transientVertices, res.vertexBuffer);
+				uploadToBufferT(staticModel.transientIndices, res.indexBuffer);
+				
+				staticModel.DestroyTransients();
 		}
 
-		vk::ResultValue<uint32_t> val = acquiredImage();
-		auto imgIndex = val.value;
-		auto result = val.result;
+		for(auto& [name, skinnedModel] : astReg.skinnedModelMap){
+			if(skinnedModel.transientVertices.empty() || skinnedModel.transientIndices.empty()){
+				continue;
+			}
+			skinnedModel.setGlobalOffsets(res.skinnedVertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
+			
+			uploadToBufferT(skinnedModel.transientVertices, res.skinnedVertexBuffer);
+			uploadToBufferT(skinnedModel.transientIndices, res.indexBuffer);
+			
+			skinnedModel.DestroyTransients();
 
-        if(result ==  vk::Result::eErrorOutOfDateKHR || plt.frameBufferResized == true){
-			plt.stallMinimizedWindow();
-			plt.frameBufferResized = false;
-			ctx.device.destroySemaphore(ctx.imageReadySemaphores[currentFrame]);
-			ctx.imageReadySemaphores[currentFrame] = ctx.device.createSemaphore(vk::SemaphoreCreateInfo{});
+		}
+	
+	}
 
-			ctx.device.waitIdle();
-			SET_WIDTH = plt.glwidth;
-			SET_HEIGHT = plt.glheight;
-            res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
-			res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-			//res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
-			res.rethinkRenderTargets(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-			res.rethinkViewportImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-			ImmediateTransitionViewport();
-			res.updateViewportDescriptor(ctx);
-			return false;
-        }
-		else if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
-            throw std::runtime_error("failed to acquire swap chain image!");
-        }
+bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
+	vk::Fence curFence[] = {ctx.fences[currentFrame] };
+	ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 
 		
-		currentImgIndex = imgIndex;
-		ctx.device.resetFences(curFence);
 
-
-
-		return true;
+	//RAAAAAAAAAAAAAAAAAGH I DONT KNOW HOW ELSE TO DELETE ZOMBIE BUFFERS
+	static int frame = 0;
+	if (!res.zombieBuffers.empty()){
+		frame++;
+		if(frame == 3){
+			for(AllocatedBuffer& i : res.zombieBuffers) { vmaDestroyBuffer(res.allocator, i.handle, i.alloc); }
+			res.zombieBuffers.clear();
+			frame = 0;
+		}
 	}
 
+	vk::ResultValue<uint32_t> val = acquiredImage();
+	auto imgIndex = val.value;
+	auto result = val.result;
 
+	if(result ==  vk::Result::eErrorOutOfDateKHR || plt.frameBufferResized == true){
+		plt.stallMinimizedWindow();
+		plt.frameBufferResized = false;
+		ctx.device.destroySemaphore(ctx.imageReadySemaphores[currentFrame]);
+		ctx.imageReadySemaphores[currentFrame] = ctx.device.createSemaphore(vk::SemaphoreCreateInfo{});
 
-	void VulkanStack::startFrame() {
-		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];//this is indx currentFrame cuz the fence above 
-		cmdBuffer.reset();
-		vk::CommandBufferBeginInfo beginInfo{};
-		beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-		cmdBuffer.begin(beginInfo);
+		ctx.device.waitIdle();
+		SET_WIDTH = plt.glwidth;
+		SET_HEIGHT = plt.glheight;
+		res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
+		res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+		//res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
+		res.rethinkRenderTargets(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+		res.rethinkViewportImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+		ImmediateTransitionViewport();
+		res.updateViewportDescriptor(ctx);
+		return false;
 	}
+	else if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+	
+	currentImgIndex = imgIndex;
+	ctx.device.resetFences(curFence);
+
+
+
+	return true;
+}
+
+
+
+void VulkanStack::startFrame() {
+	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];//this is indx currentFrame cuz the fence above 
+	cmdBuffer.reset();
+	vk::CommandBufferBeginInfo beginInfo{};
+	beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	cmdBuffer.begin(beginInfo);
+}
 
 void VulkanStack::startEditorToSwapchain(){
 	
@@ -255,163 +236,118 @@ void VulkanStack::blitTargetToSwapchain(){
 		
 
 	}
-	void VulkanStack::endFrame() {
-		
-
-		auto imageIndex = currentImgIndex;
-
-		vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];//read below same shtick
-		vk::Semaphore renderFinishedSemaph = ctx.renderFinishedSemaphores[imageIndex];
-		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];//this is indx currentFrame cuz the fence above 
-		
-
-		cmdBuffer.end();
-
-		recordSubmit(cmdBuffer, imageReadySemaph, renderFinishedSemaph, vk::PipelineStageFlagBits2::eColorAttachmentOutput
-			, vk::PipelineStageFlagBits2::eAllGraphics, ctx.graphicsQueue.handle, ctx.fences[currentFrame]);
-		
-
-
-		vk::PresentInfoKHR presInfo{};
-		presInfo.setWaitSemaphores({ renderFinishedSemaph })
-			.setSwapchains(ctx.swapchain)
-			.setImageIndices({ imageIndex });
+void VulkanStack::endFrame() {
 	
-	
-	
-		ctx.graphicsQueue.handle.presentKHR(presInfo);
-	
-		currentFrame = (currentFrame + 1) % DESIRED_IMAGES_IN_FLIGHT;
-	
-	}
-	
-	void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
-		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
-		auto swapchainImage = res.swapchainImages[currentImgIndex];
-		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
-		DynUBO::Base dyn = DynUBO::Base{}
-			.setVert(res.vertexBuffer.address)
-			.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
-			.setView(view)
-			.setProj(proj);//for the camera view and proj
 
-		std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
-	}
-	
-	void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks){
-		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
-		vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
-	}
+	auto imageIndex = currentImgIndex;
 
-	void VulkanStack::render(Scene& scn, AssetRegistry &astReg){ 
-		vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
-		auto& renderTarget = res.renderTargetImages[currentImgIndex];
-		std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
-		
-		// BarrierMasks masks = BarrierMasks{}
-		// 	.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
-		// 	.setDstStage(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
-		// 	.setSrcAccess(vk::AccessFlagBits2::eNone)
-		// 	.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);// these pipeline barriers blew my mind, super cool stuff
+	vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];//read below same shtick
+	vk::Semaphore renderFinishedSemaph = ctx.renderFinishedSemaphores[imageIndex];
+	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];//this is indx currentFrame cuz the fence above 
+	
+
+	cmdBuffer.end();
+
+	recordSubmit(cmdBuffer, imageReadySemaph, renderFinishedSemaph, vk::PipelineStageFlagBits2::eColorAttachmentOutput
+		, vk::PipelineStageFlagBits2::eAllGraphics, ctx.graphicsQueue.handle, ctx.fences[currentFrame]);
+	
 
 
-		vkutils::setPipelineBarrier(cmdBuffer, renderTarget.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor);
-		
-		// masks = BarrierMasks{}
-		// 	.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
-		// 	.setDstStage(vk::PipelineStageFlagBits2::eEarlyFragmentTests)
-		// 	.setSrcAccess(vk::AccessFlagBits2::eNone)
-		// 	.setDstAccess(vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
+	vk::PresentInfoKHR presInfo{};
+	presInfo.setWaitSemaphores({ renderFinishedSemaph })
+		.setSwapchains(ctx.swapchain)
+		.setImageIndices({ imageIndex });
+
+
+
+	ctx.graphicsQueue.handle.presentKHR(presInfo);
+
+	currentFrame = (currentFrame + 1) % DESIRED_IMAGES_IN_FLIGHT;
+
+}
+
+void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
+	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
+	auto swapchainImage = res.swapchainImages[currentImgIndex];
+	std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
+	DynUBO::Base dyn = DynUBO::Base{}
+		.setVert(res.vertexBuffer.address)
+		.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
+		.setView(view)
+		.setProj(proj);//for the camera view and proj
+
+	std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
+}
+
+void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks){
+	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
+	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
+}
+
+void VulkanStack::render(Scene& scn, AssetRegistry &astReg){ 
+	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
+	auto& renderTarget = res.renderTargetImages[currentImgIndex];
+	std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
 	
-		vkutils::setPipelineBarrier(cmdBuffer, res.zBufferImages[currentFrame].handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
+	// BarrierMasks masks = BarrierMasks{}
+	// 	.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
+	// 	.setDstStage(vk::PipelineStageFlagBits2::eColorAttachmentOutput)
+	// 	.setSrcAccess(vk::AccessFlagBits2::eNone)
+	// 	.setDstAccess(vk::AccessFlagBits2::eColorAttachmentWrite);// these pipeline barriers blew my mind, super cool stuff
 
-		rdr.beginRenderPass(cmdBuffer, renderTarget.view, renderTarget.extent2D,res.zBufferImages[currentFrame]);
-		
-		cmdBuffer.bindDescriptorSets(
-			vk::PipelineBindPoint::eGraphics, 
-			phongPSO.layout, 
-			0,                                // firstSet
-			res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
-			dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
-		);
-		// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 
-		for(auto& object : scn.gameObjects){
-			auto& mdl = astReg.getStaticModelFromID(0);
-			for(auto& mesh: mdl.meshes){
-				PushC::Model pc{};
-				glm::mat4 finalMatrix = glm::mat4{1.0f} * object.model ;//* mesh.modelMat
-				pc.setModel(finalMatrix);
-				pc.setVertexOffset(mdl.baseOffsetGlobalVBO);
-				rdr.renderMesh(cmdBuffer, phongPSO, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetGlobalIBO + mesh.baseIndexLocalIBO);
-			}
+	vkutils::setPipelineBarrier(cmdBuffer, renderTarget.handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal, vk::ImageAspectFlagBits::eColor);
+	
+	// masks = BarrierMasks{}
+	// 	.setSrcStage(vk::PipelineStageFlagBits2::eTopOfPipe)
+	// 	.setDstStage(vk::PipelineStageFlagBits2::eEarlyFragmentTests)
+	// 	.setSrcAccess(vk::AccessFlagBits2::eNone)
+	// 	.setDstAccess(vk::AccessFlagBits2::eDepthStencilAttachmentWrite);
+
+	vkutils::setPipelineBarrier(cmdBuffer, res.zBufferImages[currentFrame].handle, vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthAttachmentOptimal, vk::ImageAspectFlagBits::eDepth);
+
+	rdr.beginRenderPass(cmdBuffer, renderTarget.view, renderTarget.extent2D,res.zBufferImages[currentFrame]);
+	
+	cmdBuffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics, 
+		pipelines.phong.layout, 
+		0,                                // firstSet
+		res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
+		dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
+	);
+	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
+
+	for(auto& object : scn.gameObjects){
+		auto& mdl = astReg.getStaticModelFromID(0);
+		for(auto& mesh: mdl.meshes){
+			PushC::Model pc{};
+			glm::mat4 finalMatrix = glm::mat4{1.0f} * object.model *mdl.normalizeMat;// mesh.modelMat
+			pc.setModel(finalMatrix);
+			pc.setVertexOffset(mdl.baseOffsetVBO);
+			rdr.renderMesh(cmdBuffer, pipelines.phong, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetVBO + mesh.baseIndexLocalIBO);
 		}
-		rdr.endRenderPass(cmdBuffer); 
 	}
-
-	void VulkanStack::fillRenderQueue(ECS::Registry& reg, AssetRegistry& assetReg){
-				
-		
-
-
-			// /*FILL renderobjects array*/
-			// scn.gameObjects.resize((uint32_t)rendPool.count);
-			// for (int i{}; i < rendPool.count; i++){
-			// 	ECS::Entity e = rendPool.dense[i];
-			// 	const Renderable& rend = rendPool.data[i];
-			// 	scn.gameObjects[i].meshID = rend.meshID;
-			// 	scn.gameObjects[i].model = transPool.get(e).matrix();
-				
-			// }
-		/*
-		for(auto& object : scn.gameObjects){
-			auto& mdl = astReg.staticModelMap["models/dragon.glb"];
-			for(auto& mesh: mdl.meshes){
-				PushC::Model pc{};
-				glm::mat4 finalMatrix = object.model * mesh.modelMat;
-				pc.setModel(finalMatrix);
-				pc.setVertexOffset(mdl.baseOffsetGlobalVBO);
-				rdr.renderMesh(cmdBuffer, phongPSO, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetGlobalIBO + mesh.baseIndexLocalIBO);
-			}*/
-
-
-
-		renderQueue.clear();
-		auto [transPool, rendPool] = reg.getPools<Transform, Renderable>(); // not copying whole shit, its copy of references
-		for(int r{}; r < rendPool.count; r++){
-			ECS::Entity e = rendPool.dense[r];
-
-		}
-		
-
-
-		
-
-	}
-
-	void VulkanStack::uploadVBOAndIBO(const std::vector<Vertex> &vertices,const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO){
-		     
-            if (vertices.empty() || indices.empty()) {
-				return;
-			}
-            AllocatedBuffer stageVertex{};
-            AllocatedBuffer stageIndex{};
-			vk::DeviceSize bytesVertex = vertices.size() * sizeof(Vertex);
-			vk::DeviceSize bytesIndex =  indices.size() * sizeof(uint32_t);
-
-            res.createBuffer(BufferType::STAGING, bytesIndex, stageIndex);
-            res.createBuffer(BufferType::STAGING, bytesVertex, stageVertex);
-			
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], vertices, bytesVertex, stageVertex, res.vertexBuffer, offsetVBO * sizeof(Vertex));
-            res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], indices, bytesIndex, stageIndex, res.indexBuffer, offsetIBO * sizeof(uint32_t));
-            //need to deestroy later staging 
-			printf("UPLOAD!!! \n");
-			res.zombieBuffers.push_back(stageVertex);
-			res.zombieBuffers.push_back(stageIndex);
-	
-		}
-
-
 
 
 	
+	rdr.endRenderPass(cmdBuffer); 
+}
+
+
+
+template<typename T>
+void VulkanStack::uploadToBufferT(const std::vector<T>& data, AllocatedBuffer& dstBuffer){ //, uint32_t offsetBuffer
+	
+	AllocatedBuffer stageT{};
+	
+	res.createBuffer(BufferType::STAGING, data.size() * sizeof(T), stageT);
+	res.uploadToBuffer(ctx.device, cmdBuffers[currentFrame], data, stageT, dstBuffer); // function will increase value of  dstBuffer.sizeBytes with data.size() * sizeof(T)
+	
+	assert(dstBuffer.sizeBytes <= dstBuffer.capacityBytes);// not handling this right now, mr white
+
+	res.zombieBuffers.push_back(stageT);
+}
+
+template void VulkanStack::uploadToBufferT(const std::vector<uint32_t>& data, AllocatedBuffer& dstBuffer);
+template void VulkanStack::uploadToBufferT(const std::vector<Vertex>& data, AllocatedBuffer& dstBuffer);
+template void VulkanStack::uploadToBufferT(const std::vector<SkinnedVertex>& data, AllocatedBuffer& dstBuffer);

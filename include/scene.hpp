@@ -21,5 +21,18 @@ public:
         uint32_t meshID{};
     };
 
+    
+    enum class Mesh : uint32_t{
+        STATIC, SKINNED,
+    };
+
+
+    struct Packet{
+        glm::mat4 mdl{1.0f};
+        Mesh type{};
+    };
+
+
+
     std::vector<GameObject> gameObjects{};
 };

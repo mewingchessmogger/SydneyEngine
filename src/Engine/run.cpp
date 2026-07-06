@@ -13,8 +13,8 @@ void Engine::run(){
     // ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
     AssetLoader ldr{};
    
-    //ldr.loadScene("models/cube_gltf.glb");
-    ldr.loadScene("models/dragon.glb");
+    ldr.loadScene("models/cube_gltf.glb");
+    ldr.loadScene("models/shibahu.glb");
     Scene scn{};
     
     reg.createPool<Particle>();
@@ -38,13 +38,16 @@ void Engine::run(){
     Script game{};
     game.ptr = IScripts[0];
     game.ptr->init(reg, ctx);
+
+
+
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
-        /* pass plt and reg to dll  */
+
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
             if (mode == EngineMode::GAME){
-                plt.inputState.requestCursorVisible = false;    
+                plt.inputState.requestCursorVisible = false;    //no biggie just doing it also here cuz sometimes fails to switch
             }
         }
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? gameCamID : editorCamID);
@@ -59,26 +62,24 @@ void Engine::run(){
         fileWatcher.checkDirectoryPeriodically();
         
         prepareRenderables(scn);
-        //stk.fillRenderQueue(reg, ldr.getAssetReg());
         
         if (stk.acquireAndValidateImage(plt))
         {
-            edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages);
+            edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
-            //stk.flushRequests(ast.requests, ast.storage);
-            stk.flushRequests(ldr.getAssetReg());
+            stk.flushUploads(ldr.getAssetReg());
             stk.updateUBO(activeCam.view, activeCam.proj);
             stk.render(scn, ldr.getAssetReg());
             //begin render asss
 
             if(mode == EngineMode::EDITOR){
-                stk.blitTargetToViewport();
+                stk.blitTargetToViewport(); //viewport in imgui
                 stk.startEditorToSwapchain();
                 edt.messingAround(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentImgIndex, activeCam,plt);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
                 stk.endEditorToSwapchain();
                 edt.updateEditorInput();
             }
-            else{
+            else if(mode == EngineMode::GAME){
                 stk.blitTargetToSwapchain();
             }
             

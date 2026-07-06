@@ -12,7 +12,9 @@ struct AllocatedBuffer {
     VmaAllocation alloc{};
     VmaAllocationInfo allocInfo{};
 	vk::DeviceAddress address{};
-	vk::DeviceSize offsetInGPU{};
+	vk::DeviceSize sizeBytes{};
+	vk::DeviceSize capacityBytes{};
+	
 };
 
 struct AllocatedImage {
@@ -39,7 +41,7 @@ enum class BufferType: uint32_t{
 	SSBO,
 	IDBO,
 	UBO_DYN,
-	SKIN_VBO,
+	SKINNED_VBO,
 	COUNT,
 	
 
@@ -80,9 +82,10 @@ class ResManager{
 	const uint32_t MAX_DYN_UBO = 1;
 	const uint32_t MAX_IMAGES = 500;
 	const uint32_t CURR_DESC_SETS = 3;
-	const uint64_t VBO_BYTE_SIZE = 1048576ULL * 250ULL;  //250 MBs
-	const uint64_t IBO_BYTE_SIZE = 1048576ULL * 100ULL;  //100 MBs
-	const uint64_t BONE_BYTE_SIZE = 1048576ULL * 100ULL;  //100 MBs
+	const uint64_t BONE_BUFFER_BYTE_CAPACITY = 1048576ULL * 100ULL;  //100 MBs
+	const uint64_t IBO_BYTE_CAPACITY = 1048576ULL * 100ULL;  //100 MBs
+	const uint64_t VBO_BYTE_CAPACITY = 1048576ULL * 250ULL;  //250 MBs
+	const uint64_t SKINNED_VBO_BYTE_CAPACITY = 1048576ULL * 250ULL;  //one MB * 250 
 
 
 	std::array<vk::DescriptorSetLayout,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSetLayouts{};
@@ -99,6 +102,7 @@ class ResManager{
 	AllocatedBuffer stagingBuffer{};
 	AllocatedBuffer vertexBuffer{};
 	AllocatedBuffer indexBuffer{};
+	AllocatedBuffer skinnedVertexBuffer{};
 	AllocatedBuffer boneBuffer{};
 	AllocatedBuffer uniformBuffer{};
 	AllocatedBuffer clrPickBuffer{};
@@ -127,17 +131,13 @@ class ResManager{
     
 
 
-    void createBuffer(BufferType type, unsigned long byteSize, AllocatedBuffer &buffer);
+    void createBuffer(BufferType type, unsigned long byteCapacity, AllocatedBuffer &buffer);
 
 
 
     void initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight);
 
-    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer, uint32_t dstOffset);
-    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices, vk::DeviceSize byteSize, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer, uint32_t dstOffset);
 
-    
-    
     void initDescriptorPoolAndSets(vk::Device device, uint32_t maxImageAmount, uint32_t maxSamplers);
 	void initAndUpdateSamplers(vk::Device device, float maxAnisotropy);
 
@@ -153,4 +153,6 @@ class ResManager{
     void updateViewportDescriptor(VulkanContext &ctx);
     //void updateRenderTargetDescriptor(VulkanContext &ctx);
     bool isValidSwapchain(VulkanContext &ctx, vk::ResultValue<uint32_t> imgResult, vk::Semaphore imageReadySemaphore, uint32_t width, uint32_t height, uint32_t imagesInFlight, bool &windowResized, int currFrame);
+    template <typename T>
+    void uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<T> &data, AllocatedBuffer &stagingBuffer, AllocatedBuffer &dstBuffer);
 };

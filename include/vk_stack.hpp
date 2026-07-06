@@ -15,6 +15,7 @@ class VulkanStack{
     public:
         
         uint64_t tailVBO{};
+        uint64_t tailSkinnedVBO{};
         uint64_t tailIBO{};
         const int MAX_OBJECTS = 2;
         const int DESIRED_IMAGES_IN_FLIGHT = 2;
@@ -32,9 +33,15 @@ class VulkanStack{
         Renderer rdr{};
         ResManager res{};
         PipelineBuilder plb{};
-        PipelineBundle testPSO{};
-        PipelineBundle phongPSO{};
-        PipelineBundle PickPSO{};
+        
+        struct {
+        PipelineBundle test{};
+        PipelineBundle phong{};
+        PipelineBundle skinnedPhong{};
+        PipelineBundle pick{};
+    
+        } pipelines;
+
         std::vector<vk::CommandBuffer> cmdBuffers{};
         
         struct VKSBindDescInfo{
@@ -72,7 +79,7 @@ class VulkanStack{
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
-        void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+        //void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         
 
@@ -85,10 +92,8 @@ class VulkanStack{
         bool acquireAndValidateImage(PlatformGLFW &plt);
         
         
-        void uploadVBOAndIBO(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices,uint32_t offsetVBO, uint32_t offsetIBO);
         
 
-        void uploadDataToBuffer();
         void startFrame();
 
         void startEditorToSwapchain();
@@ -104,13 +109,16 @@ class VulkanStack{
 
         void render(Scene &scn, AssetRegistry &astReg);
 
-        void fillRenderQueue(ECS::Registry &reg, AssetRegistry &assetReg);
 
 
-        void flushRequests(AssetRegistry &astReg);
+        void flushUploads(AssetRegistry &astReg);
 
     private:
     
         vk::ResultValue<uint32_t> acquiredImage();
         void recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
+        
+        
+        template <typename T>
+        void uploadToBufferT(const std::vector<T> &data, AllocatedBuffer &dstBuffer);
 };

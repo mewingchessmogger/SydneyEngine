@@ -1,28 +1,22 @@
 #include "asset_loader.hpp"
-
-
-
-
-const aiScene* AssetLoader::getScene(std::string path)
-{
-    const aiScene* scn = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices);
-
-    return scn;
-}
-
+#include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
 
 void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl)
 {
     printf("Number of meshes: %d \n", scn->mNumMeshes);
     int total_vertices{};
     int total_indices{};
-    //int total_bones{};
+    aiVector3D minVertex{1e10f, 1e10f, 1e10f};
+    aiVector3D maxVertex{-1e10f, -1e10f, -1e10f};
+
     assert(!meshBaseVertex.size());
     meshBaseVertex.resize(scn->mNumMeshes);
     
     for(int m{}; m < scn->mNumMeshes; m++){
         const aiMesh* mesh = scn->mMeshes[m];
-        AssetRegistry::MeshData meshData{};
+        AssetRegistry::StaticMeshData meshData{};
         
         int num_vertices    = mesh->mNumVertices;
         int num_indices     = mesh->mNumFaces * 3 ;
@@ -39,6 +33,16 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& md
             }
         }
         
+        
+        minVertex.x = (minVertex.x > mesh->mAABB.mMin.x) ? mesh->mAABB.mMin.x : minVertex.x;
+        minVertex.y = (minVertex.y > mesh->mAABB.mMin.y) ? mesh->mAABB.mMin.y : minVertex.y;
+        minVertex.z = (minVertex.z > mesh->mAABB.mMin.z) ? mesh->mAABB.mMin.z : minVertex.z;
+        
+        maxVertex.x = (maxVertex.x < mesh->mAABB.mMax.x) ? mesh->mAABB.mMax.x : maxVertex.x;
+        maxVertex.y = (maxVertex.y < mesh->mAABB.mMax.y) ? mesh->mAABB.mMax.y : maxVertex.y;
+        maxVertex.z = (maxVertex.z < mesh->mAABB.mMax.z) ? mesh->mAABB.mMax.z : maxVertex.z;
+        
+
 
         meshData.name = mesh->mName.C_Str();
         meshData.indexCount = num_indices;
@@ -50,33 +54,83 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& md
     }
 
 
-    
-    // for(int i{}; i < scn->mNumMeshes; i++){
-    //     const aiMesh* mesh = scn->mMeshes[i];
-    //     int num_vertices    = mesh->mNumVertices;
-    //     int num_indices     = mesh->mNumFaces *3 ;
-    //     int num_bones       = mesh->mNumBones;
-    //     meshBaseVertex[i] = total_vertices;
-    //     printf("mesh #%d Name: '%s', vertices: %d, indices: %d, bones: %d \n", i , mesh->mName.C_Str(), num_vertices,num_indices, num_bones);
-    //     total_vertices +=  num_vertices;
-    //     total_indices  +=  num_indices;
-    //     total_bones    +=  num_bones;
-        
-    //     vertexToBones.resize(total_vertices);
-        
+    printf("min point of model: (%f, %f, %f ) ,  max point: (%f, %f, %f)\n", minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z  );
+    glm::vec3 diffVertex{maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z};
 
-    //     if(mesh->HasBones()){
-    //         parseMeshBones(i, mesh);
-    //     }
-    // }
 
-    
+    glm::vec3 actualScale = targetSize / diffVertex;
+    mdl.normalizeMat = glm::scale(mdl.normalizeMat, actualScale);
+    printf("actual scale to be made: (%f, %f, %f ) \n", actualScale.x,actualScale.y, actualScale.z);
+    meshBaseVertex.clear();
+    meshBaseVertex.shrink_to_fit();
 }
 
+void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& mdl){
+    printf("Number of meshes: %d \n", scn->mNumMeshes);
+    int total_vertices{};
+    int total_indices{};
+    int total_bones{};
+    aiVector3D minVertex{1e10f, 1e10f, 1e10f};
+    aiVector3D maxVertex{-1e10f, -1e10f, -1e10f};
 
+    assert(!meshBaseVertex.size());
+    meshBaseVertex.resize(scn->mNumMeshes);
+    
+    for(int m{}; m < scn->mNumMeshes; m++){
+        const aiMesh* mesh = scn->mMeshes[m];
+        AssetRegistry::SkinnedMeshData skinnedMeshData{};
+        
+        int num_vertices    = mesh->mNumVertices;
+        int num_bones = mesh->mNumBones;
+        int num_indices     = mesh->mNumFaces * 3 ;
+        meshBaseVertex[m] = total_vertices;
+        
+        for(int v{}; v < num_vertices; v++){
+            mdl.transientVertices.emplace_back(parseSkinnedVertex(mesh, v));
+        }
 
-Vertex AssetLoader::parseVertex(const aiMesh *mesh, int i){
-        Vertex v{};
+        for(int f{}; f < mesh->mNumFaces; f++){
+            aiFace face = mesh->mFaces[f];
+            for(int i{}; i < face.mNumIndices; i++){
+                mdl.transientIndices.emplace_back(face.mIndices[i] + meshBaseVertex[m]);
+            }
+        }
+
+        
+        for(int b{}; b < num_bones; b++){
+            aiBone* bone = mesh->mBones[b];
+            int boneID = getBoneID(bone);
+            for(int w{}; w < bone->mNumWeights; w++){
+                aiVertexWeight weight = bone->mWeights[w];
+                mdl.transientVertices[weight.mVertexId + meshBaseVertex[m]].addBone(boneID, weight.mWeight);
+            }
+        }
+        
+        minVertex.x = (minVertex.x > mesh->mAABB.mMin.x) ? mesh->mAABB.mMin.x : minVertex.x;
+        minVertex.y = (minVertex.y > mesh->mAABB.mMin.y) ? mesh->mAABB.mMin.y : minVertex.y;
+        minVertex.z = (minVertex.z > mesh->mAABB.mMin.z) ? mesh->mAABB.mMin.z : minVertex.z;
+        
+        maxVertex.x = (maxVertex.x < mesh->mAABB.mMax.x) ? mesh->mAABB.mMax.x : maxVertex.x;
+        maxVertex.y = (maxVertex.y < mesh->mAABB.mMax.y) ? mesh->mAABB.mMax.y : maxVertex.y;
+        maxVertex.z = (maxVertex.z < mesh->mAABB.mMax.z) ? mesh->mAABB.mMax.z : maxVertex.z;
+        
+
+        skinnedMeshData.name = mesh->mName.C_Str();
+        skinnedMeshData.indexCount = num_indices;
+        skinnedMeshData.baseIndexLocalIBO = total_indices;
+        //printf("mesh #%d Name: '%s', vertices: %d, indices: %d, bones: %d \n", i , mesh->mName.C_Str(), num_vertices,num_indices, num_bones);
+        total_vertices +=  num_vertices; 
+        total_indices  +=  num_indices;
+        total_bones += num_bones;
+        mdl.meshes.push_back(skinnedMeshData);
+    }
+    printf("min point of model: (%f, %f, %f ) ,  max point: (%f, %f, %f)\n", minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z  );
+
+    meshBaseVertex.clear();
+    meshBaseVertex.shrink_to_fit();
+}
+SkinnedVertex AssetLoader::parseSkinnedVertex(const aiMesh *mesh, int i){
+        SkinnedVertex v{};
         v.normal = {1.0,0.0,0.0};
         if(mesh->HasPositions()){
             aiVector3D& pos = mesh->mVertices[i];
@@ -92,8 +146,13 @@ Vertex AssetLoader::parseVertex(const aiMesh *mesh, int i){
             aiVector3D& uv = mesh->mTextureCoords[0][i];
             v.texCoord = {uv.x, uv.y};
         }
+        
+        
+
         return v;           
 }
+
+
 
 int AssetLoader::getBoneID(const aiBone* bone){
     int boneID = 0;
@@ -105,6 +164,7 @@ int AssetLoader::getBoneID(const aiBone* bone){
     }
     else{
         boneID = boneNameToIndexMap[name];
+        
     }
     return boneID;
 }
@@ -135,31 +195,55 @@ void AssetLoader::parseBone(int meshIndex, const aiBone *bone){
     //printf("\n");
 }
 
-AssetRegistry& AssetLoader::getAssetReg()
-{
-    return reg;
-}
 
-
-
+    
 void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
 {
-    AssetRegistry::StaticModel mdl{};
-
-    if(!scn->HasSkeletons()){
-        mdl.name = scn->mName.C_Str();
+    
+    if(!scn->mMeshes[0]->HasBones()){ //its static
+        AssetRegistry::StaticModel mdl{};
+        mdl.name = path;
+        
         parseMeshes(scn, mdl);
-        printf("MODEL (Scene actually) NAME IS %s !!!\n", mdl.name.c_str());
+        
+        printf("STATIC MODEL (Scene actually) NAME IS %s !!!\n", mdl.name.c_str());
 
-        if(mdl.name.empty()){
-            mdl.name = std::string{"NO NAMER EVERYBODY COME AND SEE! NO NAMER EVERYBODY! #" + modelCounter};
-            printf("NO NAMER IN PARSESCENE!!!!\n");
+        if(reg.IntegerToStringStaticModelMap.find(StaticModelCounter) != reg.IntegerToStringStaticModelMap.end()){
+            printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
+            assert(0);
         }
 
-        reg.IntegerToStringStaticModelMap[modelCounter++] = mdl.name;
+        reg.IntegerToStringStaticModelMap[StaticModelCounter++] = mdl.name;
         reg.staticModelMap[mdl.name] = std::move(mdl);
     }
 
+    else{
+        AssetRegistry::SkinnedModel mdl{};
+        mdl.name = path;
+        
+        parseMeshes(scn, mdl);
+        printf("SKINNED MODEL (Scene actually) NAME IS %s !!!\n", mdl.name.c_str());
+
+
+        if(reg.IntegerToStringSkinnedModelMap.find(SkinnedModelCounter) != reg.IntegerToStringSkinnedModelMap.end()){
+            printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
+            assert(0);
+        }
+        reg.IntegerToStringSkinnedModelMap[SkinnedModelCounter++] = mdl.name;
+        reg.skinnedModelMap[mdl.name] = std::move(mdl);
+    }       
+
+ 
+
+
+}
+
+
+const aiScene* AssetLoader::getScene(std::string path)
+{
+    const aiScene* scn = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices | aiProcess_GenBoundingBoxes);
+
+    return scn;
 }
 
 void AssetLoader::loadScene(std::string path)
@@ -167,3 +251,31 @@ void AssetLoader::loadScene(std::string path)
     parseScene(getScene(path), path);
 
 }
+
+AssetRegistry& AssetLoader::getAssetReg()
+{
+    return reg;
+}
+
+
+Vertex AssetLoader::parseVertex(const aiMesh *mesh, int i){
+        Vertex v{};
+        v.normal = {1.0,0.0,0.0};
+        if(mesh->HasPositions()){
+            aiVector3D& pos = mesh->mVertices[i];
+            v.pos = {pos.x, pos.y, pos.z};
+        }
+          
+        if(mesh->HasNormals()){
+            aiVector3D& normal = mesh->mNormals[i];
+            v.normal = {normal.x, normal.y, normal.z};
+        }
+
+        if(mesh->HasTextureCoords(0)){
+            aiVector3D& uv = mesh->mTextureCoords[0][i];
+            v.texCoord = {uv.x, uv.y};
+        }
+        return v;           
+}
+
+

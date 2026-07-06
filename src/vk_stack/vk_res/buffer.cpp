@@ -4,14 +4,15 @@
 #include "vertex_def.hpp"
 #include "iostream"
 
-void ResManager::createBuffer(BufferType type, unsigned long byteSize, AllocatedBuffer &buffer)
+void ResManager::createBuffer(BufferType type, unsigned long byteCapacity, AllocatedBuffer &buffer)
 {
 	vk::BufferCreateInfo BufferInfo{};
 	
 	BufferInfo
-		.setSize(byteSize);
+		.setSize(byteCapacity);
 	VmaAllocationCreateInfo allocInfo{};
 	
+
 	switch(type){
 		case(BufferType::IBO):
 			BufferInfo
@@ -32,7 +33,7 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 			allocInfo.flags = {};			
 		break;
 
-		case(BufferType::SKIN_VBO):
+		case(BufferType::SKINNED_VBO):
 			BufferInfo
 			.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress)
 			.setSharingMode(vk::SharingMode::eExclusive);
@@ -73,7 +74,10 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 	}
 	auto result = vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo*>(&BufferInfo)
 		, &allocInfo, reinterpret_cast<VkBuffer*>(&buffer.handle), &buffer.alloc, &buffer.allocInfo);
-		
+	
+	buffer.capacityBytes = byteCapacity;
+
+
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed creation of staging buffer");
 	}
@@ -83,14 +87,14 @@ void ResManager::createBuffer(BufferType type, unsigned long byteSize, Allocated
 
 
 void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight){
-	createBuffer(BufferType::VBO,VBO_BYTE_SIZE,vertexBuffer);
-	createBuffer(BufferType::IBO,IBO_BYTE_SIZE,indexBuffer);
-	createBuffer(BufferType::SKIN_VBO, BONE_BYTE_SIZE, boneBuffer);
+	createBuffer(BufferType::VBO,VBO_BYTE_CAPACITY,vertexBuffer);
+	createBuffer(BufferType::IBO,IBO_BYTE_CAPACITY,indexBuffer);
+	createBuffer(BufferType::SKINNED_VBO, SKINNED_VBO_BYTE_CAPACITY, skinnedVertexBuffer);
 
     std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
 	vertexBuffer.address = device.getBufferAddress({vertexBuffer.handle});
 	indexBuffer.address = device.getBufferAddress({indexBuffer.handle});
-	boneBuffer.address = device.getBufferAddress({boneBuffer.handle});
+	skinnedVertexBuffer.address = device.getBufferAddress({skinnedVertexBuffer.handle});
 
 	//////////////////////////////
 	vk::DeviceSize uboStructSize = sizeof(DynUBO::Base);                 // 192
@@ -117,7 +121,9 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 
 }
 
-void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &vertices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer, uint32_t dstOffset)
+//ONLY USE THIS IN VULKANSTACK
+template<typename T>
+void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<T> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer) //, uint32_t dstOffset
 {
 
 		BarrierMasks mask{};
@@ -128,41 +134,22 @@ void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, 
 			mask.dstAccess = vk::AccessFlagBits2::eShaderRead;
 		
 		//createStagingBuffer(byteSize, stagingBuffer);
+		vk::DeviceSize bytesT = data.size() * sizeof(T);
 
-		std::memcpy(stagingBuffer.allocInfo.pMappedData, vertices.data(), byteSize);
+		std::memcpy(stagingBuffer.allocInfo.pMappedData, data.data(), bytesT);
 		//flush it down the gpu drain so it gets visible for gpu 
-		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
+		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, bytesT);
 
 		vk::BufferCopy region{};																//
-		region.setSize(byteSize).setDstOffset(dstOffset);																//
+		region.setSize(bytesT).setDstOffset(dstBuffer.sizeBytes);																//
 		//
 		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
-		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle, byteSize, mask);
-
-}
-
-void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &indices,vk::DeviceSize byteSize,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer,uint32_t dstOffset)
-{
-
-		BarrierMasks mask{};
-
-			mask.srcStage = vk::PipelineStageFlagBits2::eTransfer;
-			mask.srcAccess = vk::AccessFlagBits2::eTransferWrite;
-			mask.dstStage = vk::PipelineStageFlagBits2::eAllGraphics ;
-			mask.dstAccess = vk::AccessFlagBits2::eShaderRead;
+		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle, bytesT, mask);
 		
-		//createStagingBuffer(byteSize, stagingBuffer);
 
-		std::memcpy(stagingBuffer.allocInfo.pMappedData, indices.data(), byteSize);
-		//flush it down the gpu drain so it gets visible for gpu 
-		vmaFlushAllocation(allocator, stagingBuffer.alloc, 0, byteSize);
-
-		vk::BufferCopy region{};																//
-		region.setSize(byteSize).setDstOffset(dstOffset);																//
-		//
-		cmdBuffer.copyBuffer(stagingBuffer.handle, dstBuffer.handle, region);	//
-		vkutils::setPipelineBarrier(cmdBuffer,dstBuffer.handle,byteSize, mask);
-
+		dstBuffer.sizeBytes += bytesT;
 }
- 
+template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
+template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
+template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<SkinnedVertex> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
 
