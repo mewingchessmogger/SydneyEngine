@@ -42,5 +42,6 @@ class Engine{
     void initialize();
     void updateCamera(Camera& cam, EngineMode context, float sens = 0.3);
     void updatePhysics();
-    void prepareRenderables(Scene& scn);
+    void prepareRenderables(Scene &scn, AssetRegistry &astReg);
+    void prepareRenderables(Scene &scn);
 };

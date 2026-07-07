@@ -42,12 +42,14 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 }
 
 	
-	void VulkanStack::flushUploads(AssetRegistry& astReg){
+	bool VulkanStack::flushUploads(AssetRegistry& astReg){
 
+		bool upload = false;
 		for(auto& [name, staticModel] : astReg.staticModelMap){
 			if(staticModel.transientVertices.empty() || staticModel.transientIndices.empty()){
 					continue;
 				}
+			upload = true;
 				staticModel.setGlobalOffsets(res.vertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
 				
 				uploadToBufferT(staticModel.transientVertices, res.vertexBuffer);
@@ -60,6 +62,7 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 			if(skinnedModel.transientVertices.empty() || skinnedModel.transientIndices.empty()){
 				continue;
 			}
+			upload =true;
 			skinnedModel.setGlobalOffsets(res.skinnedVertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
 			
 			uploadToBufferT(skinnedModel.transientVertices, res.skinnedVertexBuffer);
@@ -68,7 +71,8 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 			skinnedModel.DestroyTransients();
 
 		}
-	
+		
+		return upload;
 	}
 
 bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
@@ -265,7 +269,6 @@ void VulkanStack::endFrame() {
 	currentFrame = (currentFrame + 1) % DESIRED_IMAGES_IN_FLIGHT;
 
 }
-
 void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto swapchainImage = res.swapchainImages[currentImgIndex];
@@ -273,6 +276,7 @@ void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 	DynUBO::Base dyn = DynUBO::Base{}
 		.setVert(res.vertexBuffer.address)
 		.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
+		.setSkinVert(res.skinnedVertexBuffer.address)
 		.setView(view)
 		.setProj(proj);//for the camera view and proj
 
@@ -284,7 +288,7 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 }
 
-void VulkanStack::render(Scene& scn, AssetRegistry &astReg){ 
+void VulkanStack::render(std::vector<Scene::RenderPkt>& pkts, AssetRegistry &astReg){ 
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto& renderTarget = res.renderTargetImages[currentImgIndex];
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.strideOfUBO};		
@@ -308,25 +312,33 @@ void VulkanStack::render(Scene& scn, AssetRegistry &astReg){
 
 	rdr.beginRenderPass(cmdBuffer, renderTarget.view, renderTarget.extent2D,res.zBufferImages[currentFrame]);
 	
-	cmdBuffer.bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics, 
-		pipelines.phong.layout, 
-		0,                                // firstSet
-		res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
-		dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
-	);
-	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 
-	for(auto& object : scn.gameObjects){
-		auto& mdl = astReg.getStaticModelFromID(0);
-		for(auto& mesh: mdl.meshes){
-			PushC::Model pc{};
-			glm::mat4 finalMatrix = glm::mat4{1.0f} * object.model *mdl.normalizeMat;// mesh.modelMat
-			pc.setModel(finalMatrix);
-			pc.setVertexOffset(mdl.baseOffsetVBO);
-			rdr.renderMesh(cmdBuffer, pipelines.phong, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetVBO + mesh.baseIndexLocalIBO);
+	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
+	vk::Pipeline cachedPipeline{};
+	for(auto& pkt: pkts){
+		PipelineBundle& pipeline = (pkt.type == Scene::Mesh::STATIC) ? pipelines.phong : pipelines.skinnedPhong;
+		if (cachedPipeline != pipeline.handle){
+			cmdBuffer.bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics, 
+				pipeline.layout, 
+				0,                                // firstSet
+				res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)], 
+				dynOffset // no descritporsets2 shit cuz u gotta use volk i dont got it working
+			);
+			cachedPipeline = pipeline.handle;
 		}
+		
+		rdr.renderMesh(cmdBuffer, pipeline, pkt.pc,renderTarget.extent2D, pkt.indexCount, pkt.offsetIBO);
 	}
+
+	// for(auto& mesh: mdl.meshes){
+	// 	PushC::Model pc{};
+	// 	glm::mat4 finalMatrix = glm::mat4{1.0f} * object.model *mdl.normalizeMat;// mesh.modelMat
+	// 	pc.setModel(finalMatrix);
+	// 	pc.setVertexOffset(mdl.baseOffsetVBO);
+	// 	rdr.renderMesh(cmdBuffer, pipelines.phong, pc, renderTarget.extent2D, mesh.indexCount, mdl.baseOffsetVBO + mesh.baseIndexLocalIBO);
+	// }
+
 
 
 	

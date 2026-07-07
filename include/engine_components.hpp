@@ -52,9 +52,8 @@ struct Script{
 };
 
 struct Renderable{
-    uint32_t meshID{};
-
-    REFLECT_1(meshID);
+    uint32_t id{};
+    REFLECT_1(id);
 };
 
 struct Parent{

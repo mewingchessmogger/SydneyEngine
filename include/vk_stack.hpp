@@ -79,9 +79,8 @@ class VulkanStack{
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
-        //void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
-
-        
+        void initSkinPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+        // void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
 
         PipelineBundle createPipeline(const std::vector<uint32_t> &vertSpv, const std::vector<uint32_t> &fragSpv, CreatePipelineInfo p);
 
@@ -103,15 +102,19 @@ class VulkanStack{
 
         void endFrame();
 
+        void earlyEndFrame();
+
         void updateUBO(glm::mat4& view, glm::mat4& proj);
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
+
+        void render(std::vector<Scene::RenderPkt> &pkts, AssetRegistry &astReg);
 
         void render(Scene &scn, AssetRegistry &astReg);
 
 
 
-        void flushUploads(AssetRegistry &astReg);
+        bool flushUploads(AssetRegistry &astReg);
 
     private:
     

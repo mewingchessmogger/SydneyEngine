@@ -3,7 +3,9 @@
 #include "glm/mat4x4.hpp"
 #include "vertex_def.hpp"
 #include <string>
+#include <variant>
 class AssetRegistry{
+    
     public:
     
 
@@ -20,8 +22,8 @@ class AssetRegistry{
         std::vector<StaticMeshData> meshes{};
         glm::mat4 normalizeMat{1.0f};
         std::string name{};
-        uint32_t baseOffsetVBO{};
-        uint32_t baseOffsetIBO{};
+        uint32_t baseOffsetBytesVBO{};
+        uint32_t baseOffsetBytesIBO{};
 
         void DestroyTransients(){
             transientVertices.clear();
@@ -31,8 +33,8 @@ class AssetRegistry{
         }
 
         void setGlobalOffsets(uint32_t availOffsetGlobalVBO,uint32_t availOffsetGlobalIBO){
-            baseOffsetVBO = availOffsetGlobalVBO;
-            baseOffsetIBO = availOffsetGlobalIBO;
+            baseOffsetBytesVBO = availOffsetGlobalVBO;
+            baseOffsetBytesIBO = availOffsetGlobalIBO;
         }
 			
     };
@@ -55,9 +57,9 @@ class AssetRegistry{
         glm::mat4 normalizeMat{1.0f};
         std::string name{};
 
-        uint32_t baseOffsetSkinnedVBO{};
-        uint32_t baseOffsetIBO{};
-        uint32_t baseOffsetBoneBuffer{};
+        uint32_t baseOffsetBytesSkinnedVBO{};
+        uint32_t baseOffsetBytesIBO{};
+        uint32_t baseOffsetBytesBoneBuffer{};
 
         
         void DestroyTransients(){
@@ -68,8 +70,8 @@ class AssetRegistry{
         }
 
          void setGlobalOffsets(uint32_t availOffsetGlobalSkinnedVBO,uint32_t availOffsetGlobalIBO){
-            baseOffsetSkinnedVBO = availOffsetGlobalSkinnedVBO;
-            baseOffsetIBO = availOffsetGlobalIBO;
+            baseOffsetBytesSkinnedVBO = availOffsetGlobalSkinnedVBO;
+            baseOffsetBytesIBO = availOffsetGlobalIBO;
         }
     };
     
@@ -81,5 +83,19 @@ class AssetRegistry{
 
     StaticModel& getStaticModelFromID(uint32_t id);
     SkinnedModel& getSkinnedModelFromID(uint32_t id);
+
+    bool isSkinned(uint32_t id){
+        
+        if(IntegerToStringStaticModelMap.find(id) != IntegerToStringStaticModelMap.end()){
+            return false;
+        }
+        else if (IntegerToStringSkinnedModelMap.find(id) != IntegerToStringSkinnedModelMap.end()){
+            return true;
+        }
+        assert(0);
+        return false;
+    }
+    
+    
 
 };

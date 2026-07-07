@@ -4,7 +4,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 // Define the structure of a single vertex
-struct Vertex {
+struct SkinnedVertex {
     vec3 pos;
     float pad0;
     vec3 normal;
@@ -12,6 +12,8 @@ struct Vertex {
     vec2 uv;
     float pad2;
     float pad3;
+    ivec4 boneIDs;
+    vec4 weights;
 };
 
 
@@ -20,8 +22,8 @@ layout(buffer_reference, scalar) readonly buffer IndexBuffer {
     uint indices[];
 };
 
-layout(buffer_reference, scalar) readonly buffer VertexBuffer {
-    Vertex vertices[];
+layout(buffer_reference, scalar) readonly buffer SkinnedVertexBuffer {
+    SkinnedVertex vertices[];
 };
 
 // Your Push Constant matches your C++ struct exactly
@@ -48,14 +50,14 @@ layout(location = 0) out vec3 outNormal;
 void main() {
     // Cast the raw 64-bit uints to our buffer types
     IndexBuffer  indexBuffer  = IndexBuffer(ubo.indxAdress);
-    VertexBuffer vertexBuffer = VertexBuffer(ubo.vertAdress);
+    SkinnedVertexBuffer vertexBuffer = SkinnedVertexBuffer(ubo.skinnedVertexAdress);
 
     // Step 1: Fetch the index using the hardware counter
     uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
 
     // Step 2: Fetch the actual vertex data using that index
-    Vertex v = vertexBuffer.vertices[vIndex];
-
+    SkinnedVertex v = vertexBuffer.vertices[vIndex];
+    
     // Step 3: Project to Clip Space
     gl_Position = ubo.proj * ubo.view * pc.model * vec4(v.pos, 1.0);
 

@@ -14,6 +14,7 @@ void Engine::run(){
     AssetLoader ldr{};
    
     ldr.loadScene("models/cube_gltf.glb");
+    ldr.loadScene("models/dragon.glb");
     ldr.loadScene("models/shibahu.glb");
     Scene scn{};
     
@@ -57,20 +58,23 @@ void Engine::run(){
             game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, ctx);
             updatePhysics();
         }
-
+        
         
         fileWatcher.checkDirectoryPeriodically();
         
-        prepareRenderables(scn);
+        prepareRenderables(scn, ldr.getAssetReg());
         
         if (stk.acquireAndValidateImage(plt))
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
-            stk.flushUploads(ldr.getAssetReg());
+            if (stk.flushUploads(ldr.getAssetReg())){
+                stk.endFrame();
+                continue;
+            };
             stk.updateUBO(activeCam.view, activeCam.proj);
-            stk.render(scn, ldr.getAssetReg());
-            //begin render asss
+            stk.render(scn.packets, ldr.getAssetReg());
+            
 
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport(); //viewport in imgui
@@ -95,7 +99,8 @@ void Engine::run(){
     plt.shutdown();
 }
 
-//transform, 
+
+
 void Engine::initialize(){
  
     plt.initWindow(stk.WIDTH,stk.HEIGHT);
@@ -120,6 +125,11 @@ void Engine::initialize(){
         shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true),
         shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true)
     );
+    stk.initSkinPhongPipeline(
+        shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true),
+        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true)
+    );
+    
 
     std::cout << "Done!\n";
 
@@ -139,9 +149,6 @@ void Engine::initialize(){
 }
 
 
-
-
-
 void Engine::updatePhysics()
 {
         /*you get a copy of vector filled with refs*/
@@ -156,19 +163,57 @@ void Engine::updatePhysics()
         }
 }
 
-void Engine::prepareRenderables(Scene& scn)
+void Engine::prepareRenderables(Scene& scn, AssetRegistry& astReg)
 {
     auto [transPool, rendPool] = reg.getPools<Transform, Renderable>();
 
+    scn.packets.clear();
 
     /*FILL renderobjects array*/
-    scn.gameObjects.resize((uint32_t)rendPool.count);
     for (int i{}; i < rendPool.count; i++){
         ECS::Entity e = rendPool.dense[i];
         const Renderable& rend = rendPool.data[i];
-        scn.gameObjects[i].meshID = rend.meshID;
-        scn.gameObjects[i].model = transPool.get(e).matrix();
         
+        if(astReg.isSkinned(rend.id)){
+            
+            
+            AssetRegistry::SkinnedModel& mdl = astReg.getSkinnedModelFromID(rend.id);
+            printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesSkinnedVBO/sizeof(SkinnedVertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
+            glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
+            Scene::RenderPkt pkt{};
+            pkt.pc.modelSpace = modelMat;
+            pkt.type = Scene::Mesh::SKINNED;
+            pkt.pc.offsetVBO = mdl.baseOffsetBytesSkinnedVBO /sizeof(SkinnedVertex);
+
+            for(auto& mesh : mdl.meshes){
+                pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global
+                
+                pkt.indexCount = mesh.indexCount;
+                pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                scn.packets.push_back(pkt);
+            }
+        }
+        else{
+            
+            AssetRegistry::StaticModel& mdl = astReg.getStaticModelFromID(rend.id);
+            printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesVBO/sizeof(Vertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
+            glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
+            Scene::RenderPkt pkt{};
+            pkt.pc.modelSpace = modelMat;
+            pkt.type = Scene::Mesh::STATIC;
+            pkt.pc.offsetVBO = mdl.baseOffsetBytesVBO / sizeof(Vertex);
+
+            for(auto& mesh : mdl.meshes){
+                pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global
+                pkt.indexCount = mesh.indexCount;
+                pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                scn.packets.push_back(pkt);
+            }
+        }
+
+
     }
+
+
 }
 

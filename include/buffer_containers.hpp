@@ -17,9 +17,8 @@ namespace PushC {
     struct Model {
         glm::mat4 model{1.0f};
         uint32_t offsetVBO{};
-        uint32_t entityID{};
         Model& setModel(const glm::mat4& m) { model = m; return *this; }
-        Model& setVertexOffset(const uint32_t m) { offsetVBO = m; return *this;}
+        Model& setVertexBufferOffset(const uint32_t m) { offsetVBO = m; return *this;}
     };
 
 

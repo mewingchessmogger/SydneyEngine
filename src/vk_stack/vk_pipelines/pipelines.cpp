@@ -43,9 +43,34 @@ void VulkanStack::initPhongPipeline(std::vector<uint32_t>&& vertSpv, std::vector
 		.setDescSetLayout({res.descriptorSetLayouts[2]});//res.descriptorSetLayouts[0], res.descriptorSetLayouts[1],
 		
 		pipelines.phong = createPipeline(vertSpv,fragSpv,pInfo);
-		
+	
 }
 
+void VulkanStack::initSkinPhongPipeline(std::vector<uint32_t>&& vertSpv, std::vector<uint32_t>&& fragSpv){
+	
+	
+
+	CreatePipelineInfo pInfo{};
+	
+	pInfo
+		.setClrAttachCount(1)
+		.setClrFormat(res.swapchainImages[0].format)
+		.setDepthFormat(vk::Format::eD32Sfloat)
+		.setIsDepthPass(false)
+		.setTopology(vk::PrimitiveTopology::eTriangleList)
+		.setExtent(res.swapchainImages[0].extent2D)
+		.setPolyMode(vk::PolygonMode::eFill)
+		.setFrontFace(vk::FrontFace::eCounterClockwise)
+		.setBytesPC(sizeof(PushC::Model))
+		.setStagePC(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
+		.setDepthWrite(vk::True)
+		.setDepthTest(vk::True)
+		.setBlendState(false, true)
+		.setDescSetLayout({res.descriptorSetLayouts[2]});//res.descriptorSetLayouts[0], res.descriptorSetLayouts[1],
+		
+		pipelines.skinnedPhong = createPipeline(vertSpv,fragSpv,pInfo);
+	
+}
 // void VulkanStack::initPickPipeline(std::vector<uint32_t>&& vertSpv, std::vector<uint32_t>&& fragSpv){
 	
 	

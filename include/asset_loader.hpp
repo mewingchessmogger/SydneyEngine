@@ -11,7 +11,7 @@
 class AssetLoader{
     
     AssetRegistry reg{};
-    glm::vec3 targetSize = {0.5,0.5,0.5};
+    float targetScale = 0.5;
 
     static constexpr int MAX_BONES_PER_VERTEX = 4;
     
@@ -45,7 +45,7 @@ class AssetLoader{
     std::map<std::string, uint32_t> boneNameToIndexMap{};
     uint32_t StaticModelCounter{};
     uint32_t SkinnedModelCounter{};
-
+    uint32_t mdlCounter{};
 
     public: 
     void parseScene(const aiScene *scn);

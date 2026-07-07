@@ -5,7 +5,7 @@
 
 void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl)
 {
-    printf("Number of meshes: %d \n", scn->mNumMeshes);
+    
     int total_vertices{};
     int total_indices{};
     aiVector3D minVertex{1e10f, 1e10f, 1e10f};
@@ -52,21 +52,18 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& md
         total_indices  +=  num_indices;
         mdl.meshes.push_back(meshData);
     }
-
-
-    printf("min point of model: (%f, %f, %f ) ,  max point: (%f, %f, %f)\n", minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z  );
-    glm::vec3 diffVertex{maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z};
-
-
-    glm::vec3 actualScale = targetSize / diffVertex;
-    mdl.normalizeMat = glm::scale(mdl.normalizeMat, actualScale);
-    printf("actual scale to be made: (%f, %f, %f ) \n", actualScale.x,actualScale.y, actualScale.z);
+    
+    
+    float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
+    
+    float desiredScalingFactor = targetScale/maxDimension;
+    mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
     meshBaseVertex.clear();
     meshBaseVertex.shrink_to_fit();
+    printf("\nstatic_model: %s, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ), scaleFactor: %f . \n\n", mdl.name.c_str(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
 }
 
 void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& mdl){
-    printf("Number of meshes: %d \n", scn->mNumMeshes);
     int total_vertices{};
     int total_indices{};
     int total_bones{};
@@ -124,11 +121,17 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& m
         total_bones += num_bones;
         mdl.meshes.push_back(skinnedMeshData);
     }
-    printf("min point of model: (%f, %f, %f ) ,  max point: (%f, %f, %f)\n", minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z  );
 
+    float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
+
+    float desiredScalingFactor = targetScale/maxDimension;
+    mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
     meshBaseVertex.clear();
     meshBaseVertex.shrink_to_fit();
+    printf("\nskinned_model: %s, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ),scaleFactor: %f . \n\n", mdl.name.c_str(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
+
 }
+
 SkinnedVertex AssetLoader::parseSkinnedVertex(const aiMesh *mesh, int i){
         SkinnedVertex v{};
         v.normal = {1.0,0.0,0.0};
@@ -206,14 +209,13 @@ void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
         
         parseMeshes(scn, mdl);
         
-        printf("STATIC MODEL (Scene actually) NAME IS %s !!!\n", mdl.name.c_str());
 
-        if(reg.IntegerToStringStaticModelMap.find(StaticModelCounter) != reg.IntegerToStringStaticModelMap.end()){
+        if(reg.IntegerToStringStaticModelMap.find(mdlCounter) != reg.IntegerToStringStaticModelMap.end()){
             printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
             assert(0);
         }
-
-        reg.IntegerToStringStaticModelMap[StaticModelCounter++] = mdl.name;
+        printf("model: %s, id: %d\n", mdl.name.c_str(), mdlCounter);
+        reg.IntegerToStringStaticModelMap[mdlCounter++] = mdl.name;
         reg.staticModelMap[mdl.name] = std::move(mdl);
     }
 
@@ -222,14 +224,14 @@ void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
         mdl.name = path;
         
         parseMeshes(scn, mdl);
-        printf("SKINNED MODEL (Scene actually) NAME IS %s !!!\n", mdl.name.c_str());
 
 
-        if(reg.IntegerToStringSkinnedModelMap.find(SkinnedModelCounter) != reg.IntegerToStringSkinnedModelMap.end()){
+        if(reg.IntegerToStringSkinnedModelMap.find(mdlCounter) != reg.IntegerToStringSkinnedModelMap.end()){
             printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
             assert(0);
         }
-        reg.IntegerToStringSkinnedModelMap[SkinnedModelCounter++] = mdl.name;
+        printf("model: %s, id: %d\n", mdl.name.c_str(), mdlCounter);
+        reg.IntegerToStringSkinnedModelMap[mdlCounter++] = mdl.name;
         reg.skinnedModelMap[mdl.name] = std::move(mdl);
     }       
 

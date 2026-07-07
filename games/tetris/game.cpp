@@ -8,14 +8,19 @@ struct Bullet{
 
 void Tetris::init(ECS::Registry& reg, GameContext& ctx){
 	int floor = reg.createEntity();
-	int bullet = reg.createEntity();
 	Renderable r{};
-	r.meshID = 1;
+	r.id = 0;
 	Transform t{};
 	t.position = glm::vec3(0.0, -1.0, 0.0);
+	t.scale = glm::vec3(2.0,1.0,2.0);
 	reg.add(floor, t , r);
-	reg.createPool<Bullet>();
-	reg.emplace<Bullet>(bullet);
+	
+	int woman = reg.createEntity();
+	t.position = glm::vec3(3.0, -1.0, 0.0);
+	t.scale = glm::vec3(3.0,3.0,3.0);
+
+	r.id = 2;
+	reg.add(woman,t, r);
 }
 
 void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg, GameContext& ctx)
@@ -40,7 +45,7 @@ void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& 
 			p.acc = {0.0,-4.0,0.0};
 			p.damping = 0.5;
 			p.inverseMass = 10;
-			Renderable R = Renderable{0};
+			Renderable R = {1};
 			
 			reg.add(dragon,T,p,R);
 
