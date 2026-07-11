@@ -28,7 +28,7 @@ class VulkanStack{
         bool frameBufferResized = false;
         float deltaT{};
         uint32_t currentImgIndex{};
-        int currentFrame{};
+        uint32_t currentFrame{};
         VulkanContext ctx;
         Renderer rdr{};
         ResManager res{};

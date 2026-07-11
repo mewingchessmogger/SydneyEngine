@@ -30,17 +30,18 @@ layout(push_constant) uniform Constants {
     uint offsetVBO;
 } pc;
 
-layout(set = 0, binding = 0) uniform UniformBufferObject {
-    mat4 model;
+layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer CameraData{
     mat4 view;
     mat4 proj;
+};
+
+layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 lightView;
     mat4 lightOrtho;
     uint64_t indxAdress;
     uint64_t vertAdress;
     uint64_t skinnedVertexAdress;
-    uint64_t boneMatrixAdress;
-    uint pickedID;
+    uint64_t projAddress;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;
@@ -57,7 +58,9 @@ void main() {
     Vertex v = vertexBuffer.vertices[vIndex];
 
     // Step 3: Project to Clip Space
-    gl_Position = ubo.proj * ubo.view * pc.model * vec4(v.pos, 1.0);
+    CameraData cam = CameraData(ubo.projAddress);
+    
+    gl_Position = cam.proj * cam.view * pc.model * vec4(v.pos, 1.0);
 
     
     mat3 normalMat = mat3(transpose(inverse(pc.model)));

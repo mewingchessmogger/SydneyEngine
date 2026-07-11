@@ -96,6 +96,7 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& m
         
         for(int b{}; b < num_bones; b++){
             aiBone* bone = mesh->mBones[b];
+            
             int boneID = getBoneID(bone);
             for(int w{}; w < bone->mNumWeights; w++){
                 aiVertexWeight weight = bone->mWeights[w];
@@ -164,6 +165,7 @@ int AssetLoader::getBoneID(const aiBone* bone){
     if(boneNameToIndexMap.find(name) == boneNameToIndexMap.end()){
         boneID = boneNameToIndexMap.size();
         boneNameToIndexMap[name] = boneID;
+        
     }
     else{
         boneID = boneNameToIndexMap[name];

@@ -60,3 +60,13 @@ ALLTSÅ MÅSTE DEM BLI AVHUGGNA, ÄVEN OM DE INTE ÄNDRAS KAN DERAS VTABLE ADRES
 
 
 
+
+
+ladda upp TRS positionerna i en buffer, indexera in via trsBuffer[animatedModelOffset + whichAnimationOffset + boneID]
+struct Animation{
+    float animationTicksPerSecond;
+    float animationDuration;
+    float animationTime;
+    int whichAnimation;
+    
+} 

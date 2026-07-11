@@ -34,8 +34,8 @@ struct SkinnedVertex {
             if(weights[i] == 0.0f){
                 boneIDs[i] = boneID;
                 weights[i] = weight;
+                return;
             }
-            return;
         }
 
         assert(0);

@@ -28,27 +28,32 @@ namespace PushC {
 
 namespace DynUBO {
     struct Base {
-        glm::mat4 model{1.0f};
-        glm::mat4 view{1.0f};
-        glm::mat4 proj{1.0f};
+ 
         glm::mat4 lightView{1.0f};
         glm::mat4 lightOrtho{1.0f};
         uint64_t indxAdress{0};
         uint64_t vertAdress{0};
         uint64_t skinnedVertAdress{0}; 
-        uint64_t boneMatrixAdress{0};
+        uint64_t cameraDataAdress{0};
         
-        uint32_t pickedID{};
+       
         
-        Base& setModel(const glm::mat4& m)       { model = m;  return *this; }
-        Base& setView(const glm::mat4& v)       { view = v;  return *this; }
-        Base& setProj(const glm::mat4& p)       { proj = p;  return *this; }
+       
         Base& setLightView(const glm::mat4& lv) { lightView = lv; return *this; }
         Base& setLightOrtho(const glm::mat4& lo){ lightOrtho = lo; return *this; }
         Base& setIndx(uint64_t addr)            { indxAdress = addr; return *this; }
         Base& setVert(uint64_t addr)            { vertAdress = addr; return *this; }
         Base& setSkinVert(uint64_t addr)            { skinnedVertAdress = addr; return *this; }
-        Base& setBoneMatricesAddr(uint64_t addr)            { boneMatrixAdress = addr; return *this; }    
+        Base& setProjAddress(uint64_t addr)            { cameraDataAdress = addr; return *this; }    
+    };
+
+    struct CameraData{
+        glm::mat4 view{};
+        glm::mat4 proj{};
+    };
+    
+    struct BoneMat{
+        std::array<glm::mat4,128> boneMatrices{};
     };
 
     struct ClrPick{

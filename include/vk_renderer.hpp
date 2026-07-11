@@ -8,12 +8,7 @@ class Renderer {
     public:
     void beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgView, vk::Extent2D swapchainExtent, AllocatedImage zBufferImage);
     void renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Scene::Pkt_PC &pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO);
-    void recordDraw(vk::CommandBuffer cmdBuffer, vk::Pipeline pipeline, vk::Extent2D swapchainExtent, float extentH, float extentW);
-
-    //void recordDragon(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, PushC::Base pc, vk::Extent2D extent);
-    //void recordRender(vk::CommandBuffer cmdBuffer, uint64_t indxAdress, uint64_t vertAdress, PipelineBundle pipeline, PushC::Model pc, vk::Extent2D extent);
-    void EvalGraph();
-
+    
     void endRenderPass(vk::CommandBuffer cmdBuffer){
         cmdBuffer.endRendering();}
 };

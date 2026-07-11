@@ -25,6 +25,10 @@ layout(buffer_reference, scalar) readonly buffer IndexBuffer {
 layout(buffer_reference, scalar) readonly buffer SkinnedVertexBuffer {
     SkinnedVertex vertices[];
 };
+layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer CameraData{
+    mat4 view;
+    mat4 proj;
+};
 
 // Your Push Constant matches your C++ struct exactly
 layout(push_constant) uniform Constants {
@@ -33,20 +37,17 @@ layout(push_constant) uniform Constants {
 } pc;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
     mat4 lightView;
     mat4 lightOrtho;
     uint64_t indxAdress;
     uint64_t vertAdress;
     uint64_t skinnedVertexAdress;
-    uint64_t boneMatrixAdress;
-    uint pickedID;
+    uint64_t projAddress;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;
-
+layout(location = 1) out flat ivec4 boneIDs;
+layout(location = 2) out vec4 weights;
 void main() {
     // Cast the raw 64-bit uints to our buffer types
     IndexBuffer  indexBuffer  = IndexBuffer(ubo.indxAdress);
@@ -58,10 +59,12 @@ void main() {
     // Step 2: Fetch the actual vertex data using that index
     SkinnedVertex v = vertexBuffer.vertices[vIndex];
     
-    // Step 3: Project to Clip Space
-    gl_Position = ubo.proj * ubo.view * pc.model * vec4(v.pos, 1.0);
+    CameraData cam = CameraData(ubo.projAddress);
 
-    
+    gl_Position = cam.proj * cam.view * pc.model * vec4(v.pos, 1.0);
+    boneIDs = v.boneIDs;
+    weights = v.weights;
+
     mat3 normalMat = mat3(transpose(inverse(pc.model)));
     outNormal = normalize(normalMat * v.normal);
 

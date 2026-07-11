@@ -126,7 +126,15 @@ static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos){
         plt->inputState.lastY = ypos;
         return;
     }
+    static bool isFirstFrame = true;
 
+    if(isFirstFrame){
+        
+        plt->inputState.lastX = xpos;
+        plt->inputState.lastY = ypos;
+        isFirstFrame = false;
+        return;
+    }
     plt->inputState.mouseDX  = xpos - plt->inputState.lastX;
     plt->inputState.mouseDY  = plt->inputState.lastY - ypos;
 

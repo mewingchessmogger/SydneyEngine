@@ -43,13 +43,10 @@ class AssetLoader{
     std::vector<BoneVertexData> vertexToBones{};
     std::vector<int> meshBaseVertex{};
     std::map<std::string, uint32_t> boneNameToIndexMap{};
-    uint32_t StaticModelCounter{};
-    uint32_t SkinnedModelCounter{};
     uint32_t mdlCounter{};
 
     public: 
-    void parseScene(const aiScene *scn);
-    void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl);
+    void parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl);
     void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);

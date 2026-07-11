@@ -8,14 +8,15 @@
 #include "vertex_def.hpp"
 #include "buffer_containers.hpp"
 struct AllocatedBuffer {
-    vk::Buffer handle{};
-    VmaAllocation alloc{};
+	VmaAllocation alloc{};
     VmaAllocationInfo allocInfo{};
+    vk::Buffer handle{};
 	vk::DeviceAddress address{};
 	vk::DeviceSize sizeBytes{};
 	vk::DeviceSize capacityBytes{};
-	
+	uint32_t stride{};
 };
+
 
 struct AllocatedImage {
     vk::Image handle{};
@@ -105,6 +106,13 @@ class ResManager{
 	AllocatedBuffer skinnedVertexBuffer{};
 	AllocatedBuffer boneBuffer{};
 	AllocatedBuffer uniformBuffer{};
+	AllocatedBuffer boneMatUniformBuffer{};
+	
+	struct {
+		AllocatedBuffer cameraData{};
+
+	} dynUBOs;
+
 	AllocatedBuffer clrPickBuffer{};
 	AllocatedBuffer GameObjUBO{};
 	std::vector<AllocatedBuffer> zombieBuffers{};
@@ -123,7 +131,8 @@ class ResManager{
 	std::vector<AllocatedImage> viewportImages{};
 	AllocatedImage colorPickImage{};
 
-	uint32_t strideOfUBO{};
+	// uint32_t strideOfUBO{};
+	// uint32_t strideOfBoneMatUBO{};
 
     void forgeImage(vk::Device device, vk::Format format, uint32_t width, uint32_t height, vk::ImageUsageFlags imageUsageIntent, AllocatedImage& img, vk::ImageAspectFlags aspectMask, std::string_view type, vk::ImageViewType viewtype, uint32_t arrLayers, bool cubeCompatible);
     void requestImage(vk::Device device, ImgType type, AllocatedImage& img, int imgW, int imgH);
@@ -133,10 +142,13 @@ class ResManager{
 
     void createBuffer(BufferType type, unsigned long byteCapacity, AllocatedBuffer &buffer);
 
+    uint32_t getCurrStride(vk::DeviceSize sizeofBuffer, vk::DeviceSize minSizeUBO);
 
+
+
+    void createDynamicUBO(vk::Device device, uint32_t uboSize, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight, AllocatedBuffer &bufferUBO);
 
     void initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint32_t desiredImagesInFlight);
-
 
     void initDescriptorPoolAndSets(vk::Device device, uint32_t maxImageAmount, uint32_t maxSamplers);
 	void initAndUpdateSamplers(vk::Device device, float maxAnisotropy);

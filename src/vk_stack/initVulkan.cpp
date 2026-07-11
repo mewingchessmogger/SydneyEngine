@@ -207,7 +207,7 @@ void VulkanStack::initUpdateDescriptorSets(){
     uboBufferInfo
         .setBuffer(res.uniformBuffer.handle)
         .setOffset(0)            // Dynamic UBOs start at 0; offset is provided at bind time
-        .setRange(res.strideOfUBO);  // IMPORTANT: The size of ONE frame's data
+        .setRange(res.uniformBuffer.stride);  // IMPORTANT: The size of ONE frame's data
 
     vk::WriteDescriptorSet uboWrite{};
             std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
