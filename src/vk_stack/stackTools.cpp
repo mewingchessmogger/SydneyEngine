@@ -1,7 +1,6 @@
 #include "vk_stack.hpp"
 #include "platform_glfw.hpp"
 #include "vertex_def.hpp"
-#include "scene.hpp"
 void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore,
 	vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask,vk::Queue graphicsQueue,vk::Fence fence) {
 
@@ -271,19 +270,24 @@ void VulkanStack::endFrame() {
 }
 
 
-void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
+void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj, std::array<glm::mat4, 256>& bones){
 	DynUBO::CameraData cam{};
 	cam.view = view;
 	cam.proj = proj;
 	uint32_t camOffset = currentFrame * res.dynUBOs.cameraData.stride;
 	std::memcpy(static_cast<uint8_t*>(res.dynUBOs.cameraData.allocInfo.pMappedData) + camOffset, &cam, sizeof(cam));
 
+	uint32_t boneOffset = currentFrame * res.dynUBOs.boneMats.stride;
+	std::memcpy(static_cast<uint8_t*>(res.dynUBOs.boneMats.allocInfo.pMappedData) + boneOffset, bones.data(), sizeof(bones));
+
+	// 
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
 	DynUBO::Base dyn = DynUBO::Base{}
 		.setVert(res.vertexBuffer.address)
 		.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
 		.setSkinVert(res.skinnedVertexBuffer.address)
 		.setProjAddress(res.dynUBOs.cameraData.address + camOffset);
+		dyn.boneMatAddress = res.dynUBOs.boneMats.address + boneOffset;
 
 	std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 
@@ -295,7 +299,7 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 }
 
-void VulkanStack::render(std::vector<Scene::RenderPkt>& pkts, AssetRegistry &astReg){ 
+void VulkanStack::render(std::vector<RenderPkt>& pkts, AssetRegistry &astReg){ 
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto& renderTarget = res.renderTargetImages[currentImgIndex];
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
@@ -323,7 +327,7 @@ void VulkanStack::render(std::vector<Scene::RenderPkt>& pkts, AssetRegistry &ast
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
 	for(auto& pkt: pkts){
-		PipelineBundle& pipeline = (pkt.type == Scene::Mesh::STATIC) ? pipelines.phong : pipelines.skinnedPhong;
+		PipelineBundle& pipeline = (pkt.type == Mesh::STATIC) ? pipelines.phong : pipelines.skinnedPhong;
 		if (cachedPipeline != pipeline.handle){
 			cmdBuffer.bindDescriptorSets(
 				vk::PipelineBindPoint::eGraphics, 

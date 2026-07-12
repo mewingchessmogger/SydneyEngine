@@ -124,7 +124,7 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 	skinnedVertexBuffer.address = device.getBufferAddress({skinnedVertexBuffer.handle});
 
 	createDynamicUBO(device,sizeof(DynUBO::Base), minSizeUBO, desiredImagesInFlight, uniformBuffer);
-	createDynamicUBO(device,sizeof(DynUBO::BoneMat), minSizeUBO, desiredImagesInFlight, boneMatUniformBuffer);
+	createDynamicUBO(device,sizeof(DynUBO::BoneMat), minSizeUBO, desiredImagesInFlight, dynUBOs.boneMats);
 	createDynamicUBO(device,sizeof(DynUBO::CameraData), minSizeUBO, desiredImagesInFlight, dynUBOs.cameraData);
 }
 

@@ -8,6 +8,7 @@
 #include "vertex_def.hpp"
 #include "asset_registry.hpp"
 #include "glm/vec3.hpp"
+#include "render_packet_def.hpp"
 class AssetLoader{
     
     AssetRegistry reg{};
@@ -43,15 +44,20 @@ class AssetLoader{
     std::vector<BoneVertexData> vertexToBones{};
     std::vector<int> meshBaseVertex{};
     std::map<std::string, uint32_t> boneNameToIndexMap{};
+    std::vector<aiMatrix4x4> boneOffsetMatrices{};
     uint32_t mdlCounter{};
-
+    
     public: 
+    std::vector<const aiScene*> scenes{};
     void parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl);
     void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);
     void parseScene(const aiScene *scn, std::string &path);
     void loadScene(std::string path);
+    void loadScene(const aiScene *scn, std::string path);
+    void processNodes(aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt pkt);
+    
     int getBoneID(const aiBone *bone);
     //void parseMeshes(const aiScene *scn);
     Vertex parseVertex(const aiMesh *mesh, int i);

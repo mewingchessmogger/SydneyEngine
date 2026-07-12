@@ -14,6 +14,8 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& md
     assert(!meshBaseVertex.size());
     meshBaseVertex.resize(scn->mNumMeshes);
     
+    
+
     for(int m{}; m < scn->mNumMeshes; m++){
         const aiMesh* mesh = scn->mMeshes[m];
         AssetRegistry::StaticMeshData meshData{};
@@ -73,6 +75,7 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& m
     assert(!meshBaseVertex.size());
     meshBaseVertex.resize(scn->mNumMeshes);
     
+
     for(int m{}; m < scn->mNumMeshes; m++){
         const aiMesh* mesh = scn->mMeshes[m];
         AssetRegistry::SkinnedMeshData skinnedMeshData{};
@@ -116,7 +119,7 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& m
         skinnedMeshData.name = mesh->mName.C_Str();
         skinnedMeshData.indexCount = num_indices;
         skinnedMeshData.baseIndexLocalIBO = total_indices;
-        //printf("mesh #%d Name: '%s', vertices: %d, indices: %d, bones: %d \n", i , mesh->mName.C_Str(), num_vertices,num_indices, num_bones);
+        
         total_vertices +=  num_vertices; 
         total_indices  +=  num_indices;
         total_bones += num_bones;
@@ -129,7 +132,13 @@ void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& m
     mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
     meshBaseVertex.clear();
     meshBaseVertex.shrink_to_fit();
-    printf("\nskinned_model: %s, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ),scaleFactor: %f . \n\n", mdl.name.c_str(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
+    mdl.boneMats = std::move(boneOffsetMatrices);
+    mdl.boneNameToIndexMap = std::move(boneNameToIndexMap);
+    boneOffsetMatrices.clear();
+    boneOffsetMatrices.shrink_to_fit();
+    boneNameToIndexMap.clear();
+
+    printf("\nskinned_model: %s, total bones: %d, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ),scaleFactor: %f\n\n", mdl.name.c_str(), boneNameToIndexMap.size(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
 
 }
 
@@ -165,7 +174,7 @@ int AssetLoader::getBoneID(const aiBone* bone){
     if(boneNameToIndexMap.find(name) == boneNameToIndexMap.end()){
         boneID = boneNameToIndexMap.size();
         boneNameToIndexMap[name] = boneID;
-        
+        boneOffsetMatrices.push_back(bone->mOffsetMatrix);
     }
     else{
         boneID = boneNameToIndexMap[name];
@@ -255,6 +264,19 @@ void AssetLoader::loadScene(std::string path)
     parseScene(getScene(path), path);
 
 }
+
+void AssetLoader::loadScene(const aiScene* scn, std::string path)
+{
+    parseScene(scn, path);
+
+}
+
+void AssetLoader::processNodes(aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt pkt)
+{
+    aiNode* root = scn->mRootNode;
+    
+}
+
 
 AssetRegistry& AssetLoader::getAssetReg()
 {

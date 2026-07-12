@@ -1,4 +1,5 @@
 #pragma once
+#include "field_defs.hpp"
 #include "glm/mat4x4.hpp"
 
 
@@ -28,23 +29,13 @@ namespace PushC {
 
 namespace DynUBO {
     struct Base {
- 
-        glm::mat4 lightView{1.0f};
-        glm::mat4 lightOrtho{1.0f};
-        uint64_t indxAdress{0};
-        uint64_t vertAdress{0};
-        uint64_t skinnedVertAdress{0}; 
-        uint64_t cameraDataAdress{0};
-        
+        FIELDS_UBO_BASE;
        
         
-       
-        Base& setLightView(const glm::mat4& lv) { lightView = lv; return *this; }
-        Base& setLightOrtho(const glm::mat4& lo){ lightOrtho = lo; return *this; }
         Base& setIndx(uint64_t addr)            { indxAdress = addr; return *this; }
         Base& setVert(uint64_t addr)            { vertAdress = addr; return *this; }
         Base& setSkinVert(uint64_t addr)            { skinnedVertAdress = addr; return *this; }
-        Base& setProjAddress(uint64_t addr)            { cameraDataAdress = addr; return *this; }    
+        Base& setProjAddress(uint64_t addr)            { projectionAddress = addr; return *this; }    
     };
 
     struct CameraData{
@@ -53,7 +44,7 @@ namespace DynUBO {
     };
     
     struct BoneMat{
-        std::array<glm::mat4,128> boneMatrices{};
+        std::array<glm::mat4,256> matrices{};
     };
 
     struct ClrPick{

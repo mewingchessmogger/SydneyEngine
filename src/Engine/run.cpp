@@ -1,5 +1,4 @@
 #include "engine.hpp"
-#include "asset_loader.hpp"
 using Particle = physics::Particle;
 void Engine::run(){
 
@@ -8,13 +7,15 @@ void Engine::run(){
     //models/shibahu.glb
     // ast.addUploadRequest("models/dragon.glb");
     // ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
-    AssetLoader ldr{};
    
     ldr.loadScene("models/cube_gltf.glb");//static
     ldr.loadScene("models/dragon.glb"); //static
-    ldr.loadScene("models/shibahu.glb"); //skinned 
-    Scene scn{};
-    
+    std::string path = "models/shibahu.glb";
+    const aiScene* skinScn = ldr.getScene(path);
+    ldr.loadScene(skinScn, path);
+    ldr.scenes.push_back(skinScn);
+
+    std::vector<RenderPkt> packets{};    
     reg.createPool<Particle>();
     reg.createPool<Transform>();
     reg.createPool<Renderable>();
@@ -63,7 +64,7 @@ void Engine::run(){
         
         fileWatcher.checkDirectoryPeriodically();
         
-        prepareRenderables(scn, ldr.getAssetReg());
+        prepareRenderables(packets);
         
         if (stk.acquireAndValidateImage(plt))
         {
@@ -73,8 +74,10 @@ void Engine::run(){
                 stk.endFrame();// TODO fix validation error 
                 continue;
             };
-            stk.updateUBO(activeCam.view, activeCam.proj);
-            stk.render(scn.packets, ldr.getAssetReg());
+            AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(2);
+
+            stk.updateUBO(activeCam.view, activeCam.proj,mdl.finalBoneMatrices);
+            stk.render(packets, ldr.getAssetReg());
             
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport(); //viewport in imgui

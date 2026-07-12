@@ -4,6 +4,8 @@
 #include "vertex_def.hpp"
 #include <string>
 #include <variant>
+#include "assimp/matrix4x4.h"
+#include <array>
 class AssetRegistry{
     
     public:
@@ -44,16 +46,18 @@ class AssetRegistry{
         std::string name{};
         uint32_t baseIndexLocalIBO{};
         uint32_t indexCount{};
-
+        
         // uint32_t inverseBindMatrixOffset{}; // Where this asset's matrices start in the flat vector
         // uint32_t boneCount{};
     };
 
     struct SkinnedModel{
+        std::array<glm::mat4, 256> finalBoneMatrices{};
         std::vector<SkinnedVertex> transientVertices{};
         std::vector<uint32_t> transientIndices{};
         std::vector<SkinnedMeshData> meshes{};
-        std::vector<glm::mat4> boneMats{};
+        std::vector<aiMatrix4x4> boneMats{};
+        std::map<std::string, uint32_t> boneNameToIndexMap{};
         glm::mat4 normalizeMat{1.0f};
         std::string name{};
 

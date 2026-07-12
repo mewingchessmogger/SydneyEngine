@@ -2,7 +2,7 @@
 #include "vk_renderer.hpp"
 #include "vk_barrier.hpp"
 #include "vertex_def.hpp"
-#include "scene.hpp"
+#include "render_packet_def.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgView,  vk::Extent2D swapchainExtent, AllocatedImage zBufferImage) {
@@ -51,7 +51,7 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 
 }
 
-void Renderer::renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Scene::Pkt_PC& pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO)
+void Renderer::renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Pkt_PC& pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO)
 {
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
 	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));

@@ -106,11 +106,10 @@ class ResManager{
 	AllocatedBuffer skinnedVertexBuffer{};
 	AllocatedBuffer boneBuffer{};
 	AllocatedBuffer uniformBuffer{};
-	AllocatedBuffer boneMatUniformBuffer{};
 	
 	struct {
 		AllocatedBuffer cameraData{};
-
+		AllocatedBuffer boneMats{};
 	} dynUBOs;
 
 	AllocatedBuffer clrPickBuffer{};

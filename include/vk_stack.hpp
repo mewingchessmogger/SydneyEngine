@@ -6,7 +6,7 @@
 #include "pipeline_builder.hpp"
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
-#include "scene.hpp"
+#include "render_packet_def.hpp"
 #include "asset_registry.hpp"
 #include "ecs_registry.hpp"
 #include "engine_components.hpp"
@@ -106,11 +106,13 @@ class VulkanStack{
 
         void updateUBO(glm::mat4& view, glm::mat4& proj);
 
+
+        void updateUBO(glm::mat4 &view, glm::mat4 &proj, std::array<glm::mat4, 256> &bones);
+
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 
-        void render(std::vector<Scene::RenderPkt> &pkts, AssetRegistry &astReg);
+        void render(std::vector<RenderPkt> &pkts, AssetRegistry &astReg);
 
-        void render(Scene &scn, AssetRegistry &astReg);
 
 
 
