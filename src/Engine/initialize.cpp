@@ -25,10 +25,10 @@ void Engine::initialize(){
         shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true),
         shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true)
     );
-    stk.initSkinPhongPipeline(
-        shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true),
-        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong_skin.frag"),true)
-    );
+    // stk.initSkinPhongPipeline(
+    //     shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true),
+    //     shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong_skin.frag"),true)
+    // );
     
 
     std::cout << "Done!\n";

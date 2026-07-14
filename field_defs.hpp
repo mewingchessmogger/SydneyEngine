@@ -4,7 +4,7 @@
         uint64_t vertAdress{0};\
         uint64_t skinnedVertAdress{0}; \
         uint64_t projectionAddress{0}; \
-        uint64_t boneMatAddress{};
+        //uint64_t boneMatAddress{};
 
 
 #else

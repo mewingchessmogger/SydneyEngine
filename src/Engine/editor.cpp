@@ -91,7 +91,6 @@ void Editor::evalViewport(vk::Sampler sampler, std::vector<AllocatedImage>& inpu
 
         // Allocate a stable new descriptor handle if the incoming target is valid
         if (targets[i]) {
-            std::cout << "GOON!!";
             cachedDescriptors[i] = ImGui_ImplVulkan_AddTexture(
                 (VkSampler)sampler, 
                 (VkImageView)targets[i], 

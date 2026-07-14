@@ -40,7 +40,6 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint64_t vertAdress;
     uint64_t skinnedVertAdress;
     uint64_t projectionAddress; 
-    uint64_t boneMatAddress;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;

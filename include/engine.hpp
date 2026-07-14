@@ -18,8 +18,11 @@
 #include "editor.hpp"
 #include "asset_loader.hpp"
 #include "render_packet_def.hpp"
-
+#include "engine_api.hpp"
 class Engine{
+
+
+    
 
     public:
     enum class EngineMode: uint32_t {
@@ -37,9 +40,10 @@ class Engine{
     FileReader fileReader{};
     LoaderDLL loader{};
     AssetLoader ldr{};
-
+    EngineAPI api{};
     void initialize();
     void updateCamera(Camera& cam, EngineMode context, float sens = 0.3);
+    void processAPI();
     void updatePhysics();
     void readNodeHierarchy(float animationTime, const aiNode *pNode, const aiMatrix4x4 &parentTransform, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
     void readNodeHierarchy(float animationTime, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, const aiMatrix4x4 &globalInverseTransform, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);

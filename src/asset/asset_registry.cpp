@@ -13,6 +13,8 @@ AssetRegistry::StaticModel &AssetRegistry::getStaticModelFromID(uint32_t id)
     return mdlMap[stringMap[id]];
 }
 
+
+
 AssetRegistry::SkinnedModel &AssetRegistry::getSkinnedModelFromID(uint32_t id)
 {
     auto& stringMap = IntegerToStringSkinnedModelMap;
@@ -21,4 +23,18 @@ AssetRegistry::SkinnedModel &AssetRegistry::getSkinnedModelFromID(uint32_t id)
         printf("NO ID TO STRING EXISTS THISS ONE SKINNED!!! \n");
     }
     return mdlMap[stringMap[id]];
+}
+
+
+
+uint32_t AssetRegistry::getModelID(std::string& path)
+{
+    if(StringToIntegerSkinnedModelMap.find(path) != StringToIntegerSkinnedModelMap.end()){
+        return StringToIntegerSkinnedModelMap[path];
+    }else{
+     if(StringToIntegerStaticModelMap.find(path) != StringToIntegerStaticModelMap.end()){
+        return StringToIntegerStaticModelMap[path];
+    }   
+    assert(0); // should have never come here...
+    }
 }

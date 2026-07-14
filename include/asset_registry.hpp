@@ -81,12 +81,16 @@ class AssetRegistry{
     
     std::map<uint32_t, std::string> IntegerToStringStaticModelMap{};
     std::map<uint32_t, std::string> IntegerToStringSkinnedModelMap{};
+    std::map<std::string, uint32_t> StringToIntegerStaticModelMap{};
+    std::map<std::string, uint32_t> StringToIntegerSkinnedModelMap{};
     
     std::map<std::string, StaticModel> staticModelMap{};
     std::map<std::string, SkinnedModel> skinnedModelMap{};    
 
     StaticModel& getStaticModelFromID(uint32_t id);
     SkinnedModel& getSkinnedModelFromID(uint32_t id);
+
+    uint32_t getModelID(std::string &path);
 
     bool isSkinned(uint32_t id){
         

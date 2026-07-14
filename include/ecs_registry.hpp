@@ -14,7 +14,10 @@
 
 namespace ECS{
     using Entity = int;
-
+    struct Parent{
+        int parentID{};
+        uint32_t level{};
+    };
     struct IComponentPool{
         virtual ~IComponentPool() = default;
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
@@ -192,7 +195,7 @@ namespace ECS{
         //std::unordered_map<std::string, IComponentPool> poolNames{};
         std::vector<Entity> deadIDs{};
         std::vector<Entity> liveIDs{};
-
+        
         Entity counter{};
         bool registryDirty = false;
         public:
@@ -200,7 +203,9 @@ namespace ECS{
         std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>>& getPoolMap(){
             return pools;
         }
-
+        Registry(){
+            createPool<Parent>();
+        }
 
         Entity createEntity(){
             registryDirty = true;
@@ -264,7 +269,7 @@ namespace ECS{
             return std::tie(getPool<Components>()...);
         }
 
-
+        
 
         template<typename... Components>
         void add(Entity e, Components&&... comps) {
@@ -272,6 +277,13 @@ namespace ECS{
             (getPool<std::decay_t<Components>>().assign(e, std::forward<Components>(comps)), ...);
         }
 
+        void addParent(Entity e, Entity parent){
+            auto& pool = getPool<Parent>();
+            if (pool.hasEntity(parent))
+                pool.assign(e, {parent, pool.get(parent).level + 1});
+            else
+                pool.assign(e, {parent, 0});
+        }
 
         template<typename... Components>
         void emplace(Entity e){

@@ -270,15 +270,15 @@ void VulkanStack::endFrame() {
 }
 
 
-void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj, std::array<glm::mat4, 256>& bones){
+void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 	DynUBO::CameraData cam{};
 	cam.view = view;
 	cam.proj = proj;
 	uint32_t camOffset = currentFrame * res.dynUBOs.cameraData.stride;
 	std::memcpy(static_cast<uint8_t*>(res.dynUBOs.cameraData.allocInfo.pMappedData) + camOffset, &cam, sizeof(cam));
 
-	uint32_t boneOffset = currentFrame * res.dynUBOs.boneMats.stride;
-	std::memcpy(static_cast<uint8_t*>(res.dynUBOs.boneMats.allocInfo.pMappedData) + boneOffset, bones.data(), sizeof(bones));
+	// uint32_t boneOffset = currentFrame * res.dynUBOs.boneMats.stride;
+	// std::memcpy(static_cast<uint8_t*>(res.dynUBOs.boneMats.allocInfo.pMappedData) + boneOffset, bones.data(), sizeof(bones));
 
 	// 
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
@@ -287,7 +287,6 @@ void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj, std::array<glm::ma
 		.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
 		.setSkinVert(res.skinnedVertexBuffer.address)
 		.setProjAddress(res.dynUBOs.cameraData.address + camOffset);
-		dyn.boneMatAddress = res.dynUBOs.boneMats.address + boneOffset;
 
 	std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 

@@ -9,7 +9,7 @@
 #include "string"
 
 #include "reflections.hpp"
-
+#include "engine_api.hpp"
 
 struct Transform {
     //glm::mat4 model{1.0f};
@@ -43,8 +43,8 @@ struct Camera {
 
 struct IScript{
     virtual ~IScript() = default;
-    virtual void init(ECS::Registry& reg, GameContext& ctx) = 0;
-    virtual void update(float aspect, float dt, Input::State& state, ECS::Registry& reg, GameContext& ctx) = 0;
+    virtual void init(ECS::Registry& reg, EngineAPI& api) = 0;
+    virtual void update(float aspect, float dt, Input::State& state, ECS::Registry& reg, EngineAPI& api) = 0;
 };
 
 struct Script{
@@ -59,6 +59,7 @@ struct Renderable{
 struct Parent{
     uint32_t parentID{};
     uint32_t level{};
+    REFLECT_2(parentID, level);
 };
 
 struct Name{

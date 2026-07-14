@@ -4,6 +4,53 @@
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 using Particle = physics::Particle;
 
+ void Engine::processAPI(){
+	for (auto& req: api.reqs) {
+        switch (req.cmd) {
+
+            case EngineAPI::LOAD_MODEL:				
+				printf("uploading %s ...", req.path.c_str());
+				ldr.loadScene(req.path.c_str());
+				printf("done!\n");
+
+                break;
+
+			case EngineAPI::ATTACH_MODEL:{
+				auto& renderables = reg.getPool<Renderable>();
+				uint32_t meshID = ldr.getAssetReg().getModelID(req.path);
+				if(renderables.hasEntity(req.EntityID)){
+					printf("entity #%d updating model to %s (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
+				
+				}else{
+					printf("entity #%d assigning model %s, creating renderable component...", req.EntityID, req.path.c_str());
+				}
+				renderables.assign(req.EntityID, {meshID});
+				printf("done!\n");
+
+                break;
+			}
+				
+			
+
+            // case EngineAPI::SET_DIR_MODELS:
+            //     // Updates engine configuration
+            //     FileSystem::SetModelDirectory(req.path);
+            //     break;
+
+            // case EngineAPI::CHANGE_ANIMATION:
+            //     // Uses path as the animation name/identifier
+            //     AnimationSystem::Play(req.entityID, req.path);
+            //     break;
+
+            default:
+                // Handle or log unknown commands
+                break;
+        }
+     }
+	 api.reqs.clear();
+}
+
+
 void Engine::updatePhysics()
 {
         /*you get a copy of vector filled with refs*/
