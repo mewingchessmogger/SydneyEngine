@@ -1,42 +1,22 @@
 #include "engine.hpp"
 using Particle = physics::Particle;
 void Engine::run(){
-
-    
     initialize(); // basically all parts of the engine
-    //models/shibahu.glb
-    // ast.addUploadRequest("models/dragon.glb");
-    // ast.addUploadRequest("models/cube_gltf.glb"); //THESE SHOULD BE DONE IN INITGAME
-   
-    // ldr.loadScene("models/cube_gltf.glb");//static
-    // ldr.loadScene("models/dragon.glb"); //static
-    // std::string path = "models/shibahu.glb";
-    // const aiScene* skinScn = ldr.getScene(path);
-    // ldr.loadScene(skinScn, path);
-    // ldr.scenes.push_back(skinScn);
     
-    
-    // api.reqs.push_back({EngineAPI::LOAD_MODEL, "models/cube_gltf.glb"});
-    // api.reqs.push_back({EngineAPI::LOAD_MODEL, "models/dragon.glb"});
-    // //api.reqs.push_back({EngineAPI::LOAD_MODEL, "models/shibahu.glb"});
-
-    std::vector<RenderPkt> packets{};    
     reg.createPool<Particle>();
     reg.createPool<Transform>();
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
-    reg.createPool<Parent>();
-    int gameCamID = reg.createEntity();
-    int editorCamID = reg.createEntity();
-	reg.emplace<Camera>(gameCamID);
-    reg.emplace<Camera>(editorCamID);
-
-    EngineMode mode = EngineMode::GAME;
-    HMODULE GameModule = loader.loadDLL("games/tetris/Debug/TetrisDLL.dll");
-    ctx = GameContext{};
-
-    std::vector<IScript*> IScripts{};
+    reg.createPool<Animation>();
     
+    int editorCamID = reg.createEntity();
+    reg.emplace<Camera>(editorCamID);
+    
+    
+    EngineMode mode = EngineMode::GAME;
+    
+    std::vector<IScript*> IScripts{};    
+    HMODULE GameModule = loader.loadDLL("games/tetris/Debug/TetrisDLL.dll");
     loader.getGameContextPtr(GameModule, "GetGameScripts")(IScripts);
     
     Script game{};
@@ -44,44 +24,41 @@ void Engine::run(){
     game.ptr->init(reg, api);
 
 
+    api.loadModel("models/fps_character_animation_pack_ak-47.glb");
+    
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
-
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
-            if (mode == EngineMode::GAME){
-                plt.inputState.requestCursorVisible = false;    //no biggie just doing it also here cuz sometimes fails to switch
-            }
-            if (mode == EngineMode::EDITOR){
-                plt.inputState.requestCursorVisible = true;    //no biggie just doing it also here cuz sometimes fails to switch
-            }
-            
+            plt.inputState.requestCursorVisible = (mode == EngineMode::EDITOR);
         }
-        Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? gameCamID : editorCamID);
+
+        Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
 
         if (mode == EngineMode::GAME){         
-            updateCamera(activeCam,EngineMode::GAME);
             game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, api);
             updatePhysics();
         }
         
-        processAPI();
-        fileWatcher.checkDirectoryPeriodically();
+        processAPI(); // api.setAnimation(gameID, "shooting_ak");
+
         
-        prepareRenderables(packets);
-        //printf("SIZE OF PACKETS: %d \n", packets.size());
+        prepareRenderables(stk.packets);
+
         if (stk.acquireAndValidateImage(plt))
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
-                stk.endFrame();// TODO fix validation error 
+                stk.abortFrame();// TODO fix validation error 
                 continue;
             };
+            
             //AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(2); ,mdl.finalBoneMatrices
 
             stk.updateUBO(activeCam.view, activeCam.proj);
-            stk.render(packets, ldr.getAssetReg());
+            
+            stk.render(ldr.getAssetReg());
             
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport(); //viewport in imgui

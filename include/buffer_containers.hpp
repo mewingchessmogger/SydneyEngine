@@ -36,6 +36,8 @@ namespace DynUBO {
         Base& setVert(uint64_t addr)            { vertAdress = addr; return *this; }
         Base& setSkinVert(uint64_t addr)            { skinnedVertAdress = addr; return *this; }
         Base& setProjAddress(uint64_t addr)            { projectionAddress = addr; return *this; }    
+        Base& setBoneAddress(uint64_t addr)            { animationAddress = addr; return *this; }    
+
     };
 
     struct CameraData{

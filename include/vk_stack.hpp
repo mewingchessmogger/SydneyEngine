@@ -10,6 +10,7 @@
 #include "asset_registry.hpp"
 #include "ecs_registry.hpp"
 #include "engine_components.hpp"
+#include "render_packet_def.hpp"
 class VulkanStack{
   
     public:
@@ -59,7 +60,8 @@ class VulkanStack{
             uint32_t totalOffsetIBO{};
         };
 
-        std::vector<RenderCommand> renderQueue{};
+        
+        std::vector<RenderPkt> packets{};    
 
         void initInstance(PlatformGLFW& plt);
         void initDevice(PlatformGLFW& plt);
@@ -102,6 +104,8 @@ class VulkanStack{
 
         void endFrame();
 
+        void abortFrame();
+
         void earlyEndFrame();
 
         void updateUBO(glm::mat4& view, glm::mat4& proj);
@@ -111,7 +115,7 @@ class VulkanStack{
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 
-        void render(std::vector<RenderPkt> &pkts, AssetRegistry &astReg);
+        void render(AssetRegistry &astReg);
 
 
 
@@ -122,8 +126,10 @@ class VulkanStack{
     
         vk::ResultValue<uint32_t> acquiredImage();
         void recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore, vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask, vk::Queue graphicsQueue, vk::Fence fence);
-        
-        
+
+        // template <typename T>
+        // void updateDynUBOT(T &uboStruct, AllocatedBuffer &ubo);
+
         template <typename T>
         void uploadToBufferT(const std::vector<T> &data, AllocatedBuffer &dstBuffer);
 };

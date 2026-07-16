@@ -28,6 +28,7 @@ struct RenderPkt{
     uint32_t boneBaseIndex{};
     uint32_t offsetIBO{};
     uint32_t indexCount{};
+    
 };
 
 

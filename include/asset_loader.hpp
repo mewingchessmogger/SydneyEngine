@@ -45,6 +45,7 @@ class AssetLoader{
     std::vector<int> meshBaseVertex{};
     std::map<std::string, uint32_t> boneNameToIndexMap{};
     std::vector<aiMatrix4x4> boneOffsetMatrices{};
+    std::unordered_map<const aiNode*, const aiNodeAnim*> nodeCache{};
     uint32_t mdlCounter{};
     
     public: 
@@ -53,7 +54,12 @@ class AssetLoader{
     void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);
+    void parseSkinned(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseScene(const aiScene *scn, std::string &path);
+    const aiNodeAnim *findNodeAnim(const aiAnimation *animation, const std::string nodeName);
+    void parseNodeHierarchy(float time, int frameTimesBonesPlusAnimOffset, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, AssetRegistry::SkinnedModel &mdl);
+    void buildNodeAnimCache(const aiAnimation *anim, const aiNode *node);
+    void parseNodes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void loadScene(std::string path);
     void loadScene(const aiScene *scn, std::string path);
     void processNodes(aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt pkt);
@@ -65,6 +71,9 @@ class AssetLoader{
     AssetRegistry &getAssetReg();
     const aiScene*  getScene(std::string path);
 
+    aiMatrix4x4 interpolateTranslation(float time, const aiNodeAnim *pNodeAnim);
 
+    aiMatrix4x4 interpolateRotation(float time, const aiNodeAnim *pNodeAnim);
+
+    aiMatrix4x4 interpolateScale(float time, const aiNodeAnim *pNodeAnim);
 };
-

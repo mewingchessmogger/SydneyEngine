@@ -9,13 +9,24 @@ struct Bullet{
 void Tetris::init(ECS::Registry& reg, EngineAPI& api){
 	api.loadModel("models/cube_gltf.glb");
 	api.loadModel("models/dragon.glb");
-	
+	api.loadModel("models/shibahu.glb");
 	int floor = reg.createEntity();
 	Transform t{};
 	t.position = glm::vec3(0.0, -1.0, 0.0);
 	t.scale = glm::vec3(2.0,1.0,2.0);
 	reg.add(floor, t);
 	api.attachModel("models/cube_gltf.glb", floor);
+	
+	
+	int women = reg.createEntity();
+	Transform w{};
+	w.position = glm::vec3(1.0, 0.0, 0.0);
+	w.scale = glm::vec3(1.0,1.0,1.0);
+	reg.add(women, w);
+	api.attachModel("models/shibahu.glb", women);
+
+    api.setGameCamera(reg.createEntity());
+	reg.emplace<Camera>(api.getGameCamera());
 
 	// int woman = reg.createEntity();
 	// t.position = glm::vec3(3.0, -1.0, 0.0);
@@ -26,16 +37,17 @@ void Tetris::init(ECS::Registry& reg, EngineAPI& api){
 }
 
 void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api)
-{
-		auto& cam0 = reg.getPool<Camera>().data[0];
-		
+{		
+
+		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
+		updateGameCamera(camera, state, 0.3, aspect, dt);
 		
 		if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
 			int dragon = reg.createEntity();
 
 			Transform T{};
-			glm::vec3 floorForward = glm::normalize(glm::vec3(cam0.dir.x, 0.0f, cam0.dir.z));
-			glm::vec3 eyeFloor = glm::vec3(cam0.eye.x,0.0,cam0.eye.z);
+			glm::vec3 floorForward = glm::normalize(glm::vec3(camera.dir.x, 0.0f, camera.dir.z));
+			glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
 			T.position = eyeFloor + floorForward;
 			
 			T.rotation = {0.0,1.0,0.0};
@@ -49,6 +61,7 @@ void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& 
 			
 			api.attachModel("models/dragon.glb", dragon);
 			reg.add(dragon,T,p);
+
 
 
 		}

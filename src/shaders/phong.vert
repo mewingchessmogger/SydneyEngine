@@ -40,6 +40,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint64_t vertAdress;
     uint64_t skinnedVertAdress;
     uint64_t projectionAddress; 
+    uint64_t animationAddress;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;
@@ -51,7 +52,7 @@ void main() {
 
     // Step 1: Fetch the index using the hardware counter
     uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
-
+    
     // Step 2: Fetch the actual vertex data using that index
     Vertex v = vertexBuffer.vertices[vIndex];
 

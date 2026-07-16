@@ -37,6 +37,7 @@ class AssetRegistry{
         void setGlobalOffsets(uint32_t availOffsetGlobalVBO,uint32_t availOffsetGlobalIBO){
             baseOffsetBytesVBO = availOffsetGlobalVBO;
             baseOffsetBytesIBO = availOffsetGlobalIBO;
+            
         }
 			
     };
@@ -50,32 +51,83 @@ class AssetRegistry{
         // uint32_t inverseBindMatrixOffset{}; // Where this asset's matrices start in the flat vector
         // uint32_t boneCount{};
     };
+    struct AnimData{
+        std::string name{};
+        float duration{};
+        float ticksPerSecond{};
+		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
+		uint16_t totalFrames{};
+        uint16_t boneCount{};
 
+	};
+    
     struct SkinnedModel{
-        std::array<glm::mat4, 256> finalBoneMatrices{};
+        std::string name{};
         std::vector<SkinnedVertex> transientVertices{};
         std::vector<uint32_t> transientIndices{};
         std::vector<SkinnedMeshData> meshes{};
-        std::vector<aiMatrix4x4> boneMats{};
         std::map<std::string, uint32_t> boneNameToIndexMap{};
         glm::mat4 normalizeMat{1.0f};
-        std::string name{};
+
+        aiMatrix4x4 globalInverseTransform{};       
+        uint32_t boneCount{};
+        std::vector<AnimData> animationsData{};
+        std::vector<glm::mat4> transientBones{};
+        std::vector<aiMatrix4x4> boneOffsetMats{};
+        
+// struct Model{
+// 	struct AnimData{
+// 		uint16_t frameCount{};
+// 		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
+// 	};
+
+// 	std::vector<AnimData> animations 
+// 	std::vector<glm::mat4> boneMatrices{};
+// 	uint32_t boneCount{};
+
+// 	mat4 getMat(uint32_t a, uint32_t keyFrame, uint16_t boneID){
+// 		auto& anim = animations[a];
+// 		assert(anim.frameCount > keyFrame);
+// 		return boneMatrices[anim.offsetInLocalBoneBuffer + keyFrame * boneCount + boneID]; //+ offsetGlobal
+// 	}
+// }
+
+
 
         uint32_t baseOffsetBytesSkinnedVBO{};
         uint32_t baseOffsetBytesIBO{};
         uint32_t baseOffsetBytesBoneBuffer{};
 
-        
+
+        int getAnimation(const std::string& animName)  {
+            
+            for (int a{}; a < animationsData.size(); a++){
+                auto& anim = animationsData[a];
+                if (animName == anim.name){
+                    return a;
+                }
+            }
+            // if(animationNameToIndexMap.find(animName) != animationNameToIndexMap.end()){
+            //     return animationNameToIndexMap[animName];
+            // }
+            printf("uh oh %s aint in the map!!\n",animName.c_str());
+            assert(0);
+            return -1;
+        }
+
         void DestroyTransients(){
             transientVertices.clear();
             transientVertices.shrink_to_fit();
             transientIndices.clear();
             transientIndices.shrink_to_fit();
+            transientBones.clear();
+            transientBones.shrink_to_fit();
         }
 
-         void setGlobalOffsets(uint32_t availOffsetGlobalSkinnedVBO,uint32_t availOffsetGlobalIBO){
+         void setGlobalOffsets(uint32_t availOffsetGlobalSkinnedVBO,uint32_t availOffsetGlobalIBO, uint32_t availOffsetGlobalBonesBuffer){
             baseOffsetBytesSkinnedVBO = availOffsetGlobalSkinnedVBO;
             baseOffsetBytesIBO = availOffsetGlobalIBO;
+            baseOffsetBytesBoneBuffer = availOffsetGlobalBonesBuffer;
         }
     };
     

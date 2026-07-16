@@ -12,6 +12,7 @@
 #include "game_memory.hpp"
 #include "reflections.hpp"
 #include "engine_api.hpp"
+#include "camera.hpp"
 // #define GLM_FORCE_DEPTH_ZERO_TO_ONE
  
 // #define  GLM_FORCE_RADIANS

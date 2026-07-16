@@ -42,6 +42,14 @@ void ResManager::createBuffer(BufferType type, unsigned long byteCapacity, Alloc
 			allocInfo.flags = {};			
 		break;
 
+		case(BufferType::BONE_BUFFER):
+			BufferInfo
+			.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eShaderDeviceAddress)
+			.setSharingMode(vk::SharingMode::eExclusive);
+			
+			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE; 						//keep pointer alive bit
+			allocInfo.flags = {};			
+		break;
 
 		case(BufferType::SSBO):
 			BufferInfo
@@ -117,11 +125,14 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 	createBuffer(BufferType::VBO,VBO_BYTE_CAPACITY,vertexBuffer);
 	createBuffer(BufferType::IBO,IBO_BYTE_CAPACITY,indexBuffer);
 	createBuffer(BufferType::SKINNED_VBO, SKINNED_VBO_BYTE_CAPACITY, skinnedVertexBuffer);
+	createBuffer(BufferType::BONE_BUFFER, BONE_BUFFER_BYTE_CAPACITY, boneBuffer);
+
 
     std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
 	vertexBuffer.address = device.getBufferAddress({vertexBuffer.handle});
 	indexBuffer.address = device.getBufferAddress({indexBuffer.handle});
 	skinnedVertexBuffer.address = device.getBufferAddress({skinnedVertexBuffer.handle});
+	boneBuffer.address = device.getBufferAddress({boneBuffer.handle});
 
 	createDynamicUBO(device,sizeof(DynUBO::Base), minSizeUBO, desiredImagesInFlight, uniformBuffer);
 	createDynamicUBO(device,sizeof(DynUBO::BoneMat), minSizeUBO, desiredImagesInFlight, dynUBOs.boneMats);
@@ -161,4 +172,5 @@ void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, 
 template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<uint32_t> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
 template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<Vertex> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
 template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<SkinnedVertex> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
+template void ResManager::uploadToBuffer(vk::Device device, vk::CommandBuffer cmdBuffer, const std::vector<glm::mat4> &data,AllocatedBuffer& stagingBuffer,AllocatedBuffer& dstBuffer);
 

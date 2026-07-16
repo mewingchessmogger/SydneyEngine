@@ -49,6 +49,7 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 					continue;
 				}
 			upload = true;
+			printf("[GPU Upload] Static Model: '%s'...\n", staticModel.name.c_str());
 				staticModel.setGlobalOffsets(res.vertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
 				
 				uploadToBufferT(staticModel.transientVertices, res.vertexBuffer);
@@ -62,11 +63,12 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 				continue;
 			}
 			upload =true;
-			skinnedModel.setGlobalOffsets(res.skinnedVertexBuffer.sizeBytes, res.indexBuffer.sizeBytes);
+			printf("[GPU Upload] Skinned Model: '%s'...\n", skinnedModel.name.c_str());
+			skinnedModel.setGlobalOffsets(res.skinnedVertexBuffer.sizeBytes, res.indexBuffer.sizeBytes,res.boneBuffer.sizeBytes);
 			
 			uploadToBufferT(skinnedModel.transientVertices, res.skinnedVertexBuffer);
 			uploadToBufferT(skinnedModel.transientIndices, res.indexBuffer);
-			
+			uploadToBufferT(skinnedModel.transientBones, res.boneBuffer);
 			skinnedModel.DestroyTransients();
 
 		}
@@ -267,11 +269,32 @@ void VulkanStack::endFrame() {
 
 	currentFrame = (currentFrame + 1) % DESIRED_IMAGES_IN_FLIGHT;
 
+}void VulkanStack::abortFrame() {
+    // 1. Safely close the recording buffer
+    cmdBuffers[currentFrame].end();
+
+    // 2. Grab the semaphore that was just signaled by acquireNextImage
+    vk::Semaphore imageReadySemaph = ctx.imageReadySemaphores[currentFrame];
+    vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+    // 3. Submit a dummy block that WAITS on the semaphore so it gets consumed
+    vk::SubmitInfo submitInfo{};
+    submitInfo.setCommandBuffers(cmdBuffers[currentFrame])
+              .setWaitSemaphores(imageReadySemaph)
+              .setWaitDstStageMask(waitStage); // <-- This unsignals the semaphore!
+
+    ctx.graphicsQueue.handle.submit(submitInfo, ctx.fences[currentFrame]);
+
+    // 4. Advance the frame index safely
+    currentFrame = (currentFrame + 1) % DESIRED_IMAGES_IN_FLIGHT;
 }
 
 
 void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
+
+	
 	DynUBO::CameraData cam{};
+	
 	cam.view = view;
 	cam.proj = proj;
 	uint32_t camOffset = currentFrame * res.dynUBOs.cameraData.stride;
@@ -281,13 +304,14 @@ void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 	// std::memcpy(static_cast<uint8_t*>(res.dynUBOs.boneMats.allocInfo.pMappedData) + boneOffset, bones.data(), sizeof(bones));
 
 	// 
-	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
-	DynUBO::Base dyn = DynUBO::Base{}
-		.setVert(res.vertexBuffer.address)
-		.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
-		.setSkinVert(res.skinnedVertexBuffer.address)
-		.setProjAddress(res.dynUBOs.cameraData.address + camOffset);
 
+	DynUBO::Base dyn = DynUBO::Base{}
+	.setVert(res.vertexBuffer.address)
+	.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
+	.setSkinVert(res.skinnedVertexBuffer.address)
+	.setProjAddress(res.dynUBOs.cameraData.address + camOffset);
+
+	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
 	std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));
 
 	
@@ -298,7 +322,7 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 }
 
-void VulkanStack::render(std::vector<RenderPkt>& pkts, AssetRegistry &astReg){ 
+void VulkanStack::render(AssetRegistry &astReg){ 
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto& renderTarget = res.renderTargetImages[currentImgIndex];
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
@@ -325,7 +349,7 @@ void VulkanStack::render(std::vector<RenderPkt>& pkts, AssetRegistry &astReg){
 
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
-	for(auto& pkt: pkts){
+	for(auto& pkt: packets){
 		PipelineBundle& pipeline = (pkt.type == Mesh::STATIC) ? pipelines.phong : pipelines.skinnedPhong;
 		if (cachedPipeline != pipeline.handle){
 			cmdBuffer.bindDescriptorSets(
@@ -362,3 +386,4 @@ void VulkanStack::uploadToBufferT(const std::vector<T>& data, AllocatedBuffer& d
 template void VulkanStack::uploadToBufferT(const std::vector<uint32_t>& data, AllocatedBuffer& dstBuffer);
 template void VulkanStack::uploadToBufferT(const std::vector<Vertex>& data, AllocatedBuffer& dstBuffer);
 template void VulkanStack::uploadToBufferT(const std::vector<SkinnedVertex>& data, AllocatedBuffer& dstBuffer);
+template void VulkanStack::uploadToBufferT(const std::vector<glm::mat4>& data, AllocatedBuffer& dstBuffer);

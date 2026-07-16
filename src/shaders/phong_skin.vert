@@ -32,9 +32,9 @@ layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer Ca
 };
 
 
-layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer BoneData{
-    mat4 matrices[256];
-};
+// layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer BoneData{
+//     mat4 matrices[256];
+// };
 
 
 // Your Push Constant matches your C++ struct exactly
@@ -48,7 +48,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint64_t vertAdress;
     uint64_t skinnedVertexAdress;
     uint64_t projectionAddress;
-    uint64_t boneMatAddress;
+    uint64_t animationAddress;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;
@@ -59,7 +59,7 @@ void main() {
     IndexBuffer  indexBuffer  = IndexBuffer(ubo.indxAdress);
     SkinnedVertexBuffer vertexBuffer = SkinnedVertexBuffer(ubo.skinnedVertexAdress);
     CameraData cam = CameraData(ubo.projectionAddress);
-    BoneData boneArr = BoneData(ubo.boneMatAddress);
+    //BoneData boneArr = BoneData(ubo.boneMatAddress);
     // Step 1: Fetch the index using the hardware counter
     uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
 
@@ -67,13 +67,13 @@ void main() {
     SkinnedVertex v = vertexBuffer.vertices[vIndex];
     
     
-    mat4 boneTransform = boneArr.matrices[v.boneIDs[0]] * v.weights[0];
-    boneTransform     += boneArr.matrices[v.boneIDs[1]] * v.weights[1];
-    boneTransform     += boneArr.matrices[v.boneIDs[2]] * v.weights[2];
-    boneTransform     += boneArr.matrices[v.boneIDs[3]] * v.weights[3];
+    // mat4 boneTransform = boneArr.matrices[v.boneIDs[0]] * v.weights[0];
+    // boneTransform     += boneArr.matrices[v.boneIDs[1]] * v.weights[1];
+    // boneTransform     += boneArr.matrices[v.boneIDs[2]] * v.weights[2];
+    // boneTransform     += boneArr.matrices[v.boneIDs[3]] * v.weights[3];
 	
-
-    gl_Position = cam.proj * cam.view  * boneTransform * vec4(v.pos, 1.0);
+//* boneTransform
+    gl_Position = cam.proj * cam.view   * vec4(v.pos, 1.0);
     boneIDs = v.boneIDs;
     weights = v.weights;
 

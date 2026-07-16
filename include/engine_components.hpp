@@ -66,4 +66,9 @@ struct Name{
  std::string name{};
 };
     
-    
+struct Animation{
+    int animationIndex{};
+    float timeInTicks{};
+    //float time{};
+};
+

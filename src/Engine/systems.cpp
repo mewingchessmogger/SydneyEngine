@@ -9,7 +9,7 @@ using Particle = physics::Particle;
         switch (req.cmd) {
 
             case EngineAPI::LOAD_MODEL:				
-				printf("uploading %s ...", req.path.c_str());
+				printf("parsing %s ...\n", req.path.c_str());
 				ldr.loadScene(req.path.c_str());
 				printf("done!\n");
 
@@ -19,29 +19,30 @@ using Particle = physics::Particle;
 				auto& renderables = reg.getPool<Renderable>();
 				uint32_t meshID = ldr.getAssetReg().getModelID(req.path);
 				if(renderables.hasEntity(req.EntityID)){
-					printf("entity #%d updating model to %s (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
+					printf("entity #%d updating to '%s' (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
 				
 				}else{
-					printf("entity #%d assigning model %s, creating renderable component...", req.EntityID, req.path.c_str());
+					printf("entity #%d assigning  '%s', creating renderable component...", req.EntityID, req.path.c_str());
 				}
 				renderables.assign(req.EntityID, {meshID});
 				printf("done!\n");
 
                 break;
 			}
+			case EngineAPI::SET_ANIMATION:{
+				auto& animations = reg.getPool<Animation>();
+				AssetRegistry::SkinnedModel& model = ldr.getAssetReg().getSkinnedModelFromID(req.EntityID);
+				int animID = model.getAnimation(req.path);
+				if(animations.hasEntity(req.EntityID)){
+					printf("entity #%d updating animation slot to '%s' ...", req.EntityID, req.path.c_str());
 				
-			
-
-            // case EngineAPI::SET_DIR_MODELS:
-            //     // Updates engine configuration
-            //     FileSystem::SetModelDirectory(req.path);
-            //     break;
-
-            // case EngineAPI::CHANGE_ANIMATION:
-            //     // Uses path as the animation name/identifier
-            //     AnimationSystem::Play(req.entityID, req.path);
-            //     break;
-
+				}else{
+					printf("entity #%d creating animation slot and setting it to '%s' ...", req.EntityID, req.path.c_str());
+				}
+				animations.assign(req.EntityID, {animID}); //updates OR creates inside
+				printf("done!\n");
+                break;
+			}	
             default:
                 // Handle or log unknown commands
                 break;
@@ -175,10 +176,11 @@ const aiNodeAnim* findNodeAnim(const aiAnimation* animation, const std::string n
 					break;
 				}
 			}
+
 			//oooh we got scaling key for this keys and next keys
 			aiVectorKey currentFrame = pNodeAnim->mScalingKeys[frameIndex];
 			aiVectorKey nextFrame = pNodeAnim->mScalingKeys[(frameIndex + 1) % pNodeAnim->mNumScalingKeys]; // aah so if we are at last frame then we interpolate wiht start frame
-
+			
 			float delta = (time - (float)currentFrame.mTime) / (float)(nextFrame.mTime - currentFrame.mTime);
 
 			const aiVector3D& start = currentFrame.mValue;
@@ -208,7 +210,7 @@ void Engine::readNodeHierarchy(float animationTime,aiAnimation* pAnimation, cons
 
     aiMatrix4x4 NodeTransformation(pNode->mTransformation);
     const aiNodeAnim* pNodeAnim = findNodeAnim(pAnimation, nodeName);
-
+	
     if (pNodeAnim)
 	{
 			// Get interpolated matrices between current and next frame
@@ -222,9 +224,9 @@ void Engine::readNodeHierarchy(float animationTime,aiAnimation* pAnimation, cons
 
     if(mdl.boneNameToIndexMap.find(nodeName) != mdl.boneNameToIndexMap.end()){
         int boneID = mdl.boneNameToIndexMap[nodeName];
-        aiMatrix4x4 finalMat = globalInverseTransform * GlobalTransformation * mdl.boneMats[boneID];
+        aiMatrix4x4 finalMat = globalInverseTransform * GlobalTransformation;// * mdl.transient[boneID];
 
-        mdl.finalBoneMatrices[boneID] = glm::transpose(glm::make_mat4(&finalMat.a1));
+        //mdl.finalBoneMatrices[boneID] = glm::transpose(glm::make_mat4(&finalMat.a1));
     }
     
     for(int i{}; i < pNode->mNumChildren;i++){
@@ -233,7 +235,10 @@ void Engine::readNodeHierarchy(float animationTime,aiAnimation* pAnimation, cons
     
 
 }
+
+
 void Engine::parseSceneNodes(const aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
+
     float TicksPerSecond = (float)(scn->mAnimations[0]->mTicksPerSecond != 0 ? scn->mAnimations[0]->mTicksPerSecond : 25.0f);
     static float TimeInTicks;
 	TimeInTicks += plt.deltaTime * TicksPerSecond;
@@ -246,10 +251,11 @@ void Engine::parseSceneNodes(const aiScene* scn, std::vector<RenderPkt>& packets
 
 
 void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
-    auto [transPool, rendPool] = reg.getPools<Transform, Renderable>();
+    auto [transPool, rendPool, animPool] = reg.getPools<Transform, Renderable, Animation>();
 
     packets.clear();
     AssetRegistry& astReg = ldr.getAssetReg();
+	
     /*FILL renderobjects array*/
     for (int i{}; i < rendPool.count; i++){
         ECS::Entity e = rendPool.dense[i];
@@ -260,19 +266,19 @@ void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
             //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesSkinnedVBO/sizeof(SkinnedVertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
             glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
             RenderPkt pkt{};
-            
-            pkt.pc.modelSpace = modelMat;
+
+			pkt.pc.modelSpace = modelMat;
             pkt.type = Mesh::SKINNED;
             pkt.pc.offsetVBO = mdl.baseOffsetBytesSkinnedVBO /sizeof(SkinnedVertex);
             pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t);
-            parseSceneNodes(ldr.scenes[0], packets, pkt, mdl);
+            //parseSceneNodes(ldr.scenes[0], packets, pkt, mdl);
             
-            // for(auto& mesh : mdl.meshes){
-            //     pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global
-            //     pkt.indexCount = mesh.indexCount;
-            //     pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
-            //     packets.push_back(pkt);
-            // }
+            for(auto& mesh : mdl.meshes){
+                pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global
+                pkt.indexCount = mesh.indexCount;
+                pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                packets.push_back(pkt);
+            }
         }
         else{
             

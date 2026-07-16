@@ -43,6 +43,7 @@ enum class BufferType: uint32_t{
 	IDBO,
 	UBO_DYN,
 	SKINNED_VBO,
+	BONE_BUFFER,
 	COUNT,
 	
 
@@ -83,11 +84,11 @@ class ResManager{
 	const uint32_t MAX_DYN_UBO = 1;
 	const uint32_t MAX_IMAGES = 500;
 	const uint32_t CURR_DESC_SETS = 3;
-	const uint64_t BONE_BUFFER_BYTE_CAPACITY = 1048576ULL * 100ULL;  //100 MBs
-	const uint64_t IBO_BYTE_CAPACITY = 1048576ULL * 100ULL;  //100 MBs
-	const uint64_t VBO_BYTE_CAPACITY = 1048576ULL * 250ULL;  //250 MBs
-	const uint64_t SKINNED_VBO_BYTE_CAPACITY = 1048576ULL * 250ULL;  //one MB * 250 
-
+	
+	const uint64_t IBO_BYTE_CAPACITY = 1048576ULL * 128ULL;  //100 MBs
+	const uint64_t VBO_BYTE_CAPACITY = 1048576ULL * 256ULL;  //250 MBs
+	const uint64_t SKINNED_VBO_BYTE_CAPACITY = 1048576ULL * 256ULL;  //one MB * 250 
+	const uint64_t BONE_BUFFER_BYTE_CAPACITY  = 1048576ULL * 256ULL;  //one MB * 250 
 
 	std::array<vk::DescriptorSetLayout,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSetLayouts{};
 	std::array<vk::DescriptorSet,static_cast<size_t>(DescriptorSetType::COUNT)> descriptorSets{};

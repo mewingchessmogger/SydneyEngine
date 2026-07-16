@@ -1,10 +1,14 @@
 #pragma once
 
 class EngineAPI{
+    private:
+    int gameCameraEntity{};
+    
     public:
     enum Command{
-      LOAD_SCENE,SAVE_SCENE,CREATE_SCENE,SET_DIR_MODELS,SET_DIR_SCENE,LOAD_MODEL,ATTACH_MODEL,
+      LOAD_SCENE,SAVE_SCENE,CREATE_SCENE,SET_DIR_MODELS,SET_DIR_SCENE,LOAD_MODEL,ATTACH_MODEL,SET_ANIMATION
     };
+
     struct Request{
         Command cmd;
         std::string path{};
@@ -12,8 +16,7 @@ class EngineAPI{
     };
     
     std::vector<Request> reqs{};
-
-
+    
     void loadModel(const std::string path, int id = -1){
         reqs.push_back({LOAD_MODEL, path, id});
     }
@@ -21,5 +24,16 @@ class EngineAPI{
         reqs.push_back({ATTACH_MODEL, path, id});
     }
 
+    void setGameCamera(int entityID){
+        gameCameraEntity = entityID;
+    }
+    int getGameCamera(){
+        return gameCameraEntity;
+    }
+
+    void setAnimation(int entityID, std::string animationName){
+        reqs.push_back({SET_ANIMATION,animationName,entityID});
+    }
+    //api.setAnimation(2, "shooting")
 }; 
     
