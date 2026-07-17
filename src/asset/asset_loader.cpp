@@ -343,17 +343,18 @@
             aiAnimation* anim = scn->mAnimations[i];
             AssetRegistry::AnimData animData{};
             int boneCount = mdl.boneNameToIndexMap.size();
+            mdl.boneCount = boneCount;
+            float durationInTicks = (float)anim->mDuration;
+            float ticksPerSecond = (anim->mTicksPerSecond != 0) ? anim->mTicksPerSecond : 25.0f;
 
             animData.name = std::string(anim->mName.C_Str());
             animData.boneCount = boneCount;
-            animData.duration = (float)anim->mDuration;
-            animData.ticksPerSecond = (anim->mTicksPerSecond != 0) ? anim->mTicksPerSecond : 25.0f;
+            animData.duration = (float)anim->mDuration / ticksPerSecond; //duration in sec
             
             mdl.globalInverseTransform = scn->mRootNode->mTransformation.Inverse(); 
             
-            printf("animation #%d '%-30s', duration (in ticks): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, animData.ticksPerSecond, animData.boneCount);
-            int seconds = std::round(animData.duration / animData.ticksPerSecond);
-            uint32_t estimatedFrames = (seconds != 0) ?  60 * seconds : 1;
+            printf("animation #%d '%-30s', duration (in ticks): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, ticksPerSecond, animData.boneCount);
+            int estimatedFrames = (animData.duration != 0) ?  60 * animData.duration : 1;
 
             animData.totalFrames = estimatedFrames;
 
@@ -366,11 +367,12 @@
             
             buildNodeAnimCache(anim,scn->mRootNode);
             for (uint32_t frame{}; frame < estimatedFrames; frame++){
-                float animTime = (animData.duration > 0.0f) ? (frame / (float)estimatedFrames) * animData.duration : 0.0f;
+                float animTime = (durationInTicks > 0.0f) ? (frame / (float)estimatedFrames) * durationInTicks : 0.0f;
                 parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, identity, mdl);                
             }
             
             nodeCache.clear();
+            
             mdl.animationsData.push_back(animData);
             
         }

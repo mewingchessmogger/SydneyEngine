@@ -6,7 +6,7 @@ class EngineAPI{
     
     public:
     enum Command{
-      LOAD_SCENE,SAVE_SCENE,CREATE_SCENE,SET_DIR_MODELS,SET_DIR_SCENE,LOAD_MODEL,ATTACH_MODEL,SET_ANIMATION
+      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION, COCONUT
     };
 
     struct Request{
@@ -31,7 +31,7 @@ class EngineAPI{
         return gameCameraEntity;
     }
 
-    void setAnimation(int entityID, std::string animationName){
+    void setAnimation(std::string animationName, int entityID){
         reqs.push_back({SET_ANIMATION,animationName,entityID});
     }
     //api.setAnimation(2, "shooting")

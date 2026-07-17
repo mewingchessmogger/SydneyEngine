@@ -309,7 +309,9 @@ void VulkanStack::updateUBO(glm::mat4& view, glm::mat4& proj){
 	.setVert(res.vertexBuffer.address)
 	.setIndx(res.indexBuffer.address)// dont have to set eacdh frame but whatevs
 	.setSkinVert(res.skinnedVertexBuffer.address)
-	.setProjAddress(res.dynUBOs.cameraData.address + camOffset);
+	.setProjAddress(res.dynUBOs.cameraData.address + camOffset)
+	.setBoneAddress(res.boneBuffer.address);
+
 
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
 	std::memcpy(static_cast<uint8_t*>(res.uniformBuffer.allocInfo.pMappedData) + dynOffset[0], &dyn, sizeof(dyn));

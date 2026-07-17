@@ -10,6 +10,7 @@ void Tetris::init(ECS::Registry& reg, EngineAPI& api){
 	api.loadModel("models/cube_gltf.glb");
 	api.loadModel("models/dragon.glb");
 	api.loadModel("models/shibahu.glb");
+	api.loadModel("models/fps_character_animation_pack_ak-47.glb");
 	int floor = reg.createEntity();
 	Transform t{};
 	t.position = glm::vec3(0.0, -1.0, 0.0);
@@ -23,8 +24,9 @@ void Tetris::init(ECS::Registry& reg, EngineAPI& api){
 	w.position = glm::vec3(1.0, 0.0, 0.0);
 	w.scale = glm::vec3(1.0,1.0,1.0);
 	reg.add(women, w);
-	api.attachModel("models/shibahu.glb", women);
-
+	api.attachModel("models/fps_character_animation_pack_ak-47.glb", women);
+	api.setAnimation("RIG_UE5_Comando_AK_Reload", women);
+	
     api.setGameCamera(reg.createEntity());
 	reg.emplace<Camera>(api.getGameCamera());
 

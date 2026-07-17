@@ -7,7 +7,7 @@ void Engine::run(){
     reg.createPool<Transform>();
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
-    reg.createPool<Animation>();
+    reg.createPool<Animated>();
     
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
@@ -24,7 +24,7 @@ void Engine::run(){
     game.ptr->init(reg, api);
 
 
-    api.loadModel("models/fps_character_animation_pack_ak-47.glb");
+    //api.loadModel("models/fps_character_animation_pack_ak-47.glb");
     
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
@@ -42,6 +42,7 @@ void Engine::run(){
         
         processAPI(); // api.setAnimation(gameID, "shooting_ak");
 
+        updateAnimations(plt.deltaTime);
         
         prepareRenderables(stk.packets);
 

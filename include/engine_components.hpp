@@ -66,9 +66,23 @@ struct Name{
  std::string name{};
 };
     
-struct Animation{
+struct Animated{
     int animationIndex{};
-    float timeInTicks{};
-    //float time{};
+    float time{}; // in seconds
+    float speed = 1.0f;
+    float duration{}; // in seconds
+    
+    uint32_t offset{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
+	uint16_t totalFrames{};
+
+    int getFrame(){
+        float progress = time / duration;
+        int frameIndex = static_cast<int>(progress * totalFrames) % totalFrames;
+
+        printf("progress :%f , totalFrames: %d frameIndex: %d \n", progress, totalFrames,frameIndex );
+
+        return frameIndex;
+    }
+
 };
 

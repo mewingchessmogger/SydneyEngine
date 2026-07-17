@@ -53,9 +53,8 @@ class AssetRegistry{
     };
     struct AnimData{
         std::string name{};
-        float duration{};
-        float ticksPerSecond{};
 		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
+        float duration{};
 		uint16_t totalFrames{};
         uint16_t boneCount{};
 
@@ -104,6 +103,7 @@ class AssetRegistry{
             for (int a{}; a < animationsData.size(); a++){
                 auto& anim = animationsData[a];
                 if (animName == anim.name){
+                    printf("Found '%s' at index #%d! \n", animName, a);
                     return a;
                 }
             }

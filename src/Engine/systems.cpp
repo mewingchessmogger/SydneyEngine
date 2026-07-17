@@ -30,16 +30,27 @@ using Particle = physics::Particle;
                 break;
 			}
 			case EngineAPI::SET_ANIMATION:{
-				auto& animations = reg.getPool<Animation>();
-				AssetRegistry::SkinnedModel& model = ldr.getAssetReg().getSkinnedModelFromID(req.EntityID);
-				int animID = model.getAnimation(req.path);
+				auto& animations = reg.getPool<Animated>();
+				auto& renderables = reg.getPool<Renderable>();
+				uint32_t meshID = renderables.get(req.EntityID).id;
+				AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(meshID);
+				
+				int animID = mdl.getAnimation(req.path);
+				AssetRegistry::AnimData& data = mdl.animationsData[animID];
+				Animated comp{};
+				comp.animationIndex = animID;
+				comp.duration = data.duration;
+				comp.totalFrames = data.totalFrames;
+				comp.offset = data.offsetInLocalBoneBuffer; // now only frame * bonecount offset left
+				
 				if(animations.hasEntity(req.EntityID)){
 					printf("entity #%d updating animation slot to '%s' ...", req.EntityID, req.path.c_str());
 				
 				}else{
 					printf("entity #%d creating animation slot and setting it to '%s' ...", req.EntityID, req.path.c_str());
 				}
-				animations.assign(req.EntityID, {animID}); //updates OR creates inside
+
+				animations.assign(req.EntityID, comp); //updates OR creates inside
 				printf("done!\n");
                 break;
 			}	
@@ -66,171 +77,18 @@ void Engine::updatePhysics()
         }
 }
 
-const aiNodeAnim* findNodeAnim(const aiAnimation* animation, const std::string nodeName)
-	{
-		for (uint32_t i = 0; i < animation->mNumChannels; i++)
-		{
-			const aiNodeAnim* nodeAnim = animation->mChannels[i];
-			if (std::string(nodeAnim->mNodeName.data) == nodeName)
-			{
-				return nodeAnim;
-			}
-		}
-		return nullptr;
-	}
-
-	// Returns a 4x4 matrix with interpolated translation between current and next frame
-	aiMatrix4x4 interpolateTranslation(float time, const aiNodeAnim* pNodeAnim)
-	{
-		aiVector3D translation;
-
-		if (pNodeAnim->mNumPositionKeys == 1)
-		{
-			translation = pNodeAnim->mPositionKeys[0].mValue;
-		}
-		else
-		{
-			uint32_t frameIndex = 0;
-			for (uint32_t i = 0; i < pNodeAnim->mNumPositionKeys - 1; i++)
-			{
-				if (time < (float)pNodeAnim->mPositionKeys[i + 1].mTime)
-				{
-					frameIndex = i;
-					break;
-				}
-			}
-
-			aiVectorKey currentFrame = pNodeAnim->mPositionKeys[frameIndex];
-			aiVectorKey nextFrame = pNodeAnim->mPositionKeys[(frameIndex + 1) % pNodeAnim->mNumPositionKeys];
-
-			float delta = (time - (float)currentFrame.mTime) / (float)(nextFrame.mTime - currentFrame.mTime);
-
-			const aiVector3D& start = currentFrame.mValue;
-			const aiVector3D& end = nextFrame.mValue;
-
-			translation = (start + delta * (end - start));
-		}
-
-		aiMatrix4x4 mat;
-		aiMatrix4x4::Translation(translation, mat);
-		return mat;
-	}
-
-	// Returns a 4x4 matrix with interpolated rotation between current and next frame
-	aiMatrix4x4 interpolateRotation(float time, const aiNodeAnim* pNodeAnim)
-	{
-		aiQuaternion rotation;
-
-		if (pNodeAnim->mNumRotationKeys == 1)
-		{
-			rotation = pNodeAnim->mRotationKeys[0].mValue;
-		}
-		else
-		{
-			uint32_t frameIndex = 0;
-			for (uint32_t i = 0; i < pNodeAnim->mNumRotationKeys - 1; i++)
-			{
-				if (time < (float)pNodeAnim->mRotationKeys[i + 1].mTime)
-				{
-					frameIndex = i;
-					break;
-				}
-			}
-
-			aiQuatKey currentFrame = pNodeAnim->mRotationKeys[frameIndex];
-			aiQuatKey nextFrame = pNodeAnim->mRotationKeys[(frameIndex + 1) % pNodeAnim->mNumRotationKeys];
-
-			float delta = (time - (float)currentFrame.mTime) / (float)(nextFrame.mTime - currentFrame.mTime);
-
-			const aiQuaternion& start = currentFrame.mValue;
-			const aiQuaternion& end = nextFrame.mValue;
-
-			aiQuaternion::Interpolate(rotation, start, end, delta);
-			rotation.Normalize();
-		}
-
-		aiMatrix4x4 mat(rotation.GetMatrix());
-		return mat;
-	}
-
-
-	// Returns a 4x4 matrix with interpolated scaling between current and next frame
-	aiMatrix4x4 interpolateScale(float time, const aiNodeAnim* pNodeAnim)
-	{
-		aiVector3D scale;
-		//check num of keys if only one then 0
-		if (pNodeAnim->mNumScalingKeys == 1)
-		{
-			scale = pNodeAnim->mScalingKeys[0].mValue;
-		}
-
-		//oooh more interesting herfe we actually check our time against the nodes scalin keys.mtime until its less than time and process that key, 
-		else
-		{
-			uint32_t frameIndex = 0;
-			for (uint32_t i = 0; i < pNodeAnim->mNumScalingKeys - 1; i++)
-			{
-				if (time < (float)pNodeAnim->mScalingKeys[i + 1].mTime)
-				{
-					frameIndex = i;
-					break;
-				}
-			}
-
-			//oooh we got scaling key for this keys and next keys
-			aiVectorKey currentFrame = pNodeAnim->mScalingKeys[frameIndex];
-			aiVectorKey nextFrame = pNodeAnim->mScalingKeys[(frameIndex + 1) % pNodeAnim->mNumScalingKeys]; // aah so if we are at last frame then we interpolate wiht start frame
-			
-			float delta = (time - (float)currentFrame.mTime) / (float)(nextFrame.mTime - currentFrame.mTime);
-
-			const aiVector3D& start = currentFrame.mValue;
-			const aiVector3D& end = nextFrame.mValue;
-
-			scale = (start + delta * (end - start));
-		}
-
-		aiMatrix4x4 mat;
-		aiMatrix4x4::Scaling(scale, mat);
-		return mat;
-	}
-
-void Engine::readNodeHierarchy(float animationTime,aiAnimation* pAnimation, const aiNode* pNode, const aiMatrix4x4& parentTransform, const aiMatrix4x4& globalInverseTransform, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
-    
+void Engine::readNodeHierarchy(const aiNode* pNode, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
     for(int i{}; i < pNode->mNumMeshes;i++){
         uint32_t m = pNode->mMeshes[i];
         AssetRegistry::SkinnedMeshData& mesh = mdl.meshes[m];
         RenderPkt pkt = templatePkt;
         pkt.indexCount = mesh.indexCount;
         pkt.offsetIBO += mesh.baseIndexLocalIBO;
-        
         packets.push_back(pkt);
     }
 
-    std::string nodeName = std::string(pNode->mName.C_Str());
-
-    aiMatrix4x4 NodeTransformation(pNode->mTransformation);
-    const aiNodeAnim* pNodeAnim = findNodeAnim(pAnimation, nodeName);
-	
-    if (pNodeAnim)
-	{
-			// Get interpolated matrices between current and next frame
-			aiMatrix4x4 matScale = interpolateScale(animationTime, pNodeAnim);
-			aiMatrix4x4 matRotation = interpolateRotation(animationTime, pNodeAnim);
-			aiMatrix4x4 matTranslation = interpolateTranslation(animationTime, pNodeAnim);
-			NodeTransformation = matTranslation * matRotation * matScale;
-	}
-
-    aiMatrix4x4 GlobalTransformation = parentTransform * NodeTransformation;
-
-    if(mdl.boneNameToIndexMap.find(nodeName) != mdl.boneNameToIndexMap.end()){
-        int boneID = mdl.boneNameToIndexMap[nodeName];
-        aiMatrix4x4 finalMat = globalInverseTransform * GlobalTransformation;// * mdl.transient[boneID];
-
-        //mdl.finalBoneMatrices[boneID] = glm::transpose(glm::make_mat4(&finalMat.a1));
-    }
-    
     for(int i{}; i < pNode->mNumChildren;i++){
-        readNodeHierarchy(animationTime, pAnimation, pNode->mChildren[i], GlobalTransformation, globalInverseTransform, packets, templatePkt, mdl);
+        readNodeHierarchy(pNode->mChildren[i], packets, templatePkt, mdl);
     }
     
 
@@ -238,20 +96,21 @@ void Engine::readNodeHierarchy(float animationTime,aiAnimation* pAnimation, cons
 
 
 void Engine::parseSceneNodes(const aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
-
-    float TicksPerSecond = (float)(scn->mAnimations[0]->mTicksPerSecond != 0 ? scn->mAnimations[0]->mTicksPerSecond : 25.0f);
-    static float TimeInTicks;
-	TimeInTicks += plt.deltaTime * TicksPerSecond;
-    float animTime = fmod(TimeInTicks, (float)scn->mAnimations[0]->mDuration);
-    aiMatrix4x4 globalInverseTransform = scn->mRootNode->mTransformation.Inverse();
-    aiMatrix4x4 identity = {};
-    readNodeHierarchy(animTime, scn->mAnimations[0], scn->mRootNode, identity, globalInverseTransform, packets, templatePkt, mdl);
-
+    readNodeHierarchy(scn->mRootNode, packets, templatePkt, mdl);
+	
 }
 
 
+void Engine::updateAnimations(float dt) {
+    auto& animPool = reg.getPool<Animated>();
+    for (int i{}; i < animPool.count; i++) {
+        Animated& animated = animPool.data[i];
+		animated.time = fmod(animated.time + dt * animated.speed, animated.duration);
+    }
+}
+
 void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
-    auto [transPool, rendPool, animPool] = reg.getPools<Transform, Renderable, Animation>();
+    auto [transPool, rendPool, animPool] = reg.getPools<Transform, Renderable, Animated>();
 
     packets.clear();
     AssetRegistry& astReg = ldr.getAssetReg();
@@ -262,16 +121,22 @@ void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
         const Renderable& rend = rendPool.data[i];
         
         if(astReg.isSkinned(rend.id)){
-            AssetRegistry::SkinnedModel& mdl = astReg.getSkinnedModelFromID(rend.id);
             //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesSkinnedVBO/sizeof(SkinnedVertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
-            glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
-            RenderPkt pkt{};
-
-			pkt.pc.modelSpace = modelMat;
+            AssetRegistry::SkinnedModel& mdl = astReg.getSkinnedModelFromID(rend.id);
+            
+			glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
+            Animated& animated = animPool.get(e);
+			
+			
+			int frameIndex = animated.getFrame();
+			RenderPkt pkt{};
             pkt.type = Mesh::SKINNED;
+			
+			pkt.pc.modelSpace = modelMat;
             pkt.pc.offsetVBO = mdl.baseOffsetBytesSkinnedVBO /sizeof(SkinnedVertex);
             pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t);
-            //parseSceneNodes(ldr.scenes[0], packets, pkt, mdl);
+			pkt.pc.offsetBoneBuffer = animated.offset + frameIndex * mdl.boneCount + mdl.baseOffsetBytesBoneBuffer / sizeof(glm::mat4);
+
             
             for(auto& mesh : mdl.meshes){
                 pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global

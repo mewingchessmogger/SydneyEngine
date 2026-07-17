@@ -20,12 +20,11 @@ enum class Mesh : uint32_t{
 struct Pkt_PC{
     glm::mat4 modelSpace{1.0};
     uint32_t offsetVBO{};// represent either vbo or skinned vbo
+    uint32_t offsetBoneBuffer{};
 };
 struct RenderPkt{
     Pkt_PC pc{};
-
     Mesh type{}; 
-    uint32_t boneBaseIndex{};
     uint32_t offsetIBO{};
     uint32_t indexCount{};
     

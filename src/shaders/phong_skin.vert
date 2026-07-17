@@ -26,21 +26,23 @@ layout(buffer_reference, scalar) readonly buffer SkinnedVertexBuffer {
     SkinnedVertex vertices[];
 };
 
+layout(buffer_reference, scalar) readonly buffer matrixBuffer {
+    mat4 mats[];
+};
+
+
 layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer CameraData{
     mat4 view;
     mat4 proj;
 };
 
 
-// layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer BoneData{
-//     mat4 matrices[256];
-// };
-
 
 // Your Push Constant matches your C++ struct exactly
 layout(push_constant) uniform Constants {
     mat4 model;
     uint offsetVBO;
+    uint offsetBoneBuffer;
 } pc;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
@@ -59,21 +61,23 @@ void main() {
     IndexBuffer  indexBuffer  = IndexBuffer(ubo.indxAdress);
     SkinnedVertexBuffer vertexBuffer = SkinnedVertexBuffer(ubo.skinnedVertexAdress);
     CameraData cam = CameraData(ubo.projectionAddress);
-    //BoneData boneArr = BoneData(ubo.boneMatAddress);
-    // Step 1: Fetch the index using the hardware counter
+    matrixBuffer matBuffer = matrixBuffer(ubo.animationAddress);
+    
+    
     uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
 
-    // Step 2: Fetch the actual vertex data using that index
+    
     SkinnedVertex v = vertexBuffer.vertices[vIndex];
     
-    
-    // mat4 boneTransform = boneArr.matrices[v.boneIDs[0]] * v.weights[0];
-    // boneTransform     += boneArr.matrices[v.boneIDs[1]] * v.weights[1];
-    // boneTransform     += boneArr.matrices[v.boneIDs[2]] * v.weights[2];
-    // boneTransform     += boneArr.matrices[v.boneIDs[3]] * v.weights[3];
+    uint boneOffset = pc.offsetBoneBuffer;
+    vec4 pos = matBuffer.mats[v.boneIDs[0] + boneOffset] * v.weights[0] *vec4(v.pos, 1.0);
+    pos     += matBuffer.mats[v.boneIDs[1] + boneOffset] * v.weights[1] *vec4(v.pos, 1.0);
+    pos     += matBuffer.mats[v.boneIDs[2] + boneOffset] * v.weights[2] *vec4(v.pos, 1.0);
+    pos     += matBuffer.mats[v.boneIDs[3] + boneOffset] * v.weights[3] *vec4(v.pos, 1.0);
 	
 //* boneTransform
-    gl_Position = cam.proj * cam.view   * vec4(v.pos, 1.0);
+    gl_Position = cam.proj * cam.view * pos;
+    
     boneIDs = v.boneIDs;
     weights = v.weights;
 
