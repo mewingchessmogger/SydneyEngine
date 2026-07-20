@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan/vulkan.hpp"
+#include "precompiled_headers/engine_pch.hpp"
 struct BarrierMasks {
     vk::PipelineStageFlags2 srcStage{};
     vk::PipelineStageFlags2 dstStage{};

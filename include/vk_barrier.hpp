@@ -1,6 +1,5 @@
 #pragma once
 #include "shared_definitions.hpp"
-#include "vulkan/vulkan.hpp"
     
 namespace vkutils{
 

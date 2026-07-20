@@ -50,8 +50,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     glm
     assimp_lib
 )
-target_precompile_headers(SydneyEngine PRIVATE include/pch.hpp)
-
+target_precompile_headers(SydneyEngine PRIVATE src/precompiled_headers/engine_pch.hpp)
 
 set(ASSIMP_DLL "${CMAKE_CURRENT_SOURCE_DIR}/library/assimp/assimp-vc145-mt.dll")
 

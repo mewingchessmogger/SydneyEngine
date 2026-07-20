@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
+#include "precompiled_headers/engine_pch.hpp"
 #include <vector>
 namespace vkb {
     struct Instance;
