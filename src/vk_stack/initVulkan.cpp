@@ -3,7 +3,6 @@
 #include "vk_stack.hpp"
 #include "platform_glfw.hpp"
 #include <vk_mem_alloc.h>
-#include <iostream> 
 void VulkanStack::initInstance(PlatformGLFW& plt) {
 
 	vkb::InstanceBuilder instanceBuilder;
@@ -105,27 +104,27 @@ void VulkanStack::initDevice(PlatformGLFW& plt) {
 
     ctx.chosenGPU.getFeatures2(&supported2);
 
-    std::cout << "--- Vulkan Device Debugger ---\n";
-    std::cout << "GPU Name: " << physicalDevice.properties.deviceName << "\n";
-	
-    std::cout << "Feature textureCompressionBC: " << (features1.textureCompressionBC ? "Enabled" : "Disabled") << "\n";
-    std::cout << "Feature dynamicRendering: " << (supported13.dynamicRendering ? "Supported" : "Not Supported") << "\n";
-    std::cout << "Feature synchronization2: " << (supported13.synchronization2 ? "Supported" : "Not Supported") << "\n";
-    std::cout << "Feature bufferDeviceAddress: " << (supported12.bufferDeviceAddress ? "Supported" : "Not Supported") << "\n";
-    std::cout << "GPU supports descriptorIndexing: "
-        << supported12.descriptorIndexing << "\n";
-    std::cout << "GPU supports runtimeDescriptorArray: "
-        << supported12.runtimeDescriptorArray << "\n";
-    std::cout << "GPU supports shaderSampledImageArrayNonUniformIndexing: "
-        << supported12.shaderSampledImageArrayNonUniformIndexing << "\n";
-    std::cout << "Extension VK_KHR_shader_draw_parameters: Enabled\n";
-	std::cout << "min SSBO offset alignment: " << physicalDevice.properties.limits.minStorageBufferOffsetAlignment << "\n";
-    std::cout << "------------------------------\n";
-    std::cout << "min UBO offset alignment: " << physicalDevice.properties.limits.minUniformBufferOffsetAlignment << "\n";
-    std::cout << "------------------------------\n";
-     std::cout << "------------------------------\n";
-    std::cout << "max push constant size: " << physicalDevice.properties.limits.maxPushConstantsSize << "\n";
-    std::cout << "------------------------------\n";
+    printf("--- Vulkan Device Debugger ---\n");
+printf("GPU Name: %s\n", physicalDevice.properties.deviceName);
+
+printf("Feature textureCompressionBC: %s\n", features1.textureCompressionBC ? "Enabled" : "Disabled");
+printf("Feature dynamicRendering: %s\n", supported13.dynamicRendering ? "Supported" : "Not Supported");
+printf("Feature synchronization2: %s\n", supported13.synchronization2 ? "Supported" : "Not Supported");
+printf("Feature bufferDeviceAddress: %s\n", supported12.bufferDeviceAddress ? "Supported" : "Not Supported");
+
+// Bools print as 1 or 0 by default in printf to match original std::cout behavior
+printf("GPU supports descriptorIndexing: %d\n", supported12.descriptorIndexing);
+printf("GPU supports runtimeDescriptorArray: %d\n", supported12.runtimeDescriptorArray);
+printf("GPU supports shaderSampledImageArrayNonUniformIndexing: %d\n", supported12.shaderSampledImageArrayNonUniformIndexing);
+
+printf("Extension VK_KHR_shader_draw_parameters: Enabled\n");
+printf("min SSBO offset alignment: %llu\n", (unsigned long long)physicalDevice.properties.limits.minStorageBufferOffsetAlignment);
+printf("------------------------------\n");
+printf("min UBO offset alignment: %llu\n", (unsigned long long)physicalDevice.properties.limits.minUniformBufferOffsetAlignment);
+printf("------------------------------\n");
+printf("------------------------------\n");
+printf("max push constant size: %u\n", physicalDevice.properties.limits.maxPushConstantsSize);
+printf("------------------------------\n");
 }
 
 
@@ -142,9 +141,9 @@ void VulkanStack::initCommands() {
 
 	cmdBuffers.resize(DESIRED_IMAGES_IN_FLIGHT);
 	cmdBuffers = ctx.device.allocateCommandBuffers(allocInfo);
-	for (auto i : cmdBuffers) {
-		std::cout <<"cmdbuffer #"<< i << "\n";
-	}
+	// for (auto i : cmdBuffers) {
+	// 	std::cout <<"cmdbuffer #"<< i << "\n";
+	// }
 	res.delQ.add(ctx.cmdPool);	
  
  //imgui stuff
@@ -159,9 +158,9 @@ void VulkanStack::initCommands() {
 
 	ctx.immBuffers.resize(DESIRED_IMAGES_IN_FLIGHT);
 	ctx.immBuffers = ctx.device.allocateCommandBuffers(allocInfo);
-	for (auto i : ctx.immBuffers) {
-		std::cout << "immgui cmdBuffer#" << i << "\n";
-	}
+	// for (auto i : ctx.immBuffers) {
+	// 	std::cout << "immgui cmdBuffer#" << i << "\n";
+	// }
 	res.delQ.add(ctx.immPool);
 		
 }
@@ -210,7 +209,7 @@ void VulkanStack::initUpdateDescriptorSets(){
         .setRange(res.uniformBuffer.stride);  // IMPORTANT: The size of ONE frame's data
 
     vk::WriteDescriptorSet uboWrite{};
-            std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
+            //std::cout << "!!!!" << res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)] << "\n";
 
     uboWrite
         .setDstSet(res.descriptorSets[static_cast<size_t>(DescriptorSetType::UBO)])

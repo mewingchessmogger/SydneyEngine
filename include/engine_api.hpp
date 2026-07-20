@@ -4,10 +4,18 @@ class EngineAPI{
     private:
     int gameCameraEntity{};
     
+
+    
+
     public:
     enum Command{
-      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION, COCONUT
+      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_MESH_TO_BONE, COCONUT
     };
+
+    struct PayloadCSI{Command cmd; std::string path{}; int EntityID = -1; };
+
+    struct PayloadCSSI{Command cmd; std::string model{}; std::string bone{}; int EntityID = -1; }; // Command String String Integer -> CSSI
+
 
     struct Request{
         Command cmd;
@@ -34,6 +42,17 @@ class EngineAPI{
     void setAnimation(std::string animationName, int entityID){
         reqs.push_back({SET_ANIMATION,animationName,entityID});
     }
-    //api.setAnimation(2, "shooting")
+
+    /*
+    void lerpAnimation(std::string animName, int entityID){
+        reqs.push_back({LERP_ANIMATION,animationName,entityID});
+    }
+    
+    void attachModelToBone(std::string& srcName, std::string& dstName, int entityID){
+            reqs.push_back({ATTACH_MODEL_TO_BONE,animationName,entityID});
+
+    }
+
+    */
 }; 
     

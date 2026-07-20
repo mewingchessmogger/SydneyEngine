@@ -1,8 +1,7 @@
 
 #include "vk_mmu.hpp"
 #include "vk_barrier.hpp"
-#include "vertex_def.hpp"
-#include "iostream"
+#include <stdexcept>
 
 void ResManager::createBuffer(BufferType type, unsigned long byteCapacity, AllocatedBuffer &buffer)
 {
@@ -94,7 +93,8 @@ void ResManager::createBuffer(BufferType type, unsigned long byteCapacity, Alloc
 }
 
 uint32_t ResManager::getCurrStride(vk::DeviceSize sizeofBuffer, vk::DeviceSize minSizeUBO){
-	std::cout << "min size of UBO: " << minSizeUBO << " bytes\n";
+	printf("min size of UBO: %d bytes", minSizeUBO );
+	
 	uint32_t currStride = sizeofBuffer;
 	//check if ubosize is less than min size 
 	if (currStride <= minSizeUBO) {
@@ -127,8 +127,8 @@ void ResManager::initBuffers(vk::Device device, vk::DeviceSize minSizeUBO, uint3
 	createBuffer(BufferType::SKINNED_VBO, SKINNED_VBO_BYTE_CAPACITY, skinnedVertexBuffer);
 	createBuffer(BufferType::BONE_BUFFER, BONE_BUFFER_BYTE_CAPACITY, boneBuffer);
 
-
-    std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
+	
+    //std::cout << "name of vbo, ibo " << vertexBuffer.handle << ", " << indexBuffer.handle << "\n"; 
 	vertexBuffer.address = device.getBufferAddress({vertexBuffer.handle});
 	indexBuffer.address = device.getBufferAddress({indexBuffer.handle});
 	skinnedVertexBuffer.address = device.getBufferAddress({skinnedVertexBuffer.handle});

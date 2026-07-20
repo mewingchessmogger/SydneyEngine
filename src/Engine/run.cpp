@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "pch.hpp"
 using Particle = physics::Particle;
 void Engine::run(){
     initialize(); // basically all parts of the engine
@@ -24,13 +24,15 @@ void Engine::run(){
     game.ptr->init(reg, api);
 
 
-    //api.loadModel("models/fps_character_animation_pack_ak-47.glb");
     
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
             plt.inputState.requestCursorVisible = (mode == EngineMode::EDITOR);
+        }
+        if(plt.inputState.keyPressed(Input::Key::Quit)){
+            break;
         }
 
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
@@ -51,12 +53,10 @@ void Engine::run(){
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
-                stk.abortFrame();// TODO fix validation error 
+                stk.abortFrame();
                 continue;
             };
             
-            //AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(2); ,mdl.finalBoneMatrices
-
             stk.updateUBO(activeCam.view, activeCam.proj);
             
             stk.render(ldr.getAssetReg());

@@ -103,7 +103,7 @@ class AssetRegistry{
             for (int a{}; a < animationsData.size(); a++){
                 auto& anim = animationsData[a];
                 if (animName == anim.name){
-                    printf("Found '%s' at index #%d! \n", animName, a);
+                    printf("Found '%s' at index #%d! \n", animName.c_str(), a);
                     return a;
                 }
             }

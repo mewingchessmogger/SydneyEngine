@@ -1,7 +1,7 @@
 #pragma once
 #include "engine_components.hpp"
 #include "windows.h"
-
+#include "script_component.hpp"
 class LoaderDLL{
     
     

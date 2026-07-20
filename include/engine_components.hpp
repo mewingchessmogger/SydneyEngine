@@ -2,25 +2,23 @@
 //#include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/quaternion.hpp"
-#include "ecs_registry.hpp"
 #include "input_format.hpp"
 #include "memory"
 #include "game_memory.hpp"
 #include "string"
 
 #include "reflections.hpp"
-#include "engine_api.hpp"
 
 struct Transform {
     //glm::mat4 model{1.0f};
     glm::vec3 position{ 0.0f };
-    glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 rotation{ 0.0f, 0.0f, 0.0f }; // IN DEGREES example : {90, 45, 0} NOT from 0 to 1 or euler 0 to 3.14
     glm::vec3 scale{ 1.0f };
 
     glm::mat4 matrix() const {
         glm::mat4 m{ 1.0f };
         m = glm::translate(m, position);
-        glm::quat qRotation = glm::quat(glm::vec3(rotation.x, rotation.y, rotation.z));
+        glm::quat qRotation = glm::quat(glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)));
         m = m * glm::mat4_cast(qRotation);
         m = glm::scale(m, scale);
         return m;
@@ -40,17 +38,6 @@ struct Camera {
     float pitch{};
     float yaw{ };
 };
-
-struct IScript{
-    virtual ~IScript() = default;
-    virtual void init(ECS::Registry& reg, EngineAPI& api) = 0;
-    virtual void update(float aspect, float dt, Input::State& state, ECS::Registry& reg, EngineAPI& api) = 0;
-};
-
-struct Script{
-    IScript* ptr{};
-};
-
 struct Renderable{
     uint32_t id{};
     REFLECT_1(id);
@@ -79,7 +66,7 @@ struct Animated{
         float progress = time / duration;
         int frameIndex = static_cast<int>(progress * totalFrames) % totalFrames;
 
-        printf("progress :%f , totalFrames: %d frameIndex: %d \n", progress, totalFrames,frameIndex );
+        //printf("progress :%f , totalFrames: %d frameIndex: %d \n", progress, totalFrames,frameIndex );
 
         return frameIndex;
     }

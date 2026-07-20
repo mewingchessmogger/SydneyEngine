@@ -20,15 +20,38 @@ void Tetris::init(ECS::Registry& reg, EngineAPI& api){
 	
 	
 	int women = reg.createEntity();
-	Transform w{};
-	w.position = glm::vec3(1.0, 0.0, 0.0);
-	w.scale = glm::vec3(1.0,1.0,1.0);
-	reg.add(women, w);
-	api.attachModel("models/fps_character_animation_pack_ak-47.glb", women);
-	api.setAnimation("RIG_UE5_Comando_AK_Reload", women);
 	
+	Transform w{};
+	w.position = glm::vec3(2.0, -1.5, 0.0);
+	w.scale = {2.0f,2.0f,2.0f};
+	reg.add(women, w);
+	api.attachModel("models/shibahu.glb", women);
+	api.setAnimation("Take 001", women);
+		
+	int gun = reg.createEntity();
+	Transform g{};
+	g.position = {1.0, -1.5,0.0};
+	g.rotation = {0.0, 0.0,0.0};
+
+	reg.add(gun, g);
+	api.attachModel("models/fps_character_animation_pack_ak-47.glb", gun);
+	api.setAnimation("RIG_UE5_Comando_AK_Reload", gun);
+	
+
+
     api.setGameCamera(reg.createEntity());
 	reg.emplace<Camera>(api.getGameCamera());
+	/*animation #0 'RIG_UE5_Comando_AK_Equip      ', duration (in ticks): 1.833333, ticks per second: 1000.000000, it has 110 channels
+animation #1 'RIG_UE5_Comando_AK_Aim_Fire   ', duration (in ticks): 0.666667, ticks per second: 1000.000000, it has 110 channels
+animation #2 'RIG_UE5_Comando_AK_Fire       ', duration (in ticks): 0.666667, ticks per second: 1000.000000, it has 110 channels
+animation #3 'RIG_UE5_Comando_AK_Hold       ', duration (in ticks): 0.750000, ticks per second: 1000.000000, it has 110 channels
+animation #4 'RIG_UE5_Comando_AK_Idle       ', duration (in ticks): 2.500000, ticks per second: 1000.000000, it has 110 channels
+animation #5 'RIG_UE5_Comando_AK_Idle_Aim   ', duration (in ticks): 2.500000, ticks per second: 1000.000000, it has 110 channels
+animation #6 'RIG_UE5_Comando_AK_Reload     ', duration (in ticks): 4.583333, ticks per second: 1000.000000, it has 110 channels
+animation #7 'RIG_UE5_Comando_AK_Walk       ', duration (in ticks): 1.000000, ticks per second: 1000.000000, it has 110 channels
+animation #8 'RIG_UE5_Comando_AK_Walk_Aim   ', duration (in ticks): 1.000000, ticks per second: 1000.000000, it has 110 channels
+animation #9 'RIG_UE5_Comando_AK__Run       ', duration (in ticks): 0.791667, ticks per second: 1000.000000, it has 110 channels
+animation #10 'RIG_UE5_Comando_Natural_pose */
 
 	// int woman = reg.createEntity();
 	// t.position = glm::vec3(3.0, -1.0, 0.0);

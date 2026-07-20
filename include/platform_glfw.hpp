@@ -9,6 +9,7 @@ class PlatformGLFW{
   float deltaTime{};
   GLFWwindow* windowPtr;
   bool frameBufferResized = false;
+  bool closeWindowRequested = false;
   int glwidth{};
   int glheight{};
   float aspectRatio;

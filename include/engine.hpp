@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include "platform_glfw.hpp"
 #include "vulkan/vulkan.hpp"
 #include "vk_stack.hpp"
@@ -19,6 +18,7 @@
 #include "asset_loader.hpp"
 #include "render_packet_def.hpp"
 #include "engine_api.hpp"
+#include "script_component.hpp"
 class Engine{
 
 
@@ -46,9 +46,7 @@ class Engine{
     void processAPI();
     void updatePhysics();
     void readNodeHierarchy(const aiNode *pNode, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
-    void readNodeHierarchy(float animationTime, const aiNode *pNode, const aiMatrix4x4 &parentTransform, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
-    void readNodeHierarchy(float animationTime, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, const aiMatrix4x4 &globalInverseTransform, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
-    void readNodeHierarchy(const aiNode *pNode, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
+   
     void parseSceneNodes(const aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
     void updateAnimations(float dt);
     void prepareRenderables(std::vector<RenderPkt> &packets);

@@ -1,8 +1,5 @@
-#include <iostream>
+#include <stdexcept>
 #include "platform_glfw.hpp"
-
-
-
 
 int PlatformGLFW::windowOpen(){
     return !glfwWindowShouldClose(windowPtr);
@@ -77,6 +74,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         case GLFW_KEY_SPACE:  genericKey = Input::Key::Jump;     break;
         case GLFW_KEY_LEFT_SHIFT: genericKey = Input::Key::Sprint; break;
         case GLFW_KEY_ESCAPE: genericKey = Input::Key::Escape; break;
+        case GLFW_KEY_Q : genericKey = Input::Key::Quit; break;
         default: return; // Ignore unmapped keys
     }
 

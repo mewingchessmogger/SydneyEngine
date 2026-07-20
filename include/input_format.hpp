@@ -3,7 +3,7 @@
 
 namespace Input{
     enum class Key : uint8_t {
-        Forward, Backward, Left, Right, Jump, Sprint, LeftClick, RightClick, Escape,  COUNT
+        Forward, Backward, Left, Right, Jump, Sprint, LeftClick, RightClick, Escape, Quit, COUNT
     };
     
     struct State {

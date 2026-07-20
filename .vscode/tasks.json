@@ -1,0 +1,73 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "type": "cmake",
+            "label": "CMake: configure",
+            "command": "configure",
+            "preset": "Visual Studio Community 2022 Release - amd64",
+            "problemMatcher": ["$msCompile"],
+            "detail": "CMake template configure task",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Game DLL (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "games/tetris/build",
+                "--config",
+                "Debug",
+                "--parallel"
+            ],
+            "group": {
+                "kind": "build"
+            },
+            "problemMatcher": ["$msCompile"]
+        },
+        {
+            "label": "Build Main (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "out/build/Visual Studio Community 2022 Release - amd64",
+                "--config",
+                "Debug",
+                "--parallel"
+            ],
+            "group": {
+                "kind": "build"
+            }
+        },
+        {
+            "label": "Run Main (Debug)",
+            "type": "shell",
+            "command": "&",
+            "args": [
+                ".\\out\\build\\Visual Studio Community 2022 Release - amd64\\Debug\\SydneyEngine.exe"
+            ],
+            "group": {
+                "kind": "test"
+            }
+        },
+        {
+            "label": "Build and Run Main (Debug)",
+            "dependsOn": "Build Main (Debug)",
+            "type": "shell",
+            "command": "&",
+            "args": [
+                ".\\out\\build\\Visual Studio Community 2022 Release - amd64\\Debug\\SydneyEngine.exe"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": ["$msCompile"]
+        }
+    ]
+}

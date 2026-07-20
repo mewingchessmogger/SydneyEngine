@@ -57,10 +57,10 @@
         }
         
         
-        float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
+        //float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
         
-        float desiredScalingFactor = targetScale/maxDimension;
-        mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
+       // float desiredScalingFactor = targetScale/maxDimension;
+        //mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
         meshBaseVertex.clear();
         meshBaseVertex.shrink_to_fit();
         //printf("\nstatic_model: %s, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ), scaleFactor: %f . \n\n", mdl.name.c_str(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
@@ -127,10 +127,10 @@
             mdl.meshes.push_back(skinnedMeshData);
         }
 
-        float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
+        //float maxDimension = std::max({maxVertex.x - minVertex.x, maxVertex.y - minVertex.y, maxVertex.z - minVertex.z});
 
-        float desiredScalingFactor = targetScale/maxDimension;
-        mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
+        //float desiredScalingFactor = targetScale/maxDimension;
+        //mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
         meshBaseVertex.clear();
         meshBaseVertex.shrink_to_fit();
         mdl.boneOffsetMats = std::move(boneOffsetMatrices);
@@ -328,7 +328,7 @@
     void AssetLoader::buildNodeAnimCache(const aiAnimation* anim, const aiNode* node)
     {
         std::string nodeName(node->mName.C_Str());
-        const aiNodeAnim* found = findNodeAnim(anim, nodeName); // still O(channels), but only ONCE per node
+        const aiNodeAnim* found = findNodeAnim(anim, nodeName); 
         if (found) nodeCache[node] = found;
 
         for (uint32_t i = 0; i < node->mNumChildren; i++)
@@ -353,7 +353,7 @@
             
             mdl.globalInverseTransform = scn->mRootNode->mTransformation.Inverse(); 
             
-            printf("animation #%d '%-30s', duration (in ticks): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, ticksPerSecond, animData.boneCount);
+            printf("animation #%d '%-30s', duration (in sec): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, ticksPerSecond, animData.boneCount);
             int estimatedFrames = (animData.duration != 0) ?  60 * animData.duration : 1;
 
             animData.totalFrames = estimatedFrames;
@@ -362,13 +362,12 @@
             
             mdl.transientBones.resize(mdl.transientBones.size() + estimatedFrames * boneCount);
             
-            aiMatrix4x4 identity{};
 
             
             buildNodeAnimCache(anim,scn->mRootNode);
             for (uint32_t frame{}; frame < estimatedFrames; frame++){
                 float animTime = (durationInTicks > 0.0f) ? (frame / (float)estimatedFrames) * durationInTicks : 0.0f;
-                parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, identity, mdl);                
+                parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, scn->mRootNode->mTransformation, mdl);                
             }
             
             nodeCache.clear();

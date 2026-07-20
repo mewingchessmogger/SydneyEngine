@@ -1,12 +1,11 @@
 #pragma once 
+#include "vk_context.hpp"
 #include "vk_renderer.hpp"
 #include "vk_mmu.hpp"
 #include "platform_glfw.hpp"
-#include "vk_context.hpp"
 #include "pipeline_builder.hpp"
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
-#include "render_packet_def.hpp"
 #include "asset_registry.hpp"
 #include "ecs_registry.hpp"
 #include "engine_components.hpp"
@@ -65,7 +64,6 @@ class VulkanStack{
 
         void initInstance(PlatformGLFW& plt);
         void initDevice(PlatformGLFW& plt);
-        void createSwapchain();
         void initCommands();
         void initDescriptorStuff();
         void initUpdateDescriptorSets();
@@ -75,7 +73,6 @@ class VulkanStack{
         void initRenderTargetImages();
         void initViewportImages();
         void ImmediateTransitionViewport();
-        void initImGuiViewportImages();
         void initDepthImages();
         void initColorPickImage();
         void initTestPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
@@ -106,12 +103,10 @@ class VulkanStack{
 
         void abortFrame();
 
-        void earlyEndFrame();
 
         void updateUBO(glm::mat4& view, glm::mat4& proj);
 
 
-        void updateUBO(glm::mat4 &view, glm::mat4 &proj, std::array<glm::mat4, 256> &bones);
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 

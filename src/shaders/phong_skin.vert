@@ -75,8 +75,10 @@ void main() {
     pos     += matBuffer.mats[v.boneIDs[2] + boneOffset] * v.weights[2] *vec4(v.pos, 1.0);
     pos     += matBuffer.mats[v.boneIDs[3] + boneOffset] * v.weights[3] *vec4(v.pos, 1.0);
 	
+    
+
 //* boneTransform
-    gl_Position = cam.proj * cam.view * pos;
+    gl_Position = cam.proj * cam.view * pc.model* pos;
     
     boneIDs = v.boneIDs;
     weights = v.weights;

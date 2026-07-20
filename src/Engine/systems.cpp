@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "pch.hpp"
 #include "asset_registry.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
@@ -109,6 +109,7 @@ void Engine::updateAnimations(float dt) {
     }
 }
 
+
 void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
     auto [transPool, rendPool, animPool] = reg.getPools<Transform, Renderable, Animated>();
 
@@ -124,7 +125,7 @@ void Engine::prepareRenderables(std::vector<RenderPkt>& packets){
             //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesSkinnedVBO/sizeof(SkinnedVertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
             AssetRegistry::SkinnedModel& mdl = astReg.getSkinnedModelFromID(rend.id);
             
-			glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
+			glm::mat4 modelMat = transPool.get(e).matrix() ;
             Animated& animated = animPool.get(e);
 			
 			

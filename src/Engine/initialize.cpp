@@ -1,5 +1,4 @@
-#include "engine.hpp"
-#include "asset_loader.hpp"
+#include "pch.hpp"
 
 void Engine::initialize(){
  
@@ -17,21 +16,24 @@ void Engine::initialize(){
     stk.initColorPickImage();
     stk.initUpdateDescriptorSets();
     
-    edt.init(stk,plt);
-    std::cout << "Processing phong...";
+    edt.init(stk.ctx,plt, stk.res.swapchainImages[0].format);
+    printf("Processing phong...");
 
 
     stk.initPhongPipeline(
-        shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true),
-        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true)
+        std::move(shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true)),
+        std::move(shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true))
     );
     stk.initSkinPhongPipeline(
-        shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true),
-        shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong_skin.frag"),true)
+        std::move(shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true)),
+        std::move(shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong_skin.frag"),true))
     );
-    
+    stk.initSkinPhongPipeline(
+        std::move(shaderCompiler.compileFile("phong_skin_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong_skin.vert"),true)),
+        std::move(shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong_skin.frag"),true))
+    );
 
-    std::cout << "Done!\n";
+    printf("Done!\n");
 
     // std::cout << "Processing pick...";
     // stk.initPickPipeline(

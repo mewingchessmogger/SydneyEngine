@@ -42,17 +42,17 @@
 
             switch(status) {
                 case FileStatus::created:
-                    std::cout << "File created: " << path_to_watch << '\n';
+                    printf("File created: %s\n", path_to_watch.c_str());
                     break;
                 case FileStatus::modified:
-                    std::cout << "File modified: " << path_to_watch << '\n';
+                    printf("File modified: %s\n", path_to_watch.c_str());
                     break;
                 case FileStatus::erased:
-                    std::cout << "File erased: " << path_to_watch << '\n';
+                    printf("File erased: %s\n", path_to_watch.c_str());
                     break;
                 default:
-                    std::cout << "Error! Unknown file status.\n";
-                }};
+                    printf("Error! Unknown file status.\n");
+            }};
             
             
             action = act;

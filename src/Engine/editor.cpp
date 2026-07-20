@@ -1,6 +1,8 @@
 #include "editor.hpp"
-#include <iostream>
-void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
+
+
+
+void Editor::init(VulkanContext& ctx, PlatformGLFW& plt, vk::Format swapchainFormat)
 {
 	// 1. Descriptor pool creation using Vulkan-Hpp
 	std::array<vk::DescriptorPoolSize, 11> poolSizes = {
@@ -23,7 +25,7 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
     
-	pool = stk.ctx.device.createDescriptorPool(poolInfo);
+	pool = ctx.device.createDescriptorPool(poolInfo);
 
 	IMGUI_CHECKVERSION();
 	edtContext = ImGui::CreateContext();
@@ -36,15 +38,15 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
     
 	ImGui_ImplGlfw_InitForVulkan(plt.windowPtr,true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
-	init_info.Instance = stk.ctx.instance;
-	init_info.PhysicalDevice = stk.ctx.chosenGPU;
-	init_info.Device = stk.ctx.device;
-	init_info.QueueFamily = stk.ctx.graphicsQueue.famIndex;
-	init_info.Queue = stk.ctx.graphicsQueue.handle;
+	init_info.Instance = ctx.instance;
+	init_info.PhysicalDevice = ctx.chosenGPU;
+	init_info.Device = ctx.device;
+	init_info.QueueFamily = ctx.graphicsQueue.famIndex;
+	init_info.Queue = ctx.graphicsQueue.handle;
 	init_info.PipelineCache = VK_NULL_HANDLE;
 	init_info.DescriptorPool = pool;
-	init_info.MinImageCount = (uint32_t)stk.res.swapchainImages.size();
-	init_info.ImageCount = (uint32_t)stk.res.swapchainImages.size();
+	init_info.MinImageCount = SWAPCHAIN_IMAGE_COUNT;
+	init_info.ImageCount = SWAPCHAIN_IMAGE_COUNT;
 	init_info.Allocator = nullptr;
 	init_info.UseDynamicRendering = true;
 
@@ -56,7 +58,7 @@ void Editor::init(VulkanStack& stk, PlatformGLFW& plt)
 	renderingInfo.viewMask = 0;
 	renderingInfo.colorAttachmentCount = 1;
     
-	VkFormat rawSwapchainFormat = static_cast<VkFormat>(stk.res.swapchainImages[0].format);
+	VkFormat rawSwapchainFormat = static_cast<VkFormat>(swapchainFormat);
 	renderingInfo.pColorAttachmentFormats = &rawSwapchainFormat;
 
 	renderingInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
@@ -78,7 +80,7 @@ void Editor::evalViewport(vk::Sampler sampler, std::vector<AllocatedImage>& inpu
 {
 
 	std::array<vk::ImageView,2> targets = {inputTargets[0].view, inputTargets[1].view} ;
-	//vk::Sampler sampler = stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)];
+	//vk::Sampler sampler = res.samplers[static_cast<int>(SamplerType::TEXTURE)];
 
 	
 	for(int i{}; i < 2; i++)
@@ -120,7 +122,7 @@ void Editor::messingAround(vk::CommandBuffer buffer, ECS::Registry& reg, GameCon
 
     
     // 2. Set scale to what you want (e.g., 2.0x larger)
-    ImGui::GetIO().FontGlobalScale = 2.0f;
+    ImGui::GetIO().FontGlobalScale = 2.5f;
 
     // 3. Render the menu bar
     if (ImGui::BeginMainMenuBar()) {
