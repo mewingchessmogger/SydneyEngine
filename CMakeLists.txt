@@ -49,6 +49,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     stb
     glm
     assimp_lib
+    cr
 )
 target_precompile_headers(SydneyEngine PRIVATE src/precompiled_headers/engine_pch.hpp)
 

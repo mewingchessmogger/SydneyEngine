@@ -43,6 +43,10 @@ target_include_directories(vma INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/vma")
 add_library(json INTERFACE)
 target_include_directories(json INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/json")
 
+add_library(cr INTERFACE)
+target_include_directories(cr INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/cr")
+
+
 
 # --- STB (For standalone image/font usage) ---
 add_library(stb INTERFACE)

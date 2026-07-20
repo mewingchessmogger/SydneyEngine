@@ -11,6 +11,5 @@ class LoaderDLL{
     using voidPtr = void* (*)(std::vector<IScript*>& scripts);
 //    HMODULE loadGameDLL(const char *nameDLL);
     HMODULE loadDLL(const char *nameDLL);
-    IScript *acquireScriptPtr(HMODULE handle, const char *factoryFunctionName);
     voidPtr getGameContextPtr(HMODULE handle, const char *factoryFunctionName);
 };

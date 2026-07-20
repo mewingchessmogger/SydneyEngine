@@ -6,12 +6,55 @@
             "label": "CMake: configure",
             "command": "configure",
             "preset": "Visual Studio Community 2022 Release - amd64",
-            "problemMatcher": ["$msCompile"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "detail": "CMake template configure task",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "Create GAMEDLL Build Files",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-B",
+                "games/tetris/build",
+                "-S",
+                "games/tetris",
+                "-G",
+                "Visual Studio 17 2022",
+                "-A",
+                "x64"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Build GameDLL Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "games/tetris/build",
+                "--config",
+                "Debug",
+                "--parallel"
+            ]
+        },
+        {
+            "label": "Build GameDLL (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "games/tetris/build",
+                "--config",
+                "Release",
+                "--parallel"
+            ],
+            "problemMatcher": []
         },
         {
             "label": "Build Game DLL (Debug)",
@@ -27,7 +70,9 @@
             "group": {
                 "kind": "build"
             },
-            "problemMatcher": ["$msCompile"]
+            "problemMatcher": [
+                "$msCompile"
+            ]
         },
         {
             "label": "Build Main (Debug)",
@@ -38,6 +83,21 @@
                 "out/build/Visual Studio Community 2022 Release - amd64",
                 "--config",
                 "Debug",
+                "--parallel"
+            ],
+            "group": {
+                "kind": "build"
+            }
+        },
+         {
+            "label": "Build Main (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "out/build/Visual Studio Community 2022 Release - amd64",
+                "--config",
+                "Release",
                 "--parallel"
             ],
             "group": {
@@ -56,6 +116,17 @@
             }
         },
         {
+            "label": "Run Main (Release)",
+            "type": "shell",
+            "command": "&",
+            "args": [
+                ".\\out\\build\\Visual Studio Community 2022 Release - amd64\\Release\\SydneyEngine.exe"
+            ],
+            "group": {
+                "kind": "test"
+            }
+        },
+        {
             "label": "Build and Run Main (Debug)",
             "dependsOn": "Build Main (Debug)",
             "type": "shell",
@@ -67,7 +138,25 @@
                 "kind": "test",
                 "isDefault": true
             },
-            "problemMatcher": ["$msCompile"]
+            "problemMatcher": [
+                "$msCompile"
+            ]
+        },
+         {
+            "label": "Build and Run Main (Release)",
+            "dependsOn": "Build Main (Release)",
+            "type": "shell",
+            "command": "&",
+            "args": [
+                ".\\out\\build\\Visual Studio Community 2022 Release - amd64\\Release\\SydneyEngine.exe"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ]
         }
     ]
 }

@@ -1,4 +1,8 @@
 #include "precompiled_headers/engine_pch.hpp"
+#include "passed_structures_dll.hpp"
+#define CR_HOST
+#include "cr.h"
+
 using Particle = physics::Particle;
 void Engine::run(){
     initialize(); // basically all parts of the engine
@@ -15,17 +19,19 @@ void Engine::run(){
     
     EngineMode mode = EngineMode::GAME;
     
-    std::vector<IScript*> IScripts{};    
-    HMODULE GameModule = loader.loadDLL("games/tetris/Debug/TetrisDLL.dll");
-    loader.getGameContextPtr(GameModule, "GetGameScripts")(IScripts);
+
+    PassedStructuresDLL psd{};
+    psd = {&reg, &api,&plt.inputState, &plt.aspectRatio, &plt.deltaTime};
     
-    Script game{};
-    game.ptr = IScripts[0];
-    game.ptr->init(reg, api);
+    cr_plugin cr_ctx;
+    cr_ctx.userdata = &psd;
+    cr_plugin_open(cr_ctx, "games/tetris/Debug/TetrisDLL.dll"); 
 
 
-    
     while (plt.windowOpen()) {
+        
+
+
         plt.updateState(); // update keyboard and dt
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
@@ -38,7 +44,9 @@ void Engine::run(){
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
 
         if (mode == EngineMode::GAME){         
-            game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, api);
+            cr_plugin_update(cr_ctx);
+            
+            //game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, api);
             updatePhysics();
         }
         

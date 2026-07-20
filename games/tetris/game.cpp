@@ -1,3 +1,4 @@
+
 #include "game.hpp"
 
 using Particle = physics::Particle;
@@ -6,7 +7,7 @@ struct Bullet{
 	REFLECT_1(speed);
 };
 
-void Tetris::init(ECS::Registry& reg, EngineAPI& api){
+void init(ECS::Registry& reg, EngineAPI& api){
 	api.loadModel("models/cube_gltf.glb");
 	api.loadModel("models/dragon.glb");
 	api.loadModel("models/shibahu.glb");
@@ -61,7 +62,7 @@ animation #10 'RIG_UE5_Comando_Natural_pose */
 	// reg.add(woman,t, r);
 }
 
-void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api)
+void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api)
 {		
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
@@ -74,14 +75,14 @@ void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& 
 			glm::vec3 floorForward = glm::normalize(glm::vec3(camera.dir.x, 0.0f, camera.dir.z));
 			glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
 			T.position = eyeFloor + floorForward;
-			
+			T.scale = {2.0f,2.0f,2.0f};
 			T.rotation = {0.0,1.0,0.0};
 			Particle p{};
 			p.pos = eyeFloor;
 			p.vel = floorForward * 2.0f;
 			p.acc = {0.0,-4.0,0.0};
 			p.damping = 0.5;
-			p.inverseMass = 10;
+			p.inverseMass = 15;
 			Renderable R = {};
 			
 			api.attachModel("models/dragon.glb", dragon);
@@ -112,4 +113,38 @@ void Tetris::update(float aspect, float dt, Input::State &state, ECS::Registry& 
         }
 
 	
+}
+
+
+static bool CR_STATE alreadyInitialized = false;
+CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
+	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
+	int foo{}; 
+	switch (operation) {
+		case CR_LOAD:{
+			if(!alreadyInitialized){
+				init(*psd->reg, *psd->api);
+				alreadyInitialized = true;
+			}else{
+				printf("Hmm weve already initted this time..!\n");
+			}
+		}
+		break;
+
+		case CR_STEP:{
+			update(*psd->aspect, *psd->dt, *psd->state ,*psd->reg, *psd->api);
+		}
+		break;
+
+		case CR_UNLOAD:{
+
+		}
+		break;
+
+		case CR_CLOSE:{
+
+		}
+		break;
+	}
+    return 0;
 }

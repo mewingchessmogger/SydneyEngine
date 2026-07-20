@@ -1,6 +1,5 @@
 #pragma once 
-#include "input_format.hpp"
-#include "ecs_registry.hpp"
+#include "passed_structures_dll.hpp"
 #include "fysik_motor.hpp"
 #include "engine_components.hpp"
 
@@ -10,18 +9,16 @@
 
 // #include "game_memory.hpp"
 // #include "reflections.hpp"
-#include "engine_api.hpp"
 #include "camera.hpp"
 // #define GLM_FORCE_DEPTH_ZERO_TO_ONE
  
 // #define  GLM_FORCE_RADIANS
 // #define  GLM_ENABLE_EXPERIMENTAL
-#include "script_component.hpp"
+//#include "script_component.hpp"
+#include "cr/cr.h"
 
 
-struct Tetris : IScript{
-    
-    //GameMemory* memory{};
-    void init(ECS::Registry& reg, EngineAPI& api) override;
-    void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) override;
-};
+//GameMemory* memory{};
+void init(ECS::Registry& reg, EngineAPI& api) ;
+void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) ;
+
