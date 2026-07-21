@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 4.00)
 project(TetrisDLL)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 1. Force the output straight into your game runtime folder
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../tetris")
@@ -19,6 +20,7 @@ set(DLL_SOURCES
     "camera.hpp"
     "game.cpp"
     "game.hpp"
+    "game_systems.cpp"
     )
 
 add_library(${PROJECT_NAME} SHARED ${DLL_SOURCES})

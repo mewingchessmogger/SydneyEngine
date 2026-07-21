@@ -223,7 +223,7 @@ namespace ECS{
         or you keep track over live ids gaining overhead in ecs usage but making liveids trivial, isnt this the simpler one?
         if this is called only during editor or saving, do you care about the performance? i dont..
         */
-        std::vector<Entity> getLiveIDs() {
+        const std::vector<Entity>& getLiveIDs() {
             if (!registryDirty){
                 return liveIDs;
             }
@@ -238,8 +238,7 @@ namespace ECS{
             registryDirty = false;
             return liveIDs;
         }
-
-
+        
         template<typename T>
         void createPool(){
             std::type_index typeKey = std::type_index(typeid(T));
@@ -300,6 +299,18 @@ namespace ECS{
             //push e into dead id
             
         }
+        
+        template<typename T>
+        void destroyPool(){
+            std::type_index typeKey = std::type_index(typeid(T));
+
+            if (pools.find(typeKey) == pools.end()){
+                throw std::runtime_error("POOL DONT EXIST!!!");
+            } 
+
+            pools.erase(typeKey);
+        }
+
     };
 
 

@@ -107,9 +107,6 @@ class AssetRegistry{
                     return a;
                 }
             }
-            // if(animationNameToIndexMap.find(animName) != animationNameToIndexMap.end()){
-            //     return animationNameToIndexMap[animName];
-            // }
             printf("uh oh %s aint in the map!!\n",animName.c_str());
             assert(0);
             return -1;

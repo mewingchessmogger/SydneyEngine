@@ -166,7 +166,7 @@ void Editor::messingAround(vk::CommandBuffer buffer, ECS::Registry& reg, GameCon
     ImGui::Text("Entities");
     ImGui::Separator();
 
-	std::vector<int>& entities = reg.getLiveIDs();
+	const std::vector<int>& entities = reg.getLiveIDs();
 
 	static int selectedEntity = -1;
 	

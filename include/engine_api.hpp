@@ -26,8 +26,15 @@ class EngineAPI{
     std::vector<Request> reqs{};
     
     void loadModel(const std::string path, int id = -1){
-        reqs.push_back({LOAD_MODEL, path, id});
+        reqs.push_back({LOAD_MODEL, path, -1});
     }
+
+    void loadModels(const std::vector<std::string>& paths){
+        for(const auto& path : paths){
+            reqs.push_back({LOAD_MODEL, path, -1});
+        }
+    }
+
     void attachModel(const std::string path, int id){
         reqs.push_back({ATTACH_MODEL, path, id});
     }

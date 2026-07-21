@@ -18,7 +18,12 @@
 #include "cr/cr.h"
 
 
-//GameMemory* memory{};
+struct Weapon{
+	int id{};
+	int bullets = 30;
+
+};
 void init(ECS::Registry& reg, EngineAPI& api) ;
 void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) ;
 
+void updateWeaponSystem(Input::State & state, EngineAPI & api, ECS::Registry &reg);

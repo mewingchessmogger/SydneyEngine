@@ -1,6 +1,6 @@
 #include "precompiled_headers/engine_pch.hpp"
 #include "passed_structures_dll.hpp"
-#define CR_HOST
+#define CR_HOST CR_SAFE
 #include "cr.h"
 
 using Particle = physics::Particle;
