@@ -25,6 +25,7 @@ void Engine::run(){
     
     cr_plugin cr_ctx;
     cr_ctx.userdata = &psd;
+
     cr_plugin_open(cr_ctx, "games/tetris/Debug/TetrisDLL.dll"); 
 
 
@@ -43,7 +44,8 @@ void Engine::run(){
 
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
 
-        if (mode == EngineMode::GAME){         
+        if (mode == EngineMode::GAME){        
+            
             cr_plugin_update(cr_ctx);
             
             //game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, api);
@@ -85,4 +87,5 @@ void Engine::run(){
         plt.inputState.clearCursorDeltas();
     }
     plt.shutdown();
+    cr_plugin_close(cr_ctx);
 }

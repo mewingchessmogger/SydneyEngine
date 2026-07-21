@@ -31,18 +31,7 @@
             ],
             "problemMatcher": []
         },
-        {
-            "label": "Build GameDLL Debug",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "games/tetris/build",
-                "--config",
-                "Debug",
-                "--parallel"
-            ]
-        },
+       
         {
             "label": "Build GameDLL (Release)",
             "type": "shell",
@@ -64,15 +53,23 @@
                 "--build",
                 "games/tetris/build",
                 "--config",
-                "Debug",
-                "--parallel"
+                "Debug"
+                
             ],
             "group": {
                 "kind": "build"
             },
             "problemMatcher": [
                 "$msCompile"
-            ]
+            ],
+             "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            }
         },
         {
             "label": "Build Main (Debug)",

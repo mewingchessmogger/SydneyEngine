@@ -76,7 +76,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
 			T.position = eyeFloor + floorForward;
 			T.scale = {2.0f,2.0f,2.0f};
-			T.rotation = {0.0,1.0,0.0};
+			T.rotation = {90.0,90.0,0.0};
 			Particle p{};
 			p.pos = eyeFloor;
 			p.vel = floorForward * 2.0f;
@@ -92,24 +92,13 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		}
 
-		
-
-
-
-
 		auto& PPool = reg.getPool<physics::Particle>();
 
         for (int i{}; i < PPool.count; i++){
             ECS::Entity e = PPool.dense[i];
             Particle& p = PPool.data[i];
 			glm::vec3 vel =p.vel;
-			
-            // if ((vel.x *vel.x + vel.y* vel.y +vel.z* vel.z) < 0.1f) {
-            //     reg.destroy(e);
-        	// }
-			// if (p.pos.y <= -1.0){
-			// 	p.forceAccumulator = p.forceAccumulator + glm::vec3{0.0,4.0,0.0};
-            //std::cout << "VELOCITY of entity " << (int)e << ": " <<  p.vel.x << "\n";
+
         }
 
 	
@@ -119,15 +108,22 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 static bool CR_STATE alreadyInitialized = false;
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
-	int foo{}; 
+	
 	switch (operation) {
 		case CR_LOAD:{
-			if(!alreadyInitialized){
-				init(*psd->reg, *psd->api);
-				alreadyInitialized = true;
+			if(ctx->failure != CR_BAD_IMAGE){
+				if(!alreadyInitialized){
+					init(*psd->reg, *psd->api);
+					alreadyInitialized = true;
+				}else{
+					printf("No bad Image but already initted\n");
+				}
+
 			}else{
-				printf("Hmm weve already initted this time..!\n");
+				printf("bad image still ..\n");
 			}
+			
+			
 		}
 		break;
 
