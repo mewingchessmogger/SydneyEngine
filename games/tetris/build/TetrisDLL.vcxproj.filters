@@ -4,7 +4,7 @@
     <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game_systems.cpp">
+    <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\systems_game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

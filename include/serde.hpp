@@ -5,9 +5,7 @@
 #include <variant>
 #include <vector>
 #include <typeinfo> // Required for typeid
-#include <filesystem>
 #include <array>
-#include "engine_components.hpp"
 #include "ecs_registry.hpp"
 #include <sstream>
 #include <cctype>

@@ -39,16 +39,16 @@ void Engine::run(){
         }
 
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
-
-        if (mode == EngineMode::GAME){        
-            
-            cr_plugin_update(cr_ctx);
-            
-            updatePhysics();
-        }
         
-        processAPI(); // api.setAnimation(gameID, "shooting_ak");
+        
+        
+        if (mode == EngineMode::GAME){        
+            cr_plugin_update(cr_ctx);
+            updatePhysics();
+            
+        }
 
+        processAPI();
         updateAnimations(plt.deltaTime);
         
         prepareRenderables(stk.packets);

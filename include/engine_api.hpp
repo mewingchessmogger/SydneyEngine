@@ -50,6 +50,8 @@ class EngineAPI{
         reqs.push_back({SET_ANIMATION,animationName,entityID});
     }
 
+    
+
     /*
     void lerpAnimation(std::string animName, int entityID){
         reqs.push_back({LERP_ANIMATION,animationName,entityID});

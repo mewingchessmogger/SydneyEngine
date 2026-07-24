@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "TetrisDLL.dir\\Debug\\systems_game.obj",
+            "outputs": [
+                "C:\\Users\\Gaming\\source\\repos\\Sydney\\SydneyEngine\\games\\tetris\\build\\TetrisDLL.dir\\Debug\\vc143.pdb",
+                "TetrisDLL.dir\\Debug\\"
+            ],
+            "requires": []
+        }
+    ]
+}

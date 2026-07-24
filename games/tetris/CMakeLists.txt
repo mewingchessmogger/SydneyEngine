@@ -20,7 +20,7 @@ set(DLL_SOURCES
     "camera.hpp"
     "game.cpp"
     "game.hpp"
-    "game_systems.cpp"
+    "systems_game.cpp"
     )
 
 add_library(${PROJECT_NAME} SHARED ${DLL_SOURCES})

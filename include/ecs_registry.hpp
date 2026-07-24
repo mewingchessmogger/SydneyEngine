@@ -86,6 +86,8 @@ namespace ECS{
             int page = e / PAGE_SIZE;
             int offset = e % PAGE_SIZE;
 
+            
+
             if (page >= sparse.size() || sparse[page] == nullptr){
               throw std::runtime_error ("page not allocated for this");
             }
