@@ -211,28 +211,6 @@
     }
 
 
-    // void AssetLoader::parseSkinned(const aiScene* scn, AssetRegistry::SkinnedModel& mdl){
-    // 	aiMatrix4x4 globalInverseTransform = scn->mRootNode->mTransformation.Inverse();
-    // 	aiMatrix4x4 identity = {};
-    // 	aiNode* pNode = scn->mRootNode;
-    //     const aiMesh* mesh = scn->mMeshes[pNode->mMeshes[i]];
-        
-    //     // std::string nodeName = std::string(pNode->mName.C_Str());
-
-    //     // aiMatrix4x4 NodeTransformation(pNode->mTransformation);
-    //     // const aiNodeAnim* pNodeAnim = findNodeAnim(pAnimation, nodeName);
-
-    //     // if (pNodeAnim)
-    // 	// {
-    // 	// 		// Get interpolated matrices between current and next frame
-    // 	// 		aiMatrix4x4 matScale = interpolateScale(animationTime, pNodeAnim);
-    // 	// 		aiMatrix4x4 matRotation = interpolateRotation(animationTime, pNodeAnim);
-    // 	// 		aiMatrix4x4 matTranslation = interpolateTranslation(animationTime, pNodeAnim);
-    // 	// 		NodeTransformation = matTranslation * matRotation * matScale;
-    // 	// }
-
-    // }
-
         
     void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
     {
@@ -341,6 +319,7 @@
         
         for (int i{}; i < scn->mNumAnimations; i++){
             aiAnimation* anim = scn->mAnimations[i];
+            
             AssetRegistry::AnimData animData{};
             int boneCount = mdl.boneNameToIndexMap.size();
             mdl.boneCount = boneCount;
@@ -365,9 +344,11 @@
 
             
             buildNodeAnimCache(anim,scn->mRootNode);
+            aiMatrix4x4 identity{};
+            aiMatrix4x4::RotationX(1.57079632679f, identity);
             for (uint32_t frame{}; frame < estimatedFrames; frame++){
                 float animTime = (durationInTicks > 0.0f) ? (frame / (float)estimatedFrames) * durationInTicks : 0.0f;
-                parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, scn->mRootNode->mTransformation, mdl);                
+                parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, identity, mdl);                
             }
             
             nodeCache.clear();

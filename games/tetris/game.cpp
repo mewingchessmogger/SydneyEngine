@@ -1,5 +1,6 @@
 
 #include "game.hpp"
+#include "serde.hpp"
 
 using Particle = physics::Particle;
 struct Bullet{
@@ -47,28 +48,30 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		updateGameCamera(camera, state, 0.3, aspect, dt);
 		updateWeaponSystem(state, api, reg);
 
-		if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
-			int dragon = reg.createEntity();
+		
 
-			Transform T{};
-			glm::vec3 floorForward = glm::normalize(glm::vec3(camera.dir.x, 0.0f, camera.dir.z));
-			glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
-			T.position = eyeFloor + floorForward;
-			T.scale = {20.0f,2.0f,2.0f};
-			T.rotation = {0.0,0.0,0.0};
-			Particle p{};
-			p.pos = eyeFloor;
-			p.vel = floorForward * 2.0f;
-			p.acc = {0.0,-4.0,0.0};
-			p.damping = 0.5;
-			p.inverseMass = 15;
+		// if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
+		// 	int dragon = reg.createEntity();
+
+		// 	Transform T{};
+		// 	glm::vec3 floorForward = glm::normalize(glm::vec3(camera.dir.x, 0.0f, camera.dir.z));
+		// 	glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
+		// 	T.position = eyeFloor + floorForward;
+		// 	T.scale = {20.0f,2.0f,2.0f};
+		// 	T.rotation = {0.0,0.0,0.0};
+		// 	Particle p{};
+		// 	p.pos = eyeFloor;
+		// 	p.vel = floorForward * 2.0f;
+		// 	p.acc = {0.0,-4.0,0.0};
+		// 	p.damping = 0.5;
+		// 	p.inverseMass = 15;
 			
-			api.attachModel("models/dragon.glb", dragon);
-			reg.add(dragon,T,p);
+		// 	api.attachModel("models/dragon.glb", dragon);
+		// 	reg.add(dragon,T,p);
+		
 
 
-
-		}
+		// }
 
 		auto& PPool = reg.getPool<physics::Particle>();
 
@@ -84,10 +87,17 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 
 static bool CR_STATE alreadyInitialized = false;
-static Weapon CR_STATE ak47 = {};
 static bool CR_STATE shouldStepFuckOff = false;
-static bool CR_STATE shouldUnloadFuckOff = false;
 
+
+
+/*
+NOTICE!!!!!!!!!
+ 
+THE ORDER OF STEPS TAKEN IN THIS SWITCH WHHEN  WE HAVE TRIGGERED A REBUILD OF GAME DLL, IS COMPLETELTY ALL OVER THE PLACE, IT CAN TRIGGER
+LOAD FAIL LOAD, BACK TO STEP, AND UNLOAD.. FORCING ME TO USE A BOOLEAN CALLED SHOULDSTEPFUCKOFF, NOTICE!!! UNLOAD CAN ALSO HINDER, FORCING ANOTHER REVERSE BOOL THERE!!!
+
+*/
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
 	
@@ -107,10 +117,25 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 						alreadyInitialized = true;
 					}else{
 						shouldStepFuckOff = false;
-						int goon{};
-						printf("alrdy initted\n");
+						printf("goo1");
 						reg.createPool<Weapon>();
-						 reg.getPool<Weapon>().assign(ak47.id, ak47);
+						printf("g22o3");
+						std::ifstream is("save.txt");
+						printf("goxxxx21.5");
+						
+						if (!is.is_open()) {
+							printf("save.txt FAILED TO OPEN at CWD: %s\n",
+								std::filesystem::current_path().string().c_str());
+						}
+						auto packets = std::move(Serde::deserializeFile(is));    				
+						printf("oo");
+						is.close();
+						printf("goo");
+						for(auto& pkt: packets){
+							reg.deserializeComponent(pkt.id,pkt.sName,std::move(pkt.vars));
+							printf("goo");
+						}
+							printf("go7");
 					}
 				}
 				else{
@@ -130,8 +155,18 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 			case CR_UNLOAD:{
 				printf("UNLOAD\n");
 				if(!shouldStepFuckOff){
-					auto& wPool = reg.getPool<Weapon>();
-					ak47 = {wPool.dense[0], wPool.data[0].bullets};
+					auto& wPool = reg.getPool<Weapon>();	
+					int g{};
+					std::ofstream os("save.txt"); // std::ios_base::app
+					if (os.fail()){
+						printf("%s", strerror(errno));						
+					}
+
+					os << std::fixed << std::setprecision(3);
+
+					Serde::serializePool<Weapon>(os, reg);		
+					os.close();
+
 					reg.destroyPool<Weapon>();
 					shouldStepFuckOff = true;
 				}

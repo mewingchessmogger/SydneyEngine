@@ -20,12 +20,8 @@ void Engine::run(){
     EngineMode mode = EngineMode::GAME;
     
 
-    PassedStructuresDLL psd{};
-    psd = {&reg, &api,&plt.inputState, &plt.aspectRatio, &plt.deltaTime};
-    
-    cr_plugin cr_ctx;
-    cr_ctx.userdata = &psd;
-
+    PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime};
+    cr_plugin cr_ctx = {.userdata = &psd};
     cr_plugin_open(cr_ctx, "games/tetris/Debug/TetrisDLL.dll"); 
 
 
@@ -48,7 +44,6 @@ void Engine::run(){
             
             cr_plugin_update(cr_ctx);
             
-            //game.ptr->update(plt.aspectRatio, plt.deltaTime, plt.inputState, reg, api);
             updatePhysics();
         }
         
@@ -63,8 +58,8 @@ void Engine::run(){
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
-                stk.abortFrame();
-                continue;
+                //stk.abortFrame  (); //laptop conected to monitor crashes on this, not on laptop screen only
+                //continue;
             };
             
             stk.updateUBO(activeCam.view, activeCam.proj);

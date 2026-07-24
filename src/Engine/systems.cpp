@@ -8,12 +8,13 @@
         for (auto& req: api.reqs) {
             switch (req.cmd) {
 
-                case EngineAPI::LOAD_MODEL:				
+                case EngineAPI::LOAD_MODEL:{
                     printf("parsing %s ...\n", req.path.c_str());
                     ldr.loadScene(req.path.c_str());
                     printf("done!\n");
 
                     break;
+                }				
 
                 case EngineAPI::ATTACH_MODEL:{
                     auto& renderables = reg.getPool<Renderable>();

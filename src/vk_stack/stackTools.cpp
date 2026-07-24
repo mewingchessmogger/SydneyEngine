@@ -115,7 +115,8 @@ bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
 		return false;
 	}
 	else if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR){
-		throw std::runtime_error("failed to acquire swap chain image!");
+		printf("acquireNextImageKHR failed with: %s\n", vk::to_string(result).c_str());
+    	throw std::runtime_error("failed to acquire swap chain image!");
 	}
 	
 	currentImgIndex = imgIndex;

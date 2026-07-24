@@ -20,11 +20,31 @@ animation #10 'RIG_UE5_Comando_Natural_pose
 
 */
 void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg){
+    constexpr static std::array<const char*, 10> animNames = {
+        "RIG_UE5_Comando_AK_Equip",
+        "RIG_UE5_Comando_AK_Aim_Fire",
+        "RIG_UE5_Comando_AK_Fire",
+        "RIG_UE5_Comando_AK_Hold",
+        "RIG_UE5_Comando_AK_Idle",
+        "RIG_UE5_Comando_AK_Idle_Aim",
+        "RIG_UE5_Comando_AK_Reload",
+        "RIG_UE5_Comando_AK_Walk",
+        "RIG_UE5_Comando_AK_Walk_Aim",
+        "RIG_UE5_Comando_AK__Run"
+    };
 
+    // Static index to track animation progression
+    static size_t animIndex = 0;
     Weapon& wpn = reg.getPool<Weapon>().data[0];
+
     if(state.keyPressed(Input::Key::RightClick)){
-        api.setAnimation("RIG_UE5_Comando_AK_Equip", wpn.id);
-    }else if(state.keyPressed(Input::Key::Jump)){
+        animIndex = (animIndex + 1) % animNames.size();
+        api.setAnimation(animNames[animIndex], wpn.id);
+        
+        
+        glm::vec<3,float> v = reg.getPool<Transform>().get(wpn.id).position;
+        printf("%f, %f, %f \n", v.x, v.y, v.z);
+    }else if(state.keyPressed(Input::Key::LeftClick)){
         api.setAnimation("RIG_UE5_Comando_AK_Reload", wpn.id);
     }
 }

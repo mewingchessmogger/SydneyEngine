@@ -1,0 +1,6 @@
+Entity 2 {
+   struct Weapon {
+      int id 2
+      int bullets 30
+   }
+}

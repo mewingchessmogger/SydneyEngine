@@ -9,8 +9,9 @@
 #include "reflections.hpp"
 #include <stdexcept>
 #include "has_member.hpp"
-
-
+#include <optional>
+#include <stdexcept>
+#include "glm/vec3.hpp"
 
 namespace ECS{
     using Entity = int;
@@ -21,9 +22,11 @@ namespace ECS{
     struct IComponentPool{
         virtual ~IComponentPool() = default;
         virtual void remove(Entity e) = 0; // = 0 MEANS ITS A PURE VIRTUAL FUNCTION EXPECT IMPLEMENTAITION BELOW WEIRD AAH C++ SYNTAX OMGFFG
-        virtual bool hasEntity(Entity e) = 0;
         virtual void reset() = 0;
+        virtual void assignComponentFields(Entity e, std::vector<Variable>&& vars) = 0;
+        virtual bool hasEntity(Entity e) = 0;
         virtual std::vector<Variable> getComponentFields(Entity e) = 0;
+
     };
 
     template<typename T>
@@ -78,23 +81,6 @@ namespace ECS{
         void assign(Entity e, T&& p) {
             assign(e, p); // Inside here, 'p' now has a name, so it cleanly binds to T& p
         }
-
-        // /// @brief ONLY FOR UNIQUE_PTR<sCRIPT> COMPONENTS!!!!!!!
-        // /// @param e 
-        // /// @param p 
-        // void assign(Entity e, T&& p){
-        //     if (sparse[e] != -1) {
-        //         data[sparse[e]] = std::move(p); 
-        //         return;              
-        //     }
-
-        //     sparse[e] = count;
-        //     dense[count] = e;
-        //     data[count] = std::move(p);
-        //     count++;
-        // }
-
-
 
         T& get(Entity e){
             int page = e / PAGE_SIZE;
@@ -186,13 +172,45 @@ namespace ECS{
 
 
         }
+        void assignComponentFields(Entity e, std::vector<Variable>&& vars) override{
+           T comp{};
+            std::vector<VariableAddress> addresses {};
+            if constexpr (has_member(comp, reflectAddress())){ // this check is for rn only making sure tag comps can get assigned eg empty structs
+                 addresses = comp.reflectAddress();
+            }
+            
+            for(int i{}; i < addresses.size(); i++){
+
+                VariableAddress& v = addresses[i];
+                if(std::holds_alternative<int*>(v.address)){
+                    int* ptr = std::get<int*>(v.address);
+                    *ptr = std::get<int>(vars[i].var);
+                }
+                else if(std::holds_alternative<float*>(v.address)){
+                    float* ptr = std::get<float*>(v.address);
+                    *ptr = std::get<float>(vars[i].var);
+                }
+                else if(std::holds_alternative<uint32_t*>(v.address)){
+                    uint32_t* ptr = std::get<uint32_t*>(v.address);
+                    *ptr = std::get<uint32_t>(vars[i].var);
+                }
+
+                else if(std::holds_alternative<glm::vec<3,float>*>(v.address)){
+                    glm::vec<3,float>* ptr = std::get<glm::vec<3,float>*>(v.address);
+                    *ptr = std::get<glm::vec<3,float>>(vars[i].var);
+                }else{
+                    throw std::runtime_error(" UNSUPPORTED POINTER FOUND IN VARIABLE ADDRESS HOW DID WE GET HERE?!?!?! HMMM");
+                }
+            }
+            assign(e, comp);
+        }
 
     };
     
     class Registry{
         private:
         std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
-        //std::unordered_map<std::string, IComponentPool> poolNames{};
+        std::unordered_map<std::string, std::optional<std::type_index>> stringToPool{};
         std::vector<Entity> deadIDs{};
         std::vector<Entity> liveIDs{};
         
@@ -246,7 +264,13 @@ namespace ECS{
             if (pools.find(typeKey) != pools.end()){
                 throw std::runtime_error("POOL ALREADY EXIST!!!");
             } 
+
+            if (stringToPool.find(std::string{typeKey.name()}) != stringToPool.end()){
+                throw std::runtime_error("STRING POOL REP ALREADY EXIST!!!");
+            } 
+
             pools[typeKey] = std::make_unique<Pool<T>>();
+            stringToPool[std::string{typeKey.name()}] = typeKey;
 
         }
 
@@ -263,6 +287,24 @@ namespace ECS{
             return *specificPoolPtr;
         }
 
+
+        void deserializeComponent(Entity e, std::string_view sName, std::vector<Variable>&& vars){
+            
+            
+            if(stringToPool.find(std::string{sName}) == stringToPool.end()){
+                throw std::runtime_error("POOL DOES  NOT EXIST!");
+            }
+            auto& typeKey = stringToPool[std::string{sName}];
+            if(typeKey.has_value()){
+            
+            pools[typeKey.value()]->assignComponentFields(e, std::move(vars));
+            }else{
+                throw std::runtime_error(" OPTIONAL TYPE KEY EXIST BUT EMPTY!!!");
+            }
+           
+        }
+
+        
         template<typename... Components>
         std::tuple<Pool<Components>&...> getPools(){
             return std::tie(getPool<Components>()...);
@@ -309,6 +351,7 @@ namespace ECS{
             } 
 
             pools.erase(typeKey);
+            stringToPool.erase(typeKey.name());
         }
 
     };
