@@ -329,7 +329,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\camera.hpp" />
     <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game.cpp" />
     <ClInclude Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\game.hpp" />
     <ClCompile Include="C:\Users\Gaming\source\repos\Sydney\SydneyEngine\games\tetris\systems_game.cpp" />

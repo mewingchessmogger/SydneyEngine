@@ -17,7 +17,6 @@ add_compile_definitions(
 
 # 3. Compile the local files into the DLL
 set(DLL_SOURCES 
-    "camera.hpp"
     "game.cpp"
     "game.hpp"
     "systems_game.cpp"

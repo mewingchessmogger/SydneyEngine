@@ -1,7 +1,9 @@
-    #include "precompiled_headers/engine_pch.hpp"
+#include "engine.hpp"
+
     #include "asset_registry.hpp"
     #include "glm/gtc/type_ptr.hpp"
     #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
+
     using Particle = physics::Particle;
 
     void Engine::processAPI(){
@@ -10,6 +12,17 @@
 
                 case EngineAPI::LOAD_MODEL:{
                     printf("parsing %s ...\n", req.path.c_str());
+                    AssetRegistry& astReg = ldr.getAssetReg();
+                    if (astReg.StringToIntegerSkinnedModelMap.find(req.path.c_str() != astReg.StringToIntegerSkinnedModelMap.end())){
+                        printf(" already uploaded '%s'\n", req.path.c_str());
+                        continue;
+                    }
+                    if (astReg.StringToIntegerStaticModelMap.find(req.path.c_str() != astReg.StringToIntegerStaticModelMap.end())){
+                        printf(" already uploaded '%s'\n", req.path.c_str());
+                        continue;
+                    }
+                    
+
                     ldr.loadScene(req.path.c_str());
                     printf("done!\n");
 
@@ -19,6 +32,7 @@
                 case EngineAPI::ATTACH_MODEL:{
                     auto& renderables = reg.getPool<Renderable>();
                     uint32_t meshID = ldr.getAssetReg().getModelID(req.path);
+                    
                     if(renderables.hasEntity(req.EntityID)){
                         printf("entity #%d updating to '%s' (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
                     
@@ -62,7 +76,38 @@
         api.reqs.clear();
     }
 
+    
+    
 
+    
+    void Engine::propagateNodes()
+    {
+            auto [transPool, nodePool] = reg.getPools<Transform, Node>();
+            
+            for (int i{}; i < nodePool.count; i++){
+                ECS::Entity e = nodePool.dense[i];
+                Node& node = nodePool.data[i];
+                
+                Transform& parent = transPool.get(e);
+                Transform& child = transPool.get(node.child);
+
+                glm::quat parentQuat = glm::quat(glm::radians(parent.worldRotation));
+                glm::quat childLocalQuat = glm::quat(glm::radians(child.rotation)); // Local input!
+
+                // Compute World Scale
+                child.worldScale = parent.worldScale * child.scale;
+                // Compute World Rotation
+                glm::quat worldQuat = parentQuat * childLocalQuat;
+                child.worldRotation = glm::degrees(glm::eulerAngles(worldQuat)); // World output!
+
+                // Compute World Position
+                glm::vec3 scaledOffset = parent.worldScale * child.position;
+                child.worldPosition = parent.worldPosition + (parentQuat * scaledOffset); // World output!
+            }
+    }
+
+
+    
     void Engine::updatePhysics()
     {
             /*you get a copy of vector filled with refs*/

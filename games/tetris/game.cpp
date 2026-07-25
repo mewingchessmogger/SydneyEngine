@@ -2,13 +2,6 @@
 #include "game.hpp"
 #include "serde.hpp"
 
-using Particle = physics::Particle;
-struct Bullet{
-	int speed{};
-	REFLECT_1(speed);
-};
-
-
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
@@ -28,7 +21,8 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	api.setAnimation("Take 001", women);
 		
 	int gun = reg.createEntity();
-	Transform g = {.position = {1.0, -1.5,0.0}};
+	Transform g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
+
 	reg.getPool<Weapon>().assign(gun,{gun,30});
 
 	reg.add(gun, g);
@@ -37,7 +31,12 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	
 
     api.setGameCamera(reg.createEntity());
+	reg.emplace<Transform>(api.getGameCamera());
 	reg.emplace<Camera>(api.getGameCamera());
+	Node n = {.child = gun};
+
+	reg.add(api.getGameCamera(),n);
+	
 
 }
 
@@ -45,9 +44,12 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 {		
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
-		updateGameCamera(camera, state, 0.3, aspect, dt);
+		Transform& cameraPos = reg.getPool<Transform>().get(api.getGameCamera()); 
+		updateGameCamera(camera,cameraPos, state, 0.3, aspect, dt);
 		updateWeaponSystem(state, api, reg);
-
+		Transform& gun = reg.getPool<Transform>().get(reg.getPool<Node>().data[0].child);
+		gun.position =  {0.0,-1.55, 0.02};
+		gun.rotation = {0.0, 180.0, 0.0};
 		
 
 		// if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
@@ -73,14 +75,14 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		// }
 
-		auto& PPool = reg.getPool<physics::Particle>();
+		// auto& PPool = reg.getPool<physics::Particle>();
 
-        for (int i{}; i < PPool.count; i++){
-            ECS::Entity e = PPool.dense[i];
-            Particle& p = PPool.data[i];
-			glm::vec3 vel =p.vel;
+        // for (int i{}; i < PPool.count; i++){
+        //     ECS::Entity e = PPool.dense[i];
+        //     Particle& p = PPool.data[i];
+		// 	glm::vec3 vel =p.vel;
 
-        }
+        // }
 
 	
 }

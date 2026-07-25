@@ -2,7 +2,14 @@
 {
     "cmake.debugConfig": {
         "cwd": "${workspaceFolder}"
-    }
-,
-    "C_Cpp.errorSquiggles": "disabled"
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    
+    "triggerTaskOnSave.tasks": {
+            "Build Game DLL (Debug)": [
+                "games/tetris/*.cpp",
+            ]
+        }
+
+
 }

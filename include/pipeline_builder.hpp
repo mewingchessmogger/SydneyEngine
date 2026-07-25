@@ -10,7 +10,8 @@ public:
 		device = dev;
 		return *this;
 	}
-PipelineBuilder& PipelineBuilder::setDynRendering(int expectedClrAttachmentsCount, std::vector<vk::Format> formatClrAttachments, vk::Format formatOfDepth = vk::Format::eUndefined);	
+
+	PipelineBuilder& setDynRendering(int expectedClrAttachmentsCount, std::vector<vk::Format> formatClrAttachments, vk::Format formatOfDepth = vk::Format::eUndefined);	
     PipelineBuilder &setShaderStages(const std::vector<uint32_t> &vertCompiled, const std::vector<uint32_t> &fragCompiled, bool isDepthPass);
     PipelineBuilder &setVertexInputInfo();
     PipelineBuilder& setAssemblyInfo(vk::PrimitiveTopology top = vk::PrimitiveTopology::eTriangleList);

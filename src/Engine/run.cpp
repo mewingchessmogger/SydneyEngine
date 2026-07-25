@@ -1,4 +1,4 @@
-#include "precompiled_headers/engine_pch.hpp"
+#include "engine.hpp"
 #include "passed_structures_dll.hpp"
 #define CR_HOST CR_SAFE
 #include "cr.h"
@@ -12,7 +12,7 @@ void Engine::run(){
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
     reg.createPool<Animated>();
-    
+    reg.createPool<Node>();
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
     
@@ -47,12 +47,15 @@ void Engine::run(){
             updatePhysics();
             
         }
+        
 
         processAPI();
         updateAnimations(plt.deltaTime);
-        
+        //propateParentTransformations
+        propagateNodes();
         prepareRenderables(stk.packets);
-
+        std::vector<int> foo{};
+        
         if (stk.acquireAndValidateImage(plt))
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 

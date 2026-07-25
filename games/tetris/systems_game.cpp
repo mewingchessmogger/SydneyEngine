@@ -1,24 +1,5 @@
     #include "game.hpp"
 
-    /*
-    enum class Key : uint8_t {
-            Forward, Backward, Left, Right, Jump, Sprint, LeftClick, RightClick, Escape, Quit, COUNT
-        };
-        
-    // FOR GUN MODEL AK
-    animation #0 'RIG_UE5_Comando_AK_Equip      ', duration (seconds): 1.833333
-    animation #1 'RIG_UE5_Comando_AK_Aim_Fire   ', duration (seconds): 0.666667
-    animation #2 'RIG_UE5_Comando_AK_Fire       ', duration (seconds): 0.666667
-    animation #3 'RIG_UE5_Comando_AK_Hold       ', duration (seconds): 0.750000
-    animation #4 'RIG_UE5_Comando_AK_Idle       ', duration (seconds): 2.500000
-    animation #5 'RIG_UE5_Comando_AK_Idle_Aim   ', duration (seconds): 2.500000
-    animation #6 'RIG_UE5_Comando_AK_Reload     ', duration (seconds): 4.583333
-    animation #7 'RIG_UE5_Comando_AK_Walk       ', duration (seconds): 1.000000
-    animation #8 'RIG_UE5_Comando_AK_Walk_Aim   ', duration (seconds): 1.000000
-    animation #9 'RIG_UE5_Comando_AK__Run       ', duration (seconds): 0.791667
-    animation #10 'RIG_UE5_Comando_Natural_pose 
-
-    */
     void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg){
         constexpr static std::array<const char*, 10> animNames = {
             "RIG_UE5_Comando_AK_Equip",
@@ -67,6 +48,7 @@
                 return;
             }else{
                 reloading  = false;
+                api.setAnimation("RIG_UE5_Comando_AK_Idle", wpn.id);
                 return;
             }
 
@@ -79,15 +61,15 @@
             api.setAnimation("RIG_UE5_Comando_AK_Fire", wpn.id);
         }
         else if(state.keyHeld(Input::Key::LeftClick)){
-            if (anim.time > 0.25){
-                anim.time = 0.15;
+            if (anim.time > 0.21){
+                anim.time = 0.10;
             }
         
         }else if(state.keyReleased(Input::Key::LeftClick)){
             
             api.setAnimation("RIG_UE5_Comando_AK_Idle", wpn.id);
         }
-
+        
 
         if(state.keyPressed(Input::Key::RightClick)){
             api.setAnimation("RIG_UE5_Comando_AK_Idle_Aim", wpn.id);
@@ -97,8 +79,8 @@
                 api.setAnimation("RIG_UE5_Comando_AK_Aim_Fire", wpn.id);
             }
             else if(state.keyHeld(Input::Key::LeftClick)){
-                if (anim.time > 0.25){
-                    anim.time = 0.1;
+                if (anim.time > 0.21){
+                    anim.time = 0.10;
                 }
             }
             else if(state.keyReleased(Input::Key::LeftClick)){

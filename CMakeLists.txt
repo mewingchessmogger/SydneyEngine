@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 add_subdirectory(library)
 
+
+
+
+
 add_library(glm_vulkan_defines INTERFACE)
 target_compile_definitions(glm_vulkan_defines INTERFACE 
     GLM_FORCE_DEPTH_ZERO_TO_ONE 
@@ -40,6 +44,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE 
+    #VulkanCppModule
     glm_vulkan_defines
     Vulkan::Vulkan
     Vulkan::shaderc_combined
@@ -53,8 +58,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     assimp_lib
     cr
 )
-target_precompile_headers(SydneyEngine PRIVATE src/precompiled_headers/engine_pch.hpp)
-
 set(ASSIMP_DLL "${CMAKE_CURRENT_SOURCE_DIR}/library/assimp/assimp-vc145-mt.dll")
 
 # 3. Use add_custom_command to handle the copy

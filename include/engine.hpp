@@ -44,6 +44,8 @@ class Engine{
     void initialize();
     void updateCamera(Camera& cam, EngineMode context, float sens = 0.3);
     void processAPI();
+
+    void propagateNodes();
     void updatePhysics();
     void readNodeHierarchy(const aiNode *pNode, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
    

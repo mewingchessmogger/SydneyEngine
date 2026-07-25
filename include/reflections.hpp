@@ -22,6 +22,13 @@
     }\
 
 
+#define REFLECT_6(a, b, c, d, e ,f) \
+    auto reflect() {\
+        auto& [a, b, c, d, e, f] = *this;\
+        return std::vector<Variable>{{a, #a}, {b, #b}, {c, #c}, {d, #d}, {e, #e}, {f, #f}};\
+    }\
+
+
 
 #define REFLECT_ADDRESS_1(a) \
     auto reflectAddress() { \
@@ -41,3 +48,8 @@
         return std::vector<VariableAddress>{{&a}, {&b}, {&c}};\
     }\
 
+#define REFLECT_ADDRESS_6(a, b, c, d, e, f) \
+    auto reflectAddress() {\
+        auto& [a, b, c] = *this;\
+        return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}, {&e}, {&f}};\
+    }\
