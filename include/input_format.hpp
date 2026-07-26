@@ -3,7 +3,41 @@
 
 namespace Input{
     enum class Key : uint8_t {
-        Forward, Backward, Left, Right, Jump, Sprint, LeftClick, RightClick, Escape, Quit, COUNT
+        // Alphanumeric Keys
+        A, B, C, D, E, F, G, H, I, J, K, L, M,
+        N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+        
+        Num0, Num1, Num2, Num3, Num4, 
+        Num5, Num6, Num7, Num8, Num9,
+
+        // Whitespace & System Navigation
+        Space,
+        Enter,
+        Escape,
+        Tab,
+        Backspace,
+        Delete,
+
+        // Modifier Keys
+        LeftShift,
+        RightShift,
+        LeftControl,
+        RightControl,
+        LeftAlt,
+        RightAlt,
+
+        // Directional Navigation
+        ArrowUp,
+        ArrowDown,
+        ArrowLeft,
+        ArrowRight,
+
+        // Mouse Input Buttons
+        MouseLeft,
+        MouseRight,
+        MouseMiddle,
+
+        COUNT // Total count must not exceed 64 for 64-bit state masking
     };
     
     struct State {

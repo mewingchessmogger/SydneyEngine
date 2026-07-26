@@ -1,18 +1,6 @@
-    #include "game.hpp"
 
-    void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg){
-        constexpr static std::array<const char*, 10> animNames = {
-            "RIG_UE5_Comando_AK_Equip",
-            "RIG_UE5_Comando_AK_Aim_Fire",
-            "RIG_UE5_Comando_AK_Fire",
-            "RIG_UE5_Comando_AK_Hold",
-            "RIG_UE5_Comando_AK_Idle",
-            "RIG_UE5_Comando_AK_Idle_Aim",
-            "RIG_UE5_Comando_AK_Reload",
-            "RIG_UE5_Comando_AK_Walk",
-            "RIG_UE5_Comando_AK_Walk_Aim",
-            "RIG_UE5_Comando_AK__Run"
-        };
+#include "game.hpp"
+
         /*
         animation #0 'RIG_UE5_Comando_AK_Equip      ', duration (in sec): 1.833333, ticks per second: 1000.000000, it has 110 channels
     animation #1 'RIG_UE5_Comando_AK_Aim_Fire   ', duration (in sec): 0.666667, ticks per second: 1000.000000, it has 110 channels
@@ -26,103 +14,145 @@
     animation #9 'RIG_UE5_Comando_AK__Run       ', duration (in sec): 0.791667, ticks per second: 1000.000000, it has 110 channels
     animation #10 'RIG_UE5_Comando_Natural_pose  ', duration (in sec): 0.000000, ticks per second: 1000.000000, it has 110 channels*/
 
-        // Static index to track animation progression
-        static size_t animIndex = 0;
+enum AKAnim : int {
+Equip        = 0,
+AimFire      = 1,
+Fire         = 2,
+Hold         = 3,
+Idle         = 4,
+IdleAim      = 5,
+Reload       = 6,
+Walk         = 7,
+WalkAim      = 8,
+Run          = 9,
+NaturalPose  = 10
+};
 
-        if(!reg.getPool<Animated>().dense.size()){
-            return;
-        }
+struct AnimParams {
+    bool isMoving         = false; // WASD held
+    bool isRunning = false; // shift held 
+    bool isAiming = false;
+    bool isReloading = false;
+};
 
-        Weapon& wpn = reg.getPool<Weapon>().data[0];
-        auto& anim = reg.getPool<Animated>().get(wpn.id);
+struct Transition {
+    AKAnim dst;
+    bool (*condition)(const AnimParams&);
+    bool lockNext; // does entering 'dst' lock the state?
+    bool bypass;    // can this edge override a locked current state?
+};
 
-        static bool CR_STATE reloading = false;
-        if(state.keyPressed(Input::Key::Jump)){
-            api.setAnimation("RIG_UE5_Comando_AK_Reload", wpn.id);
-            reloading = true;
-            return;
-        }
+bool condMove(const AnimParams& p) { return p.isMoving && !p.isRunning && !p.isAiming;}
+bool condStop(const AnimParams& p) { return !p.isMoving && !p.isAiming; }
+bool condRun(const AnimParams& p) { return p.isMoving && p.isRunning; }
+bool condIdleAim(const AnimParams& p) {return p.isAiming && !p.isMoving;}
+bool condWalkAim(const AnimParams& p) {return p.isAiming && p.isMoving;}
+bool condReload(const AnimParams& p) {return p.isReloading;}
 
-        if(reloading){
-            if (anim.time < anim.duration* 0.98){
-                return;
-            }else{
-                reloading  = false;
-                api.setAnimation("RIG_UE5_Comando_AK_Idle", wpn.id);
-                return;
-            }
+constexpr Transition fromIdle[] = {
+    {AKAnim::Walk, condMove, false, true },
+    {AKAnim::Run, condRun, false, true },
+    {AKAnim::IdleAim, condIdleAim, false, true },
+    {AKAnim::Reload, condReload, true, true },
+};
 
-        }
+constexpr Transition fromWalk[] = {
+    { AKAnim::Idle, condStop, false, true },
+    { AKAnim::Run, condRun, false, true },
+    {AKAnim::IdleAim, condIdleAim, false, true },
+    {AKAnim::WalkAim, condWalkAim, false, true },
+    {AKAnim::Reload, condReload, true, true },
+};
 
-        if(state.keyReleased(Input::Key::RightClick)){
-            api.setAnimation("RIG_UE5_Comando_AK_Idle", wpn.id);
-        }
-        if(state.keyPressed(Input::Key::LeftClick)){
-            api.setAnimation("RIG_UE5_Comando_AK_Fire", wpn.id);
-        }
-        else if(state.keyHeld(Input::Key::LeftClick)){
-            if (anim.time > 0.21){
-                anim.time = 0.10;
-            }
-        
-        }else if(state.keyReleased(Input::Key::LeftClick)){
-            
-            api.setAnimation("RIG_UE5_Comando_AK_Idle", wpn.id);
-        }
-        
-
-        if(state.keyPressed(Input::Key::RightClick)){
-            api.setAnimation("RIG_UE5_Comando_AK_Idle_Aim", wpn.id);
-        }
-        else if(state.keyHeld(Input::Key::RightClick)){
-            if (state.keyPressed(Input::Key::LeftClick)){
-                api.setAnimation("RIG_UE5_Comando_AK_Aim_Fire", wpn.id);
-            }
-            else if(state.keyHeld(Input::Key::LeftClick)){
-                if (anim.time > 0.21){
-                    anim.time = 0.10;
-                }
-            }
-            else if(state.keyReleased(Input::Key::LeftClick)){
-                api.setAnimation("RIG_UE5_Comando_AK_Idle_Aim", wpn.id);
-            }
-        }
-
-        
-        
-        
-
-        // if(state.keyPressed(Input::Key::LeftClick) && !state.keyPressed(Input::Key::RightClick)){
-        //     api.setAnimation("RIG_UE5_Comando_AK_Fire", wpn.id);
-        
-        //     anim.loop = 0.30;
-        //     anim.loopOffset = 0.0;
-        // }
-
-    
+constexpr Transition fromRun[] = {
+    {AKAnim::Walk, condMove, false, true },
+    {AKAnim::Idle, condStop, false, true },
+    {AKAnim::IdleAim, condIdleAim, false, true },
+};
 
 
+constexpr Transition fromIdleAim[] = {
+    {AKAnim::Walk, condMove, false, true },
+    {AKAnim::Idle, condStop, false, true },
+    {AKAnim::Run, condRun, false, true },
+    {AKAnim::WalkAim, condWalkAim, false, true },
+    {AKAnim::Reload, condReload, true, true },
+};
 
-        // else if(state.keyHeld(Input::Key::RightClick)){
-        //     if (anim.time > 2.0){
-        //         anim.time = 1.8;
-        //     }
+constexpr Transition fromWalkAim[] = {
+    {AKAnim::Walk, condMove, false, true },
+    {AKAnim::Idle, condStop, false, true },
+    {AKAnim::Run, condRun, false, true },
+    {AKAnim::IdleAim, condIdleAim, false, true },
+    {AKAnim::Reload, condReload, true, true },
+};
 
-        // if(state.keyPressed(Input::Key::LeftClick)){
-        //     api.setAnimation("RIG_UE5_Comando_AK_Aim_Fire", wpn.id);
-        
-        //     anim.loop = 0.30;
-        //     anim.loopOffset = 0.0;
-        // }
-        // else if(state.keyHeld(Input::Key::LeftClick)){
-        //     printf("%f\n", anim.time);
-        //     if (anim.time > 0.25){
-        //         anim.time = 0.1;
-        //     }
-        // }
-    
-        // }
+constexpr Transition fromReload[] = {
+    {AKAnim::Walk, condMove, false, false },
+    {AKAnim::Idle, condStop, false, false},
+    {AKAnim::Run, condRun, false, false},
+    {AKAnim::IdleAim, condIdleAim, false, false},
+};
 
 
 
+
+struct StateTransitions {
+    AKAnim state;
+    const Transition* transitions;
+    size_t count;
+};
+
+constexpr StateTransitions stateTable[] = {
+    { AKAnim::Idle, fromIdle, std::size(fromIdle) },
+    { AKAnim::Walk, fromWalk, std::size(fromWalk) },
+    { AKAnim::Run, fromRun, std::size(fromRun) },
+    { AKAnim::IdleAim, fromIdleAim, std::size(fromIdleAim) },
+    { AKAnim::WalkAim, fromWalkAim,std::size(fromWalkAim) },
+    { AKAnim::Reload, fromReload,std::size(fromReload) },
+
+
+
+};
+
+void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg){
+    constexpr static std::array<std::string_view, 11> anims = {
+    "RIG_UE5_Comando_AK_Equip",        // 0
+    "RIG_UE5_Comando_AK_Aim_Fire",    // 1
+    "RIG_UE5_Comando_AK_Fire",        // 2
+    "RIG_UE5_Comando_AK_Hold",        // 3
+    "RIG_UE5_Comando_AK_Idle",        // 4
+    "RIG_UE5_Comando_AK_Idle_Aim",    // 5
+    "RIG_UE5_Comando_AK_Reload",      // 6
+    "RIG_UE5_Comando_AK_Walk",        // 7
+    "RIG_UE5_Comando_AK_Walk_Aim",    // 8
+    "RIG_UE5_Comando_AK__Run",        // 9
+    "RIG_UE5_Comando_Natural_pose"   // 10
+};
+
+    if(!reg.getPool<Animated>().dense.size()){
+        return;
     }
+    //static int CR_STATE i = 3;
+    Weapon& wpn = reg.getPool<Weapon>().data[0];
+    auto& anim = reg.getPool<Animated>().get(wpn.id);
+    
+    AnimParams p{};
+    p.isMoving = state.keyHeld(Input::Key::W) || state.keyHeld(Input::Key::A) || state.keyHeld(Input::Key::S) || state.keyHeld(Input::Key::D);
+    p.isRunning = state.keyHeld(Input::Key::LeftShift);
+    p.isAiming = state.keyHeld(Input::Key::MouseRight);
+    p.isReloading = state.keyPressed(Input::Key::R);
+    AKAnim current = static_cast<AKAnim>(anim.animationIndex);
+
+    for (auto& st : stateTable){
+        if (st.state != current) {continue;} // skip states not current
+        for(int i = 0; i < st.count; i++){
+            const Transition& t = st.transitions[i]; // get current state
+            if (t.condition(p) && current != t.dst){ // if pass conditons and we are not playing the same anim
+                api.setAnimation(anims[t.dst], wpn.id, t.lockNext, t.bypass); //current state updated here
+                return;
+            }
+        }
+    }
+
+}

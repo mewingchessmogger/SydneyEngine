@@ -27,7 +27,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 
 	reg.add(gun, g);
 	api.attachModel("models/fps_character_animation_pack_ak-47.glb", gun);
-	api.setAnimation("RIG_UE5_Comando_AK_Reload", gun);
+	api.setAnimation("RIG_UE5_Comando_AK_Idle", gun);
 	
 
     api.setGameCamera(reg.createEntity());
@@ -89,10 +89,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 
 static bool CR_STATE alreadyInitialized = false;
-
 static bool CR_STATE rejectStepExecution = false;
-
-
 /*
 NOTICE!!!!!!!!!
 
@@ -130,7 +127,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 						reg.createPool<Weapon>();
 						std::ifstream is("games/tetris/temp.txt");
 						auto packets = std::move(Serde::deserializeFile(is));    				
-						
+						printf("goo12\n");
 						is.close();
 						
 						for(auto& pkt: packets){

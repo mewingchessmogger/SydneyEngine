@@ -4,6 +4,7 @@
     #include <iostream>
     #include "glm/gtc/type_ptr.hpp"
     #include "glm/matrix.hpp"      
+    #include "string_hasher.hpp"
     void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl)
     {
         
@@ -238,7 +239,6 @@
         else{
             AssetRegistry::SkinnedModel mdl{};//TITANIC AINT STATIC!!!!
             mdl.name = path;
-            
             parseMeshes(scn, mdl);
             parseNodes(scn, mdl);
 
@@ -327,6 +327,7 @@
             float ticksPerSecond = (anim->mTicksPerSecond != 0) ? anim->mTicksPerSecond : 25.0f;
 
             animData.name = std::string(anim->mName.C_Str());
+            animData.hash = Hasher::stringview(animData.name);
             animData.boneCount = boneCount;
             animData.duration = (float)anim->mDuration / ticksPerSecond; //duration in sec
             

@@ -53,12 +53,12 @@ struct Animated{
     float time{}; // in seconds
     float speed = 1.0f;
     float duration{}; // in seconds
-    
+
     uint32_t offset{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
 	uint16_t totalFrames{};
-
-    float loop = 0.0;
-    float loopOffset = 0.0;
+    int layer = -1;
+    float crossfade = 0.0;
+    bool isLocked = false;
 
 
     int getFrame(){

@@ -53,6 +53,7 @@ class AssetRegistry{
     };
     struct AnimData{
         std::string name{};
+        uint64_t hash{};
 		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
         float duration{};
 		uint16_t totalFrames{};
@@ -102,6 +103,7 @@ class AssetRegistry{
             
             for (int a{}; a < animationsData.size(); a++){
                 auto& anim = animationsData[a];
+                
                 if (animName == anim.name){
                     printf("Found '%s' at index #%d! \n", animName.c_str(), a);
                     return a;
@@ -111,6 +113,23 @@ class AssetRegistry{
             assert(0);
             return -1;
         }
+
+        int getAnimation(const uint64_t hash)  {
+            
+            for (int a{}; a < animationsData.size(); a++){
+                auto& anim = animationsData[a];
+                
+                if (hash == anim.hash){
+                    printf("Found '%s' at index #%d! \n", anim.name.c_str(), a);
+                    return a;
+                }
+            }
+            printf("uh oh the hash %d aint corresponding to anything in the map!!\n",hash);
+            assert(0);
+            return -1;
+        }
+
+
 
         void DestroyTransients(){
             transientVertices.clear();

@@ -1,10 +1,9 @@
 #pragma once
-
+#include <variant>
+#include  "string_hasher.hpp"
 class EngineAPI{
     private:
     int gameCameraEntity{};
-    
-
     
 
     public:
@@ -22,23 +21,41 @@ class EngineAPI{
         std::string path{};
         int EntityID = -1;
     };
+
+
+    struct AnimationRequest{
+        Command cmd{};
+        uint64_t hash{};
+        int EntityID = -1;
+        int layer = -1;
+        float crossfade = 0;
+        bool locked = false;
+        bool bypassLocked = false;
+    };
+
     
-    std::vector<Request> reqs{};
+    std::vector<std::variant<Request,AnimationRequest>> reqs{};
     
+
     void loadModel(const std::string path, int id = -1){
-        reqs.push_back({LOAD_MODEL, path, -1});
+        reqs.push_back(Request{LOAD_MODEL, path, -1});
     }
 
     void loadModels(const std::vector<std::string>& paths){
         for(const auto& path : paths){
-            reqs.push_back({LOAD_MODEL, path, -1});
+            reqs.push_back(Request{LOAD_MODEL, path, -1});
         }
     }
 
     void attachModel(const std::string path, int id){
-        reqs.push_back({ATTACH_MODEL, path, id});
+        reqs.push_back(Request{ATTACH_MODEL, path, id});
     }
+    
+    // void attachModel(std::string_view path, int id){
+    //     uint64_t hash = Hasher::stringview(name);
 
+    //     reqs.push_back(Request{ATTACH_MODEL, path, id});
+    // }
     void setGameCamera(int entityID){
         gameCameraEntity = entityID;
     }
@@ -46,10 +63,24 @@ class EngineAPI{
         return gameCameraEntity;
     }
 
-    void setAnimation(std::string animationName, int entityID){
-        reqs.push_back({SET_ANIMATION,animationName,entityID});
+    void setAnimation(AnimationRequest& req){
+        reqs.push_back(req);
+        //reqs.push_back({SET_ANIMATION,animationName,entityID,});
     }
 
+
+    void setAnimation(std::string_view name, int entityID,bool locked = false, bool bypassLocked = false, int layer = 0, float crossfade = 0.0f) {
+        uint64_t hash = Hasher::stringview(name);
+        reqs.push_back(AnimationRequest{
+            SET_ANIMATION, 
+            hash,
+            entityID,
+            layer,
+            crossfade,
+            locked,
+            bypassLocked
+        });
+}
     
 
     /*

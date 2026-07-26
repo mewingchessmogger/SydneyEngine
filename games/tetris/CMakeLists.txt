@@ -20,13 +20,10 @@ set(DLL_SOURCES
     "game.cpp"
     "game.hpp"
     "systems_game.cpp"
-    )
+)
 
 add_library(${PROJECT_NAME} SHARED ${DLL_SOURCES})
 
-if(MSVC)
-    target_link_options(${PROJECT_NAME} PRIVATE /INCREMENTAL:NO)
-endif()
 
 # 4. Only pull the shared engine include headers
 target_include_directories(${PROJECT_NAME} PRIVATE 

@@ -279,17 +279,17 @@ void Editor::updateCamera(Camera& cam, PlatformGLFW& plt, float sens){
 
 
 
-		if (state.keyHeld(Input::Key::Forward)){
+		if (state.keyHeld(Input::Key::W)){
 			eye += glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
-		if (state.keyHeld(Input::Key::Backward)){
+		if (state.keyHeld(Input::Key::S)){
 			eye -= glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
-		if (state.keyHeld(Input::Key::Left)){
+		if (state.keyHeld(Input::Key::A)){
 			eye -= glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 
 		}
-		if (state.keyHeld(Input::Key::Right)){
+		if (state.keyHeld(Input::Key::D)){
 			eye += glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 		}
 		

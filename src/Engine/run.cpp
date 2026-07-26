@@ -18,23 +18,18 @@ void Engine::run(){
     
     
     EngineMode mode = EngineMode::GAME;
-    
-
     PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime};
     cr_plugin cr_ctx = {.userdata = &psd};
     cr_plugin_open(cr_ctx, "games/tetris/Debug/TetrisDLL.dll"); 
 
 
     while (plt.windowOpen()) {
-        
-
-
         plt.updateState(); // update keyboard and dt
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
             plt.inputState.requestCursorVisible = (mode == EngineMode::EDITOR);
         }
-        if(plt.inputState.keyPressed(Input::Key::Quit)){
+        if(plt.inputState.keyPressed(Input::Key::L)){
             break;
         }
 
@@ -45,13 +40,11 @@ void Engine::run(){
         if (mode == EngineMode::GAME){        
             cr_plugin_update(cr_ctx);
             updatePhysics();
-            
         }
         
 
         processAPI();
         updateAnimations(plt.deltaTime);
-        //propateParentTransformations
         propagateNodes();
         prepareRenderables(stk.packets);
         std::vector<int> foo{};

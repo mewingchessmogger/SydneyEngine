@@ -1,83 +1,120 @@
-#include "engine.hpp"
-
+    #include "engine.hpp"
     #include "asset_registry.hpp"
     #include "glm/gtc/type_ptr.hpp"
     #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 
     using Particle = physics::Particle;
-
+    using Request = EngineAPI::Request;
+    using AnimationRequest = EngineAPI::AnimationRequest;
     void Engine::processAPI(){
-        for (auto& req: api.reqs) {
-            switch (req.cmd) {
+        for (auto& reqT: api.reqs) {
 
-                case EngineAPI::LOAD_MODEL:{
-                    printf("parsing %s ...\n", req.path.c_str());
-                    AssetRegistry& astReg = ldr.getAssetReg();
-                    if (astReg.StringToIntegerSkinnedModelMap.find(req.path.c_str() != astReg.StringToIntegerSkinnedModelMap.end())){
-                        printf(" already uploaded '%s'\n", req.path.c_str());
-                        continue;
-                    }
-                    if (astReg.StringToIntegerStaticModelMap.find(req.path.c_str() != astReg.StringToIntegerStaticModelMap.end())){
-                        printf(" already uploaded '%s'\n", req.path.c_str());
-                        continue;
-                    }
-                    
+            switch (reqT.index()) { 
+                case 0:
+                {// REQUEST{}
+                    Request& req = std::get<Request>(reqT);
+                    switch(req.cmd) 
+                    {
+                        case EngineAPI::LOAD_MODEL:{
+                                printf("parsing %s ...\n", req.path.c_str());
+                                AssetRegistry& astReg = ldr.getAssetReg();
+                                if (astReg.StringToIntegerSkinnedModelMap.find(req.path.c_str()) != astReg.StringToIntegerSkinnedModelMap.end()){
+                                    printf(" already uploaded '%s'\n", req.path.c_str());
+                                    continue;
+                                }
+                                else if (astReg.StringToIntegerStaticModelMap.find(req.path.c_str()) != astReg.StringToIntegerStaticModelMap.end()){
+                                    printf(" already uploaded '%s'\n", req.path.c_str());
+                                    continue;
+                                }
+                                
 
-                    ldr.loadScene(req.path.c_str());
-                    printf("done!\n");
+                                ldr.loadScene(req.path.c_str());
+                                printf("done!\n");
 
-                    break;
-                }				
+                                break;
+                        }			
+                        case EngineAPI::ATTACH_MODEL:{
+                                auto& renderables = reg.getPool<Renderable>();
+                                uint32_t meshID = ldr.getAssetReg().getModelID(req.path);
+                                
+                                if(renderables.hasEntity(req.EntityID)){
+                                    printf("entity #%d updating to '%s' (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
+                                
+                                }else{
+                                    printf("entity #%d assigning  '%s', creating renderable component...", req.EntityID, req.path.c_str());
+                                }
+                                renderables.assign(req.EntityID, {meshID});
+                                printf("done!\n");
 
-                case EngineAPI::ATTACH_MODEL:{
-                    auto& renderables = reg.getPool<Renderable>();
-                    uint32_t meshID = ldr.getAssetReg().getModelID(req.path);
-                    
-                    if(renderables.hasEntity(req.EntityID)){
-                        printf("entity #%d updating to '%s' (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
-                    
-                    }else{
-                        printf("entity #%d assigning  '%s', creating renderable component...", req.EntityID, req.path.c_str());
-                    }
-                    renderables.assign(req.EntityID, {meshID});
-                    printf("done!\n");
-
+                                break;
+                        }
+                    }	
                     break;
                 }
-                case EngineAPI::SET_ANIMATION:{
-                    auto& animations = reg.getPool<Animated>();
-                    auto& renderables = reg.getPool<Renderable>();
-                    uint32_t meshID = renderables.get(req.EntityID).id;
-                    AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(meshID);
-                    
-                    int animID = mdl.getAnimation(req.path);
-                    AssetRegistry::AnimData& data = mdl.animationsData[animID];
-                    Animated comp{};
-                    comp.animationIndex = animID;
-                    comp.duration = data.duration;
-                    comp.totalFrames = data.totalFrames;
-                    comp.offset = data.offsetInLocalBoneBuffer; // now only frame * bonecount offset left
-                    if(animations.hasEntity(req.EntityID)){
-                        printf("entity #%d updating animation slot to '%s' ...", req.EntityID, req.path.c_str());
-                    
-                    }else{
-                        printf("entity #%d creating animation slot and setting it to '%s' ...", req.EntityID, req.path.c_str());
+                case 1:
+                {
+                    AnimationRequest& req = std::get<AnimationRequest>(reqT);
+                    switch(req.cmd)
+                    {
+                        case EngineAPI::SET_ANIMATION:{
+                            auto& animations = reg.getPool<Animated>();
+                            auto& renderables = reg.getPool<Renderable>();
+                            
+                            if (!req.bypassLocked){
+                                if(animations.hasEntity(req.EntityID)){    
+                                    if (animations.get(req.EntityID).isLocked){
+                                        break;
+                                    }
+                                }
+                            }
+
+                            
+
+                            uint32_t meshID = renderables.get(req.EntityID).id;
+                            AssetRegistry::SkinnedModel& mdl = ldr.getAssetReg().getSkinnedModelFromID(meshID);
+                            
+
+
+                            int animID = mdl.getAnimation(req.hash);
+                            
+                            AssetRegistry::AnimData& data = mdl.animationsData[animID];
+                            
+                            Animated comp{};
+                            comp.animationIndex = animID;
+                            comp.duration = data.duration;
+                            comp.totalFrames = data.totalFrames;
+                            comp.offset = data.offsetInLocalBoneBuffer; // now only frame * bonecount offset left
+                            comp.isLocked = req.locked;
+                            
+
+                            if(animations.hasEntity(req.EntityID)){
+                                printf("entity #%d updating animation slot to '%s' ...", req.EntityID, data.name.c_str());
+                            
+                            }else{
+                                printf("entity #%d creating animation slot and setting it to '%s' ...", req.EntityID, data.name.c_str());
+                            }
+
+                            animations.assign(req.EntityID, comp); //updates OR creates inside
+                            printf("done!\n");
+                            break;
+                        }
+
+                        break;
                     }
-
-                    animations.assign(req.EntityID, comp); //updates OR creates inside
-                    printf("done!\n");
                     break;
-                }	
+                }
                 default:
-                    // Handle or log unknown commands
                     break;
-            }
         }
-        api.reqs.clear();
     }
-
+    api.reqs.clear();
+    }
     
     
+//add parent (imppiicilty become sibling)
+//remove parent (impplicitly remove belovw children)
+//iter children 
+//iter siblings
 
     
     void Engine::propagateNodes()
@@ -150,7 +187,11 @@
         auto& animPool = reg.getPool<Animated>();
         for (int i{}; i < animPool.count; i++) {
             Animated& animated = animPool.data[i];
+            float prevTime = animated.time;
             animated.time = fmod(animated.time + dt * animated.speed, animated.duration);
+            if (animated.time < prevTime){
+                animated.isLocked = false;
+            }
         }
     }
 

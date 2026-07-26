@@ -67,14 +67,67 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
     if (action == GLFW_REPEAT) return;
     Input::Key genericKey;
     switch (key) {
-        case GLFW_KEY_W:      genericKey = Input::Key::Forward;  break;
-        case GLFW_KEY_S:      genericKey = Input::Key::Backward; break;
-        case GLFW_KEY_A:      genericKey = Input::Key::Left;     break;
-        case GLFW_KEY_D:      genericKey = Input::Key::Right;    break;
-        case GLFW_KEY_SPACE:  genericKey = Input::Key::Jump;     break;
-        case GLFW_KEY_LEFT_SHIFT: genericKey = Input::Key::Sprint; break;
-        case GLFW_KEY_ESCAPE: genericKey = Input::Key::Escape; break;
-        case GLFW_KEY_Q : genericKey = Input::Key::Quit; break;
+        // Letters
+        case GLFW_KEY_A: genericKey = Input::Key::A; break;
+        case GLFW_KEY_B: genericKey = Input::Key::B; break;
+        case GLFW_KEY_C: genericKey = Input::Key::C; break;
+        case GLFW_KEY_D: genericKey = Input::Key::D; break;
+        case GLFW_KEY_E: genericKey = Input::Key::E; break;
+        case GLFW_KEY_F: genericKey = Input::Key::F; break;
+        case GLFW_KEY_G: genericKey = Input::Key::G; break;
+        case GLFW_KEY_H: genericKey = Input::Key::H; break;
+        case GLFW_KEY_I: genericKey = Input::Key::I; break;
+        case GLFW_KEY_J: genericKey = Input::Key::J; break;
+        case GLFW_KEY_K: genericKey = Input::Key::K; break;
+        case GLFW_KEY_L: genericKey = Input::Key::L; break;
+        case GLFW_KEY_M: genericKey = Input::Key::M; break;
+        case GLFW_KEY_N: genericKey = Input::Key::N; break;
+        case GLFW_KEY_O: genericKey = Input::Key::O; break;
+        case GLFW_KEY_P: genericKey = Input::Key::P; break;
+        case GLFW_KEY_Q: genericKey = Input::Key::Q; break;
+        case GLFW_KEY_R: genericKey = Input::Key::R; break;
+        case GLFW_KEY_S: genericKey = Input::Key::S; break;
+        case GLFW_KEY_T: genericKey = Input::Key::T; break;
+        case GLFW_KEY_U: genericKey = Input::Key::U; break;
+        case GLFW_KEY_V: genericKey = Input::Key::V; break;
+        case GLFW_KEY_W: genericKey = Input::Key::W; break;
+        case GLFW_KEY_X: genericKey = Input::Key::X; break;
+        case GLFW_KEY_Y: genericKey = Input::Key::Y; break;
+        case GLFW_KEY_Z: genericKey = Input::Key::Z; break;
+
+        // Numbers
+        case GLFW_KEY_0: genericKey = Input::Key::Num0; break;
+        case GLFW_KEY_1: genericKey = Input::Key::Num1; break;
+        case GLFW_KEY_2: genericKey = Input::Key::Num2; break;
+        case GLFW_KEY_3: genericKey = Input::Key::Num3; break;
+        case GLFW_KEY_4: genericKey = Input::Key::Num4; break;
+        case GLFW_KEY_5: genericKey = Input::Key::Num5; break;
+        case GLFW_KEY_6: genericKey = Input::Key::Num6; break;
+        case GLFW_KEY_7: genericKey = Input::Key::Num7; break;
+        case GLFW_KEY_8: genericKey = Input::Key::Num8; break;
+        case GLFW_KEY_9: genericKey = Input::Key::Num9; break;
+
+        // Whitespace & System
+        case GLFW_KEY_SPACE:     genericKey = Input::Key::Space; break;
+        case GLFW_KEY_ENTER:     genericKey = Input::Key::Enter; break;
+        case GLFW_KEY_ESCAPE:    genericKey = Input::Key::Escape; break;
+        case GLFW_KEY_TAB:       genericKey = Input::Key::Tab; break;
+        case GLFW_KEY_BACKSPACE: genericKey = Input::Key::Backspace; break;
+        case GLFW_KEY_DELETE:    genericKey = Input::Key::Delete; break;
+
+        // Modifiers
+        case GLFW_KEY_LEFT_SHIFT:    genericKey = Input::Key::LeftShift; break;
+        case GLFW_KEY_RIGHT_SHIFT:   genericKey = Input::Key::RightShift; break;
+        case GLFW_KEY_LEFT_CONTROL:  genericKey = Input::Key::LeftControl; break;
+        case GLFW_KEY_RIGHT_CONTROL: genericKey = Input::Key::RightControl; break;
+        case GLFW_KEY_LEFT_ALT:      genericKey = Input::Key::LeftAlt; break;
+        case GLFW_KEY_RIGHT_ALT:     genericKey = Input::Key::RightAlt; break;
+
+        // Navigation
+        case GLFW_KEY_UP:    genericKey = Input::Key::ArrowUp; break;
+        case GLFW_KEY_DOWN:  genericKey = Input::Key::ArrowDown; break;
+        case GLFW_KEY_LEFT:  genericKey = Input::Key::ArrowLeft; break;
+        case GLFW_KEY_RIGHT: genericKey = Input::Key::ArrowRight; break;
         default: return; // Ignore unmapped keys
     }
 
@@ -95,9 +148,9 @@ static void mouseKeyCallback(GLFWwindow* window, int button, int action, int mod
     if (action == GLFW_REPEAT) return;
     Input::Key genericKey;
     switch (button) {
-        case GLFW_MOUSE_BUTTON_LEFT:      genericKey = Input::Key::LeftClick;  break;
-        case GLFW_MOUSE_BUTTON_RIGHT:      genericKey = Input::Key::RightClick; break;
-        
+        case GLFW_MOUSE_BUTTON_LEFT:      genericKey = Input::Key::MouseLeft;  break;
+        case GLFW_MOUSE_BUTTON_RIGHT:      genericKey = Input::Key::MouseRight; break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:    genericKey = Input::Key::MouseMiddle; break;
         default: return; // Ignore unmapped keys
     }
 

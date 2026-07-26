@@ -29,6 +29,7 @@ layout(push_constant) uniform Constants {
     mat4 model;
     uint offsetVBO;
     uint offsetBoneBuffer;
+  //  uint secOffsetBoneBuffer;
 } pc;
 
 layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer CameraData{
