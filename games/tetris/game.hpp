@@ -41,17 +41,17 @@ inline void updateGameCamera(Camera& cam, Transform& camTrans, Input::State& sta
 		float cameraYAxis{};
 		
 
-		if (state.keyHeld(Input::Key::W)){
+		if (state.keyHeld(Input::Key::C)){
 			eye += glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
-		if (state.keyHeld(Input::Key::S)){
+		if (state.keyHeld(Input::Key::X)){
 			eye -= glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
-		if (state.keyHeld(Input::Key::A)){
+		if (state.keyHeld(Input::Key::Z)){
 			eye -= glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 
 		}
-		if (state.keyHeld(Input::Key::D)){
+		if (state.keyHeld(Input::Key::V)){
 			eye += glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 		}
 		

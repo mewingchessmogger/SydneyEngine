@@ -15,7 +15,7 @@ void Engine::run(){
     reg.createPool<Node>();
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
-    
+    api.loadModel("models/cube_gltf.glb");
     
     EngineMode mode = EngineMode::GAME;
     PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime};
@@ -60,7 +60,7 @@ void Engine::run(){
             
             stk.updateUBO(activeCam.view, activeCam.proj);
             
-            stk.render(ldr.getAssetReg());
+            stk.render();
             
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport(); //viewport in imgui

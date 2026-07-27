@@ -72,6 +72,8 @@ struct Animated{
 };
 
 
+
+
 struct Node{
     int parent  = -1;
     int sibling = -1;

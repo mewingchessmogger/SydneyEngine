@@ -325,7 +325,7 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 }
 
-void VulkanStack::render(AssetRegistry &astReg){ 
+void VulkanStack::render(){ 
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto& renderTarget = res.renderTargetImages[currentImgIndex];
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
@@ -353,7 +353,8 @@ void VulkanStack::render(AssetRegistry &astReg){
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
 	for(auto& pkt: packets){
-		PipelineBundle& pipeline = (pkt.type == Mesh::STATIC) ? pipelines.phong : pipelines.skinnedPhong;
+ 		PipelineBundle& pipeline = (pkt.type == Mesh::COLLIDER) ? pipelines.collider : (pkt.type == Mesh::SKINNED) ? pipelines.skinnedPhong : pipelines.phong;
+		
 		if (cachedPipeline != pipeline.handle){
 			cmdBuffer.bindDescriptorSets(
 				vk::PipelineBindPoint::eGraphics, 

@@ -75,24 +75,12 @@ class AssetRegistry{
         std::vector<glm::mat4> transientBones{};
         std::vector<aiMatrix4x4> boneOffsetMats{};
         
-// struct Model{
-// 	struct AnimData{
-// 		uint16_t frameCount{};
-// 		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
-// 	};
-
-// 	std::vector<AnimData> animations 
-// 	std::vector<glm::mat4> boneMatrices{};
-// 	uint32_t boneCount{};
-
-// 	mat4 getMat(uint32_t a, uint32_t keyFrame, uint16_t boneID){
-// 		auto& anim = animations[a];
-// 		assert(anim.frameCount > keyFrame);
-// 		return boneMatrices[anim.offsetInLocalBoneBuffer + keyFrame * boneCount + boneID]; //+ offsetGlobal
-// 	}
-// }
-
-
+        
+        struct AABB{
+            glm::vec3 max{1.0};
+            glm::vec3 min{1.0};
+        } bounds;
+        float boundScale = 0.01; // magic number, a usual scale for the raw vertices when decomposing a models finalmat traversing node hiuerarchy...
 
         uint32_t baseOffsetBytesSkinnedVBO{};
         uint32_t baseOffsetBytesIBO{};
@@ -146,14 +134,13 @@ class AssetRegistry{
             baseOffsetBytesBoneBuffer = availOffsetGlobalBonesBuffer;
         }
     };
-    
     std::map<uint32_t, std::string> IntegerToStringStaticModelMap{};
-    std::map<uint32_t, std::string> IntegerToStringSkinnedModelMap{};
-    std::map<std::string, uint32_t> StringToIntegerStaticModelMap{};
-    std::map<std::string, uint32_t> StringToIntegerSkinnedModelMap{};
-    
-    std::map<std::string, StaticModel> staticModelMap{};
-    std::map<std::string, SkinnedModel> skinnedModelMap{};    
+        std::map<uint32_t, std::string> IntegerToStringSkinnedModelMap{};
+        std::map<std::string, uint32_t> StringToIntegerStaticModelMap{};
+        std::map<std::string, uint32_t> StringToIntegerSkinnedModelMap{};
+        
+        std::map<std::string, StaticModel> staticModelMap{};
+        std::map<std::string, SkinnedModel> skinnedModelMap{};    
 
     StaticModel& getStaticModelFromID(uint32_t id);
     SkinnedModel& getSkinnedModelFromID(uint32_t id);

@@ -134,13 +134,15 @@
         //mdl.normalizeMat = glm::scale(mdl.normalizeMat, glm::vec3(desiredScalingFactor));
         meshBaseVertex.clear();
         meshBaseVertex.shrink_to_fit();
+        
         mdl.boneOffsetMats = std::move(boneOffsetMatrices);
         mdl.boneNameToIndexMap = std::move(boneNameToIndexMap);
+        
         boneOffsetMatrices.clear();
         boneOffsetMatrices.shrink_to_fit();
         boneNameToIndexMap.clear();
-
-        //printf("\nskinned_model: %s, total bones: %d, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ),scaleFactor: %f\n\n", mdl.name.c_str(), boneNameToIndexMap.size(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
+        mdl.bounds = {.max = glm::vec3{maxVertex.x, maxVertex.y, maxVertex.z}, .min = glm::vec3{minVertex.x, minVertex.y, minVertex.z}};
+        //printf("\nskinned_model: %s, total bones: %d, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f )", mdl.name.c_str(), boneNameToIndexMap.size(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z);
 
     }
 
@@ -240,6 +242,7 @@
             AssetRegistry::SkinnedModel mdl{};//TITANIC AINT STATIC!!!!
             mdl.name = path;
             parseMeshes(scn, mdl);
+         
             parseNodes(scn, mdl);
 
             if(reg.IntegerToStringSkinnedModelMap.find(mdlCounter) != reg.IntegerToStringSkinnedModelMap.end()){
@@ -291,7 +294,10 @@
         if(mdl.boneNameToIndexMap.find(nodeName) != mdl.boneNameToIndexMap.end()){
             int boneID = mdl.boneNameToIndexMap[nodeName];
             aiMatrix4x4 finalMat = mdl.globalInverseTransform * GlobalTransformation* mdl.boneOffsetMats[boneID];
-            
+            // aiVector3D scale, pos;
+            // aiQuaternion rot;
+            // finalMat.Decompose(scale, rot, pos);
+            // printf("scale:(%.4f,%.4f,%.4f)\n",scale.x, scale.y, scale.z);    // quite interesting, for both anime girl and my beloved ak47 the scale at finalMat was always 0.01 hmm...
             mdl.transientBones[boneID + frameTimesBonesPlusAnimOffset] = glm::transpose(glm::make_mat4(&finalMat.a1));
         }
         
@@ -317,6 +323,15 @@
     #include <cmath>
     void AssetLoader::parseNodes(const aiScene* scn, AssetRegistry::SkinnedModel& mdl ){
         
+        aiMatrix4x4 dummy{};
+        // aiMatrix4x4::RotationX(1.57079632679f, dummy);
+            
+        // glm::mat3 nodeMat = glm::mat3{glm::transpose(glm::make_mat4(&dummy.a1))};
+        // mdl.bounds = {.max = nodeMat * mdl.bounds.max, .min = nodeMat * mdl.bounds.min};
+        // glm::vec3 max = mdl.bounds.max;
+        // glm::vec3 min = mdl.bounds.min;
+        //printf("\n model : '%s' minP:(%f, %f, %f ), maxP:(%f, %f, %f )", mdl.name.c_str(), min.x,min.y, min.z, max.x,max.y, max.z);
+
         for (int i{}; i < scn->mNumAnimations; i++){
             aiAnimation* anim = scn->mAnimations[i];
             
@@ -333,7 +348,7 @@
             
             mdl.globalInverseTransform = scn->mRootNode->mTransformation.Inverse(); 
             
-            printf("animation #%d '%-30s', duration (in sec): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, ticksPerSecond, animData.boneCount);
+             printf("animation #%d '%-30s', duration (in sec): %f, ticks per second: %f, it has %d channels\n", i, anim->mName.C_Str(), animData.duration, ticksPerSecond, animData.boneCount);
             int estimatedFrames = (animData.duration != 0) ?  60 * animData.duration : 1;
 
             animData.totalFrames = estimatedFrames;
@@ -342,11 +357,13 @@
             
             mdl.transientBones.resize(mdl.transientBones.size() + estimatedFrames * boneCount);
             
-
+            
+           
             
             buildNodeAnimCache(anim,scn->mRootNode);
             aiMatrix4x4 identity{};
             aiMatrix4x4::RotationX(1.57079632679f, identity);
+            
             for (uint32_t frame{}; frame < estimatedFrames; frame++){
                 float animTime = (durationInTicks > 0.0f) ? (frame / (float)estimatedFrames) * durationInTicks : 0.0f;
                 parseNodeHierarchy(animTime,frame * boneCount + animData.offsetInLocalBoneBuffer, anim, scn->mRootNode, identity, mdl);                

@@ -35,11 +35,10 @@ class VulkanStack{
         PipelineBuilder plb{};
         
         struct {
-        PipelineBundle test{};
         PipelineBundle phong{};
         PipelineBundle skinnedPhong{};
         PipelineBundle pick{};
-    
+        PipelineBundle collider{};
         } pipelines;
 
         std::vector<vk::CommandBuffer> cmdBuffers{};
@@ -79,7 +78,8 @@ class VulkanStack{
 
         void initPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
         void initSkinPhongPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
-        // void initPickPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+        void initColliderPipeline(std::vector<uint32_t> &&vertSpv, std::vector<uint32_t> &&fragSpv);
+        
 
         PipelineBundle createPipeline(const std::vector<uint32_t> &vertSpv, const std::vector<uint32_t> &fragSpv, CreatePipelineInfo p);
 
@@ -110,7 +110,7 @@ class VulkanStack{
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 
-        void render(AssetRegistry &astReg);
+        void render();
 
 
 

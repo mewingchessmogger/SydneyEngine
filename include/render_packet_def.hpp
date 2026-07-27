@@ -14,7 +14,7 @@ enum class PipelineType{
 
 
 enum class Mesh : uint32_t{
-    STATIC, SKINNED, COCONUT
+    STATIC, SKINNED, COLLIDER, COCONUT
 };
 
 struct Pkt_PC{

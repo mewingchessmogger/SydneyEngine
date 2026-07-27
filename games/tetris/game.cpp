@@ -5,7 +5,7 @@
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
-	api.loadModels({"models/cube_gltf.glb","models/dragon.glb","models/shibahu.glb","models/fps_character_animation_pack_ak-47.glb"});
+	api.loadModels({"models/dragon.glb","models/shibahu.glb","models/fps_character_animation_pack_ak-47.glb"});
 	
 
 	Transform t = {.position = glm::vec3(3.0, -3.0, 0.0), .rotation = {}, .scale = glm::vec3{ 4.0, 1.0, 4.0 } };

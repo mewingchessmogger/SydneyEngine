@@ -139,6 +139,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
     } else if (action == GLFW_RELEASE) {
         plt->inputState.current &= ~mask; // Bitwise AND-NOT: Set bit to 0
     }
+
 }
 
 static void mouseKeyCallback(GLFWwindow* window, int button, int action, int mods){

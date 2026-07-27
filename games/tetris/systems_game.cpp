@@ -15,17 +15,17 @@
     animation #10 'RIG_UE5_Comando_Natural_pose  ', duration (in sec): 0.000000, ticks per second: 1000.000000, it has 110 channels*/
 
 enum AKAnim : int {
-Equip        = 0,
-AimFire      = 1,
-Fire         = 2,
-Hold         = 3,
-Idle         = 4,
-IdleAim      = 5,
-Reload       = 6,
-Walk         = 7,
-WalkAim      = 8,
-Run          = 9,
-NaturalPose  = 10
+    Equip        = 0,
+    AimFire      = 1,
+    Fire         = 2,
+    Hold         = 3,
+    Idle         = 4,
+    IdleAim      = 5,
+    Reload       = 6,
+    Walk         = 7,
+    WalkAim      = 8,
+    Run          = 9,
+    NaturalPose  = 10
 };
 
 struct AnimParams {
@@ -33,31 +33,39 @@ struct AnimParams {
     bool isRunning = false; // shift held 
     bool isAiming = false;
     bool isReloading = false;
+    bool isFiring = false;
+    
 };
+
 
 struct Transition {
     AKAnim dst;
     bool (*condition)(const AnimParams&);
     bool lockNext; // does entering 'dst' lock the state?
     bool bypass;    // can this edge override a locked current state?
+    void (*print)() =nullptr;
 };
 
 bool condMove(const AnimParams& p) { return p.isMoving && !p.isRunning && !p.isAiming;}
 bool condStop(const AnimParams& p) { return !p.isMoving && !p.isAiming; }
 bool condRun(const AnimParams& p) { return p.isMoving && p.isRunning; }
-bool condIdleAim(const AnimParams& p) {return p.isAiming && !p.isMoving;}
-bool condWalkAim(const AnimParams& p) {return p.isAiming && p.isMoving;}
+bool condIdleAim(const AnimParams& p) {return p.isAiming && !p.isMoving && !p.isFiring;}
+bool condWalkAim(const AnimParams& p) {return p.isAiming && p.isMoving && !p.isFiring;}
 bool condReload(const AnimParams& p) {return p.isReloading;}
+bool condFiring(const AnimParams& p) {return p.isFiring && !p.isRunning && !p.isAiming;}
+bool condAimFiring(const AnimParams& p) {return p.isFiring && !p.isRunning && p.isAiming;}
+void goon() {printf("DIVEJOB\n");}
 
 constexpr Transition fromIdle[] = {
-    {AKAnim::Walk, condMove, false, true },
+    {AKAnim::Walk, condMove, false, true, goon},
     {AKAnim::Run, condRun, false, true },
     {AKAnim::IdleAim, condIdleAim, false, true },
     {AKAnim::Reload, condReload, true, true },
+    
 };
 
 constexpr Transition fromWalk[] = {
-    { AKAnim::Idle, condStop, false, true },
+    { AKAnim::Idle, condStop, false, true},
     { AKAnim::Run, condRun, false, true },
     {AKAnim::IdleAim, condIdleAim, false, true },
     {AKAnim::WalkAim, condWalkAim, false, true },
@@ -74,17 +82,21 @@ constexpr Transition fromRun[] = {
 constexpr Transition fromIdleAim[] = {
     {AKAnim::Walk, condMove, false, true },
     {AKAnim::Idle, condStop, false, true },
-    {AKAnim::Run, condRun, false, true },
+    //{AKAnim::Run, condRun, false, true },
     {AKAnim::WalkAim, condWalkAim, false, true },
     {AKAnim::Reload, condReload, true, true },
+    {AKAnim::AimFire, condAimFiring, true, true },
 };
 
 constexpr Transition fromWalkAim[] = {
     {AKAnim::Walk, condMove, false, true },
     {AKAnim::Idle, condStop, false, true },
-    {AKAnim::Run, condRun, false, true },
+    //{AKAnim::Run, condRun, false, true },
     {AKAnim::IdleAim, condIdleAim, false, true },
     {AKAnim::Reload, condReload, true, true },
+    {AKAnim::AimFire, condAimFiring, true, true },
+    
+
 };
 
 constexpr Transition fromReload[] = {
@@ -92,8 +104,25 @@ constexpr Transition fromReload[] = {
     {AKAnim::Idle, condStop, false, false},
     {AKAnim::Run, condRun, false, false},
     {AKAnim::IdleAim, condIdleAim, false, false},
+
 };
 
+constexpr Transition fromFire[] = {
+    {AKAnim::Walk, condMove, false, false },
+    {AKAnim::Idle, condStop, false, false},
+    {AKAnim::Run, condRun, false, false},
+    {AKAnim::IdleAim, condIdleAim, false, false},
+};
+
+constexpr Transition fromAimFire[] = {
+    {AKAnim::Walk, condMove, false, false },
+    {AKAnim::Idle, condStop, false, false},
+    //{AKAnim::Run, condRun, false, false},
+    {AKAnim::IdleAim, condIdleAim, false, false},
+    {AKAnim::WalkAim, condWalkAim, false, true },
+    {AKAnim::AimFire, condAimFiring, true, true },
+
+};
 
 
 
@@ -110,6 +139,8 @@ constexpr StateTransitions stateTable[] = {
     { AKAnim::IdleAim, fromIdleAim, std::size(fromIdleAim) },
     { AKAnim::WalkAim, fromWalkAim,std::size(fromWalkAim) },
     { AKAnim::Reload, fromReload,std::size(fromReload) },
+    { AKAnim::Fire, fromFire,std::size(fromFire) },
+    { AKAnim::AimFire, fromAimFire,std::size(fromAimFire) },
 
 
 
@@ -138,10 +169,11 @@ void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg)
     auto& anim = reg.getPool<Animated>().get(wpn.id);
     
     AnimParams p{};
-    p.isMoving = state.keyHeld(Input::Key::W) || state.keyHeld(Input::Key::A) || state.keyHeld(Input::Key::S) || state.keyHeld(Input::Key::D);
+    p.isMoving = state.keyHeld(Input::Key::Z) || state.keyHeld(Input::Key::X) || state.keyHeld(Input::Key::C) || state.keyHeld(Input::Key::V);
     p.isRunning = state.keyHeld(Input::Key::LeftShift);
     p.isAiming = state.keyHeld(Input::Key::MouseRight);
     p.isReloading = state.keyPressed(Input::Key::R);
+    p.isFiring = state.keyHeld(Input::Key::MouseLeft);
     AKAnim current = static_cast<AKAnim>(anim.animationIndex);
 
     for (auto& st : stateTable){
@@ -149,6 +181,10 @@ void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg)
         for(int i = 0; i < st.count; i++){
             const Transition& t = st.transitions[i]; // get current state
             if (t.condition(p) && current != t.dst){ // if pass conditons and we are not playing the same anim
+                if(t.print != nullptr){
+                    t.print();
+                }
+
                 api.setAnimation(anims[t.dst], wpn.id, t.lockNext, t.bypass); //current state updated here
                 return;
             }

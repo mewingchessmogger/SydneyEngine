@@ -222,7 +222,7 @@
                 pkt.pc.modelSpace = modelMat;
                 pkt.pc.offsetVBO = mdl.baseOffsetBytesSkinnedVBO /sizeof(SkinnedVertex);
                 pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t);
-                pkt.pc.offsetBoneBuffer = animated.offset + frameIndex * mdl.boneCount + mdl.baseOffsetBytesBoneBuffer / sizeof(glm::mat4);
+                pkt.pc.offsetBoneBuffer = animated.offset + frameIndex * mdl.boneCount + mdl.baseOffsetBytesBoneBuffer / sizeof(glm::mat4); //HOLY reddit OPTIMIZATION 64 SAME AS 2^6 MEANING BIT SHIFT HOLY 
 
                 
                 for(auto& mesh : mdl.meshes){
@@ -231,6 +231,34 @@
                     pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                     packets.push_back(pkt);
                 }
+
+                //if collider 
+                AssetRegistry::StaticModel& cube = astReg.getStaticModelFromID(0);
+                RenderPkt cubePkt{};
+                cubePkt.type = Mesh::COLLIDER;
+                glm::vec3 minV = glm::vec3{mdl.bounds.min.x, mdl.bounds.min.y, mdl.bounds.min.z} * 0.01f;
+                glm::vec3 maxV = glm::vec3{mdl.bounds.max.x, mdl.bounds.max.y, mdl.bounds.max.z} * 0.01f;
+                glm::vec3 center      = (minV + maxV) * 0.5f;
+                glm::vec3 halfExtents = (maxV - minV) * 0.5f;
+
+                // slim the box on X/Z to compensate for T-pose bind-pose arm spread
+                float horizontalShrink = 0.35f; // tune this — 1.0 = no change, lower = slimmer
+                halfExtents.x *= horizontalShrink;
+                halfExtents.z *= horizontalShrink;
+
+                glm::mat4 finalMat = glm::translate(glm::mat4(1.0f), center)
+                                * glm::scale(glm::mat4(1.0f), halfExtents);
+                cubePkt.pc.modelSpace =  modelMat * finalMat ;
+                cubePkt.pc.offsetVBO = cube.baseOffsetBytesVBO / sizeof(Vertex);
+                 for(auto& mesh : cube.meshes){
+                    cubePkt.offsetIBO = cube.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                    cubePkt.indexCount = mesh.indexCount;
+                    cubePkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                    packets.push_back(cubePkt);
+                }
+                
+
+
             }
             else{
                 
@@ -243,7 +271,7 @@
                 pkt.pc.offsetVBO = mdl.baseOffsetBytesVBO / sizeof(Vertex);
 
                 for(auto& mesh : mdl.meshes){
-                    pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global
+                    pkt.offsetIBO = mdl.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
                     pkt.indexCount = mesh.indexCount;
                     pkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                     packets.push_back(pkt);
