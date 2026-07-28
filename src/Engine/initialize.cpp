@@ -32,8 +32,8 @@ void Engine::initialize(){
 
     printf("3....!?? ");
     stk.initColliderPipeline(
-        std::move(shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/phong.vert"),true)),
-        std::move(shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/phong.frag"),true))
+        std::move(shaderCompiler.compileFile("phong_vert", shaderc_vertex_shader, fileReader.readFile("src/shaders/collider.vert"),true)),
+        std::move(shaderCompiler.compileFile("phong_frag", shaderc_fragment_shader, fileReader.readFile("src/shaders/collider.frag"),true))
     );
     printf("Done!\n");
 

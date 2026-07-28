@@ -353,7 +353,7 @@ void VulkanStack::render(){
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
 	for(auto& pkt: packets){
- 		PipelineBundle& pipeline = (pkt.type == Mesh::COLLIDER) ? pipelines.collider : (pkt.type == Mesh::SKINNED) ? pipelines.skinnedPhong : pipelines.phong;
+ 		PipelineBundle& pipeline = pipelines.getPipeline(pkt.type);
 		
 		if (cachedPipeline != pipeline.handle){
 			cmdBuffer.bindDescriptorSets(
@@ -366,7 +366,24 @@ void VulkanStack::render(){
 			cachedPipeline = pipeline.handle;
 		}
 		
-		rdr.renderMesh(cmdBuffer, pipeline, pkt.pc,renderTarget.extent2D, pkt.indexCount, pkt.offsetIBO);
+		switch(pkt.type){
+			case Mesh::COLLIDER:
+				rdr.renderCollider(cmdBuffer, pipeline, pkt.pc, renderTarget.extent2D);
+				break;
+			
+			case Mesh::STATIC: 
+				rdr.renderMesh(cmdBuffer, pipeline, pkt.pc,renderTarget.extent2D, pkt.indexCount, pkt.offsetIBO);
+				break;
+			
+			case Mesh::SKINNED: 
+ 				rdr.renderMesh(cmdBuffer, pipeline, pkt.pc,renderTarget.extent2D, pkt.indexCount, pkt.offsetIBO);
+				break;
+
+			default:
+				break;
+
+		}
+
 	}
 
 	rdr.endRenderPass(cmdBuffer); 

@@ -233,7 +233,7 @@
                 }
 
                 //if collider 
-                AssetRegistry::StaticModel& cube = astReg.getStaticModelFromID(0);
+                //AssetRegistry::StaticModel& cube = astReg.getStaticModelFromID(0);
                 RenderPkt cubePkt{};
                 cubePkt.type = Mesh::COLLIDER;
                 glm::vec3 minV = glm::vec3{mdl.bounds.min.x, mdl.bounds.min.y, mdl.bounds.min.z} * 0.01f;
@@ -246,16 +246,13 @@
                 halfExtents.x *= horizontalShrink;
                 halfExtents.z *= horizontalShrink;
 
-                glm::mat4 finalMat = glm::translate(glm::mat4(1.0f), center)
-                                * glm::scale(glm::mat4(1.0f), halfExtents);
+                glm::mat4 finalMat = glm::translate(glm::mat4(1.0f), center);
+                                //* glm::scale(glm::mat4(1.0f), halfExtents);
+
                 cubePkt.pc.modelSpace =  modelMat * finalMat ;
-                cubePkt.pc.offsetVBO = cube.baseOffsetBytesVBO / sizeof(Vertex);
-                 for(auto& mesh : cube.meshes){
-                    cubePkt.offsetIBO = cube.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                    cubePkt.indexCount = mesh.indexCount;
-                    cubePkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
-                    packets.push_back(cubePkt);
-                }
+                
+                packets.push_back(cubePkt);
+                 
                 
 
 

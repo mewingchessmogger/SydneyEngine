@@ -8,7 +8,9 @@ class Renderer {
     public:
     void beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgView, vk::Extent2D swapchainExtent, AllocatedImage zBufferImage);
     void renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Pkt_PC &pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO);
-    
+
+    void renderCollider(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Pkt_PC &pc, vk::Extent2D extent);
+
     void endRenderPass(vk::CommandBuffer cmdBuffer){
         cmdBuffer.endRendering();}
 };

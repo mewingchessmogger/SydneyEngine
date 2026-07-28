@@ -37,10 +37,28 @@ class VulkanStack{
         struct {
         PipelineBundle phong{};
         PipelineBundle skinnedPhong{};
-        PipelineBundle pick{};
         PipelineBundle collider{};
-        } pipelines;
 
+        
+        PipelineBundle& getPipeline(Mesh type){
+            switch(type){
+                case Mesh::STATIC:
+                    return phong;
+
+                case Mesh::SKINNED:
+                    return skinnedPhong;
+
+                case Mesh::COLLIDER:
+                    return collider;
+
+                default:
+                    printf("NOO PIPELINE LOOK INSIDE VK_STACK.HPP AT gertPIPELIEN func\n");
+                    break;
+            }
+        }
+
+        } pipelines;
+        
         std::vector<vk::CommandBuffer> cmdBuffers{};
         
         struct VKSBindDescInfo{

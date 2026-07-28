@@ -31,7 +31,7 @@ struct Camera {
     glm::mat4 model{};
     glm::mat4 view{};
     glm::mat4 proj{};
-    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 2.0f);
+    glm::vec3 eye = glm::vec3(0.0f, 1.0f, 2.0f);
     glm::vec3 dir = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     float pitch{};
