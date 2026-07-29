@@ -31,23 +31,22 @@ const char** PlatformGLFW::getInstanceExtensions(uint32_t* count)
     return glfwGetRequiredInstanceExtensions(count);
 }
 
-void PlatformGLFW::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface)
+void PlatformGLFW::createWindowSurface(void* windowPtr, VkInstance instance, VkSurfaceKHR *surface)
 {
-    glfwCreateWindowSurface(instance, windowPtr, nullptr,surface);
+    glfwCreateWindowSurface(instance, static_cast<GLFWwindow*>(windowPtr), nullptr,surface);
 }
 
 void PlatformGLFW::shutdown()
 {
     glfwTerminate();
 }
-void PlatformGLFW::stallMinimizedWindow(){
-    
+void PlatformGLFW::stallMinimizedWindow(void* winPtr, int& glwidth, int& glheight, float& aspectRatio){
+    GLFWwindow* windowPtr = static_cast<GLFWwindow*>(winPtr);
     glfwGetFramebufferSize(windowPtr, &glwidth, &glheight);
     while (glwidth == 0 || glheight == 0) {
         glfwGetFramebufferSize(windowPtr, &glwidth, &glheight);
         glfwWaitEvents();
     }
-    
     
     aspectRatio =  (float)glwidth/(float)glheight;
 

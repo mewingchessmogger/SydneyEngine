@@ -176,7 +176,7 @@ namespace ECS{
         void assignComponentFields(Entity e, std::vector<Variable>&& vars) override{
            T comp{};
             std::vector<VariableAddress> addresses {};
-            if constexpr (has_member(comp, reflectAddress())){ // this check is for rn only making sure tag comps can get assigned eg empty structs
+            if constexpr (has_member(comp, reflectAddress())){ // this check is for rn only making sure tagonly comps can get assigned e.g empty structs
                  addresses = comp.reflectAddress();
             }
             
@@ -212,10 +212,14 @@ namespace ECS{
         private:
         std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>> pools{};
         std::unordered_map<std::string, std::optional<std::type_index>> stringToPool{};
+        // std::vector<std::unique_ptr<IComponentPool>> vPools{};
+        // std::unordered_map<std::string, uint32_t> stringToVPool{};
+
         std::vector<Entity> deadIDs{};
         std::vector<Entity> liveIDs{};
         
         Entity counter{};
+        int poolCounter{};
         bool registryDirty = false;
         public:
 
@@ -223,7 +227,6 @@ namespace ECS{
             return pools;
         }
         Registry(){
-            createPool<Parent>();
         }
 
         Entity createEntity(){
@@ -273,6 +276,9 @@ namespace ECS{
             pools[typeKey] = std::make_unique<Pool<T>>();
             stringToPool[std::string{typeKey.name()}] = typeKey;
 
+            // stringToVPool[std::string{typeKey.name()}] = vPools.size();
+            // vPools.emplace_back(std::make_unique<Pool<T>>());
+
         }
 
         template<typename T>
@@ -319,13 +325,13 @@ namespace ECS{
             (getPool<std::decay_t<Components>>().assign(e, std::forward<Components>(comps)), ...);
         }
 
-        void addParent(Entity e, Entity parent){
-            auto& pool = getPool<Parent>();
-            if (pool.hasEntity(parent))
-                pool.assign(e, {parent, pool.get(parent).level + 1});
-            else
-                pool.assign(e, {parent, 0});
-        }
+        // void addParent(Entity e, Entity parent){
+        //     auto& pool = getPool<Parent>();
+        //     if (pool.hasEntity(parent))
+        //         pool.assign(e, {parent, pool.get(parent).level + 1});
+        //     else
+        //         pool.assign(e, {parent, 0});
+        // }
 
         template<typename... Components>
         void emplace(Entity e){

@@ -2,7 +2,6 @@
 #include "vk_context.hpp"
 #include "vk_renderer.hpp"
 #include "vk_mmu.hpp"
-#include "platform_glfw.hpp"
 #include "pipeline_builder.hpp"
 #include "shared_definitions.hpp"
 #include "vertex_def.hpp"
@@ -53,6 +52,7 @@ class VulkanStack{
 
                 default:
                     printf("NOO PIPELINE LOOK INSIDE VK_STACK.HPP AT gertPIPELIEN func\n");
+                    
                     break;
             }
         }
@@ -79,8 +79,9 @@ class VulkanStack{
         
         std::vector<RenderPkt> packets{};    
 
-        void initInstance(PlatformGLFW& plt);
-        void initDevice(PlatformGLFW& plt);
+        void initInstance(const char ** (*getInstanceExtensions) (uint32_t* count));
+
+        void initDevice(void* windowPtr, void (*createWindowSurface)(void* windowPtr, VkInstance instance , VkSurfaceKHR* surface));
         void initCommands();
         void initDescriptorStuff();
         void initUpdateDescriptorSets();
@@ -105,7 +106,7 @@ class VulkanStack{
 
         
 
-        bool acquireAndValidateImage(PlatformGLFW &plt);
+        bool acquireAndValidateImage(void (*stallMinimizedWindow)(void* winPtr, int& glwidth, int& glheight, float& aspectRatio), void* winPtr, int& glwidth, int& glheight, bool& frameBufferResized, float& aspectRatio);
         
         
         

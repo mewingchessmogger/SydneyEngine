@@ -33,7 +33,7 @@
 #define REFLECT_ADDRESS_1(a) \
     auto reflectAddress() { \
         auto& [a] = *this; \
-        return std::vector<VariableAddress>{{&a,}};\
+        return std::vector<VariableAddress>{{&a}};\
     }\
     
 #define REFLECT_ADDRESS_2(a, b) \

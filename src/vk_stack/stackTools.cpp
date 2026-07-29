@@ -1,5 +1,4 @@
 #include "vk_stack.hpp"
-#include "platform_glfw.hpp"
 #include "vertex_def.hpp"
 void VulkanStack::recordSubmit(vk::CommandBuffer cmdBuffer, vk::Semaphore waitSemaphore, vk::Semaphore signalSemaphore,
 	vk::PipelineStageFlagBits2 waitStageMask, vk::PipelineStageFlagBits2 signalStageMask,vk::Queue graphicsQueue,vk::Fence fence) {
@@ -76,7 +75,7 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 		return upload;
 	}
 
-bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
+bool VulkanStack::acquireAndValidateImage(void (*stallMinimizedWindow)(void* winPtr, int& glwidth, int& glheight, float& aspectRatio), void* winPtr, int& glwidth, int& glheight, bool& frameBufferResized, float& aspectRatio ) {
 	vk::Fence curFence[] = {ctx.fences[currentFrame] };
 	ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 
 		
@@ -95,21 +94,23 @@ bool VulkanStack::acquireAndValidateImage(PlatformGLFW& plt) {
 	vk::ResultValue<uint32_t> val = acquiredImage();
 	auto imgIndex = val.value;
 	auto result = val.result;
-
-	if(result ==  vk::Result::eErrorOutOfDateKHR || plt.frameBufferResized == true){
-		plt.stallMinimizedWindow();
-		plt.frameBufferResized = false;
+	
+	//acquireAndValidateImage(stallMinimizedWindow, &glwidth, &glheight, &frameBufferResized);
+	
+	if(result ==  vk::Result::eErrorOutOfDateKHR || frameBufferResized == true){
+		stallMinimizedWindow(winPtr, glwidth, glheight, aspectRatio);
+		frameBufferResized = false;
 		ctx.device.destroySemaphore(ctx.imageReadySemaphores[currentFrame]);
 		ctx.imageReadySemaphores[currentFrame] = ctx.device.createSemaphore(vk::SemaphoreCreateInfo{});
 
 		ctx.device.waitIdle();
-		SET_WIDTH = plt.glwidth;
-		SET_HEIGHT = plt.glheight;
-		res.rethinkSwapchain(ctx, plt.glwidth, plt.glheight, DESIRED_IMAGES_IN_FLIGHT);
-		res.rethinkZBufferImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-		//res.rethinkClrPickImage(ctx, plt.glwidth, plt.glheight);
-		res.rethinkRenderTargets(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
-		res.rethinkViewportImages(ctx, plt.glwidth, plt.glheight,DESIRED_IMAGES_IN_FLIGHT);
+		SET_WIDTH = glwidth;
+		SET_HEIGHT = glheight;
+		res.rethinkSwapchain(ctx, glwidth, glheight, DESIRED_IMAGES_IN_FLIGHT);
+		res.rethinkZBufferImages(ctx, glwidth, glheight,DESIRED_IMAGES_IN_FLIGHT);
+		//res.rethinkClrPickImage(ctx, glwidth, glheight);
+		res.rethinkRenderTargets(ctx, glwidth, glheight,DESIRED_IMAGES_IN_FLIGHT);
+		res.rethinkViewportImages(ctx, glwidth, glheight,DESIRED_IMAGES_IN_FLIGHT);
 		ImmediateTransitionViewport();
 		res.updateViewportDescriptor(ctx);
 		return false;

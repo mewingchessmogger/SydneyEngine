@@ -2,8 +2,8 @@
 void Engine::initialize(){
  
     plt.initWindow(stk.WIDTH,stk.HEIGHT);
-    stk.initInstance(plt);
-    stk.initDevice(plt);
+    stk.initInstance(PlatformGLFW::getInstanceExtensions);
+    stk.initDevice(plt.windowPtr, PlatformGLFW::createWindowSurface);
     stk.initSyncs();
     stk.initCommands();
     stk.initDescriptorStuff();
@@ -39,7 +39,7 @@ void Engine::initialize(){
 
     fileWatcher.setCheckTime(5);
     fileWatcher.setFileDirectory("src/shaders");
-    fileWatcher.warmupDirectory();
-    fileWatcher.setStandardResponse();
+    fileWatcher.warmupDirectory();  
+    fileWatcher.setStandardResponse();// very much unused here
 
 }

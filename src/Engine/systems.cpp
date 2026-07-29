@@ -10,7 +10,7 @@
         for (auto& reqT: api.reqs) {
 
             switch (reqT.index()) { 
-                case 0:
+                case 0: // REQEUEST
                 {// REQUEST{}
                     Request& req = std::get<Request>(reqT);
                     switch(req.cmd) 
@@ -157,29 +157,6 @@
                 transPool.get(e).position = p.pos;
                 // std::cout << "VELOCITY of entity " << (int)e << ": " <<  p.vel.x << ", " <<  p.vel.y << ", " <<  p.vel.z << "\n";
             }
-    }
-
-    void Engine::readNodeHierarchy(const aiNode* pNode, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
-        for(int i{}; i < pNode->mNumMeshes;i++){
-            uint32_t m = pNode->mMeshes[i];
-            AssetRegistry::SkinnedMeshData& mesh = mdl.meshes[m];
-            RenderPkt pkt = templatePkt;
-            pkt.indexCount = mesh.indexCount;
-            pkt.offsetIBO += mesh.baseIndexLocalIBO;
-            packets.push_back(pkt);
-        }
-
-        for(int i{}; i < pNode->mNumChildren;i++){
-            readNodeHierarchy(pNode->mChildren[i], packets, templatePkt, mdl);
-        }
-        
-
-    }
-
-
-    void Engine::parseSceneNodes(const aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel& mdl){
-        readNodeHierarchy(scn->mRootNode, packets, templatePkt, mdl);
-        
     }
 
 

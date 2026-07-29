@@ -38,19 +38,16 @@ class Engine{
     ShaderCompiler shaderCompiler{};
     FileWatcher fileWatcher{};
     FileReader fileReader{};
-    LoaderDLL loader{};
     AssetLoader ldr{};
     EngineAPI api{};
     void initialize();
-    void updateCamera(Camera& cam, EngineMode context, float sens = 0.3);
     void processAPI();
 
     void propagateNodes();
     void updatePhysics();
-    void readNodeHierarchy(const aiNode *pNode, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
    
-    void parseSceneNodes(const aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt templatePkt, AssetRegistry::SkinnedModel &mdl);
     void updateAnimations(float dt);
     void prepareRenderables(std::vector<RenderPkt> &packets);
+    
     void run();
 };

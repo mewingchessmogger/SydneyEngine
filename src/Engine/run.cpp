@@ -15,13 +15,15 @@ void Engine::run(){
     reg.createPool<Node>();
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
-    api.loadModel("models/cube_gltf.glb");
     
     EngineMode mode = EngineMode::GAME;
     PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime};
-    cr_plugin cr_ctx = {.userdata = &psd};
-    cr_plugin_open(cr_ctx, "games/tetris/Debug/TetrisDLL.dll"); 
-
+    cr_plugin game_plugin = {.userdata = &psd};
+    cr_plugin_open(game_plugin, "games/tetris/Debug/TetrisDLL.dll"); 
+    // plugin physics
+    // plugin renderer
+    // plugin sound
+    // plugin 
 
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
@@ -38,7 +40,7 @@ void Engine::run(){
         
         
         if (mode == EngineMode::GAME){        
-            cr_plugin_update(cr_ctx);
+            cr_plugin_update(game_plugin);
             updatePhysics();
         }
         
@@ -47,11 +49,14 @@ void Engine::run(){
         updateAnimations(plt.deltaTime);
         propagateNodes();
         prepareRenderables(stk.packets);
-        std::vector<int> foo{};
         
-        if (stk.acquireAndValidateImage(plt))
+
+        if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))
         {
-            edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)],stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
+
+
+
+            edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
                 //stk.abortFrame  (); //laptop conected to monitor crashes on this, not on laptop screen only
@@ -78,5 +83,5 @@ void Engine::run(){
         plt.inputState.clearCursorDeltas();
     }
     plt.shutdown();
-    cr_plugin_close(cr_ctx);
+    cr_plugin_close(game_plugin);
 }

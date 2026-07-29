@@ -17,10 +17,10 @@ class PlatformGLFW{
   void initWindow(int width, int height);
   int windowOpen();
   void updateState();
-  const char** getInstanceExtensions(uint32_t* count);
-  void createWindowSurface(VkInstance instance,VkSurfaceKHR* surface);
+  static const char** getInstanceExtensions(uint32_t* count);
+  static void createWindowSurface(void* windowPtr, VkInstance instance,VkSurfaceKHR* surface);
   void shutdown();
-  void stallMinimizedWindow();
+  static void stallMinimizedWindow(void* winPtr, int& glwidth, int& glheight, float& aspectRatio);
   float getWindowAspect();
   float getDeltaTime();
 

@@ -1,13 +1,19 @@
 
 #include "VkBootstrap.h"
 #include "vk_stack.hpp"
-#include "platform_glfw.hpp"
 #include <vk_mem_alloc.h>
-void VulkanStack::initInstance(PlatformGLFW& plt) {
+
+// struct initPlatformBridge{
+// const char ** (*getInstanceExtensions) (uint32_t* count);
+// void (*createWindowSurface)(VkInstance instance, VkSurface* surface);
+
+// };
+
+void VulkanStack::initInstance(const char ** (*getInstanceExtensions) (uint32_t* count)) {
 
 	vkb::InstanceBuilder instanceBuilder;
 	uint32_t count{};
-	const char** extensions = plt.getInstanceExtensions(&count);
+	const char** extensions = getInstanceExtensions(&count);
 	auto vkbInstanceBuilder = instanceBuilder.request_validation_layers(bUseValidationLayers)
 		.use_default_debug_messenger()
 		.require_api_version(1, 3, 0)
@@ -21,10 +27,10 @@ void VulkanStack::initInstance(PlatformGLFW& plt) {
 }
 
 
-void VulkanStack::initDevice(PlatformGLFW& plt) {
+void VulkanStack::initDevice(void* windowPtr, void (*createWindowSurface)(void* windowPtr, VkInstance instance , VkSurfaceKHR* surface)) {
 
     //necessary right here otherwise crash
-    plt.createWindowSurface(ctx.instance,reinterpret_cast<VkSurfaceKHR*>(&ctx.surface));
+    createWindowSurface(windowPtr, ctx.instance,reinterpret_cast<VkSurfaceKHR*>(&ctx.surface));
     //use vkbootstrap to select a gpu
     vkb::PhysicalDeviceSelector physicalDeviceSelector(*ctx.vkbInstance);
 
