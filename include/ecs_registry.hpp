@@ -1,16 +1,18 @@
 #pragma once  
-#include <unordered_map>
-#include <typeindex>
-#include <memory>
-#include <array>
-#include <tuple>
-#include <variant>
+// #include <unordered_map>
+// #include <typeindex>
+// #include <memory>
+// #include <array>
+// #include <tuple>
+// #include <variant>
+
 #include <type_traits>
 #include "reflections.hpp"
 #include "has_member.hpp"
-#include <optional>
-#include <stdexcept>
-#include "glm/vec3.hpp"
+
+// #include <optional>
+// #include <stdexcept>
+// #include "glm/vec3.hpp"
 
 namespace ECS{
     using Entity = int;

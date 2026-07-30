@@ -2,7 +2,7 @@
 #include "passed_structures_dll.hpp"
 #define CR_HOST CR_SAFE
 #include "cr.h"
-
+#include "systems.hpp"
 using Particle = physics::Particle;
 void Engine::run(){
     initialize(); // basically all parts of the engine
@@ -41,20 +41,20 @@ void Engine::run(){
         
         if (mode == EngineMode::GAME){        
             cr_plugin_update(game_plugin);
-            updatePhysics();
+            Sys::updatePhysics(reg, plt.deltaTime);
         }
         
 
-        processAPI();
-        updateAnimations(plt.deltaTime);
-        propagateNodes();
-        prepareRenderables(stk.packets);
+        //processAPI();
+        Sys::processAPI(reg, ldr.getAssetReg(), api, ldr);
+        Sys::propagateNodes(reg);
+        Sys::updateAnimations(reg, plt.deltaTime);
+        Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);
         
-
+        
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))
         {
-
-
+            
 
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();

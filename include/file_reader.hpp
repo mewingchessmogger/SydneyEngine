@@ -1,7 +1,7 @@
 #pragma once 
-#include <string>
-#include <stdexcept>
-#include "fstream"
+//#include <string>
+//#include <stdexcept>
+//#include "fstream"
 class FileReader{
 
     public:    

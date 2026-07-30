@@ -45,46 +45,19 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
 		Transform& cameraPos = reg.getPool<Transform>().get(api.getGameCamera()); 
+		
 		updateGameCamera(camera,cameraPos, state, 0.3, aspect, dt);
 		updateWeaponSystem(state, api, reg);
+
+		if(!reg.getPool<Transform>().dense.size()){
+			return; 
+		}//TEMOPARRY BARRIER, SOMETIMES UPDATE CALLS WHEN
+
+
 		Transform& gun = reg.getPool<Transform>().get(reg.getPool<Node>().data[0].child);
+
 		gun.position =  {0.0,-1.55, 0.02};
 		gun.rotation = {0.0, 180.0, 0.0};
-		
-
-		// if (state.keyPressed(Input::Key::Jump) || state.keyPressed(Input::Key::LeftClick)){
-		// 	int dragon = reg.createEntity();
-
-		// 	Transform T{};
-		// 	glm::vec3 floorForward = glm::normalize(glm::vec3(camera.dir.x, 0.0f, camera.dir.z));
-		// 	glm::vec3 eyeFloor = glm::vec3(camera.eye.x,0.0,camera.eye.z);
-		// 	T.position = eyeFloor + floorForward;
-		// 	T.scale = {20.0f,2.0f,2.0f};
-		// 	T.rotation = {0.0,0.0,0.0};
-		// 	Particle p{};
-		// 	p.pos = eyeFloor;
-		// 	p.vel = floorForward * 2.0f;
-		// 	p.acc = {0.0,-4.0,0.0};
-		// 	p.damping = 0.5;
-		// 	p.inverseMass = 15;
-			
-		// 	api.attachModel("models/dragon.glb", dragon);
-		// 	reg.add(dragon,T,p);
-		
-
-
-		// }
-
-		// auto& PPool = reg.getPool<physics::Particle>();
-
-        // for (int i{}; i < PPool.count; i++){
-        //     ECS::Entity e = PPool.dense[i];
-        //     Particle& p = PPool.data[i];
-		// 	glm::vec3 vel =p.vel;
-
-        // }
-
-	
 }
 
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <variant>
-#include "string"
+//#include <variant>
+//#include "string"
 #include "glm/vec3.hpp" // inclue type_vec3 instead?
 
 struct Variable{

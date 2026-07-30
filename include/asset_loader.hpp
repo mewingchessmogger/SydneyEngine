@@ -1,4 +1,5 @@
 #pragma once
+#include "asset_loader_interface.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -9,8 +10,9 @@
 #include "asset_registry.hpp"
 #include "glm/vec3.hpp"
 #include "render_packet_def.hpp"
-class AssetLoader{
-    
+class AssetLoader : public IAssetLoader{
+    public:
+    ~AssetLoader() override = default; // Added 'override' here
     AssetRegistry reg{};
     float targetScale = 0.5;
 
@@ -54,14 +56,14 @@ class AssetLoader{
     void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);
-    void parseSkinned(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
+    //void parseSkinned(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseScene(const aiScene *scn, std::string &path);
     const aiNodeAnim *findNodeAnim(const aiAnimation *animation, const std::string nodeName);
     void parseNodeHierarchy(float time, int frameTimesBonesPlusAnimOffset, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, AssetRegistry::SkinnedModel &mdl);
     void buildNodeAnimCache(const aiAnimation *anim, const aiNode *node);
     void parseNodes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
-    void loadScene(std::string path);
-    void loadScene(const aiScene *scn, std::string path);
+    void loadModel(std::string path) override;
+    //void loadModel(const aiScene *scn, std::string path);
     void processNodes(aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt pkt);
     
     int getBoneID(const aiBone *bone);

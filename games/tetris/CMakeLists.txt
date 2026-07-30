@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 4.00)
+
 project(TetrisDLL)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 1. Force the output straight into your game runtime folder
@@ -24,6 +25,7 @@ set(DLL_SOURCES
 
 add_library(${PROJECT_NAME} SHARED ${DLL_SOURCES})
 
+target_precompile_headers(${PROJECT_NAME} PRIVATE pch_game.hpp)
 
 # 4. Only pull the shared engine include headers
 target_include_directories(${PROJECT_NAME} PRIVATE 

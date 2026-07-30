@@ -257,8 +257,7 @@
             mdlCounter++;
         }       
 
-    
-
+        importer.FreeScene();
 
     }
     const aiNodeAnim* AssetLoader::findNodeAnim(const aiAnimation* animation, const std::string nodeName)
@@ -385,17 +384,18 @@
         return scn;
     }
 
-    void AssetLoader::loadScene(std::string path)
-    {
-        parseScene(getScene(path), path);
-
+    void AssetLoader::loadModel(std::string path) {   
+        const aiScene* scn = getScene(path);
+        parseScene(scn, path);        
     }
 
-    void AssetLoader::loadScene(const aiScene* scn, std::string path)
-    {
-        parseScene(scn, path);
 
-    }
+
+    // void AssetLoader::loadScene(const aiScene* scn, std::string path)
+    // {
+    //     parseScene(scn, path);
+
+    // }
 
     void AssetLoader::processNodes(aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt pkt)
     {

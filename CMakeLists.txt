@@ -1,9 +1,26 @@
 cmake_minimum_required(VERSION 4.00)
+# set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+# set(CMAKE_CXX_MODULE_STD 1)
 project(SydneyEngine)
-set(CMAKE_CXX_STANDARD 20)
+
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+
+# add_library(VulkanHppModule)
+
+# target_sources(VulkanHppModule
+#     PUBLIC
+#         FILE_SET CXX_MODULES 
+#         BASE_DIRS
+#             "${Vulkan_INCLUDE_DIRS}/vulkan"
+#         FILES 
+#             "${Vulkan_INCLUDE_DIRS}/vulkan/vulkan.cppm"
+
+# )
+# target_link_libraries(VulkanHppModule PUBLIC Vulkan::Vulkan)
+
 add_subdirectory(library)
 
 
@@ -16,6 +33,8 @@ target_compile_definitions(glm_vulkan_defines INTERFACE
     GLM_FORCE_RADIANS
     GLM_ENABLE_EXPERIMENTAL
 )
+
+
 
 if(MSVC)
     # /MP4 limits compilation to 4 processes
@@ -37,14 +56,14 @@ add_executable( ${PROJECT_NAME} ${SOURCE_FILES})
 #target_link_libraries(${PROJECT_NAME} glfw)
 
 # 2. Define the path to the DLL
-
+target_precompile_headers(${PROJECT_NAME} PRIVATE include/pch.hpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-    #VulkanCppModule
+    #VulkanHppModule
     glm_vulkan_defines
     Vulkan::Vulkan
     Vulkan::shaderc_combined

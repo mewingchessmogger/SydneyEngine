@@ -1,5 +1,6 @@
 #pragma once
-#include "vulkan/vulkan.hpp"
+
+
 struct BarrierMasks {
     vk::PipelineStageFlags2 srcStage{};
     vk::PipelineStageFlags2 dstStage{};

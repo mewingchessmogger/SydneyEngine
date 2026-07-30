@@ -1,3 +1,0 @@
-C:/Users/Gaming/source/repos/Sydney/SydneyEngine/games/tetris/build/CMakeFiles/TetrisDLL.dir
-C:/Users/Gaming/source/repos/Sydney/SydneyEngine/games/tetris/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/Gaming/source/repos/Sydney/SydneyEngine/games/tetris/build/CMakeFiles/ZERO_CHECK.dir

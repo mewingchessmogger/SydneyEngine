@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vulkan/vulkan.hpp"
-#include <vector>
+
+//#include <vector>
 namespace vkb {
     struct Instance;
     struct Device;

@@ -1,11 +1,12 @@
 #pragma once
-#include <map>
+//#include <map>
 #include "glm/mat4x4.hpp"
 #include "vertex_def.hpp"
-#include <string>
-#include <variant>
+//#include <string>
+//#include <variant>
 #include "assimp/matrix4x4.h"
-#include <array>
+//#include <array>
+
 class AssetRegistry{
     
     public:

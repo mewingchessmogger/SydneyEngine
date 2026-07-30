@@ -1,8 +1,8 @@
 
 #pragma once
-#include <vulkan/vulkan.hpp>
+//#include <vulkan/vulkan.hpp>
 #include "vk_mem_alloc.h"
-#include <vector>
+//#include <vector>
 
 struct DeletionQueue {
     // --- VMA Resources (Need Allocator + Handle) ---

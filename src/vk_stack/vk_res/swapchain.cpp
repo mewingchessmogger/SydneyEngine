@@ -1,7 +1,6 @@
 
 	#include "vk_mmu.hpp"
 	#include "VkBootstrap.h"
-	#include <iostream>
 	#include "vk_context.hpp"
 	void ResManager::createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, uint32_t imagesInFlight) {
 		vkb::SwapchainBuilder swapchainBuilder(ctx.chosenGPU, ctx.device, ctx.surface);

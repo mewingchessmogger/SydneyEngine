@@ -95,7 +95,6 @@ bool VulkanStack::acquireAndValidateImage(void (*stallMinimizedWindow)(void* win
 	auto imgIndex = val.value;
 	auto result = val.result;
 	
-	//acquireAndValidateImage(stallMinimizedWindow, &glwidth, &glheight, &frameBufferResized);
 	
 	if(result ==  vk::Result::eErrorOutOfDateKHR || frameBufferResized == true){
 		stallMinimizedWindow(winPtr, glwidth, glheight, aspectRatio);
@@ -327,6 +326,8 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 }
 
 void VulkanStack::render(){ 
+
+	
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];
 	auto& renderTarget = res.renderTargetImages[currentImgIndex];
 	std::array< uint32_t,1> dynOffset = {currentFrame * res.uniformBuffer.stride};		
