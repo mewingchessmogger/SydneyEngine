@@ -46,16 +46,13 @@ void Engine::run(){
         
 
         //processAPI();
-        Sys::processAPI(reg, ldr.getAssetReg(), api, ldr);
+        Sys::processAPI(reg, ldr.getAssetReg(), api, ldr); //A LOT HAPPENS IN HERE
         Sys::propagateNodes(reg);
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);
         
-        
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))
         {
-            
-
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
@@ -68,6 +65,7 @@ void Engine::run(){
             stk.render();
             
             if(mode == EngineMode::EDITOR){
+                //stk.blit(Src::TARGET, Dst::EDITOR_VIEWPORT)
                 stk.blitTargetToViewport(); //viewport in imgui
                 stk.startEditorToSwapchain();
                 edt.messingAround(stk.cmdBuffers[stk.currentFrame], reg, ctx, stk.currentImgIndex, activeCam,plt);// IMGUI WILL CREATE OWN RENDER PASS IF OUTSIDE GLFW WINDOW
@@ -75,6 +73,7 @@ void Engine::run(){
                 edt.updateEditorInput();
             }
             else if(mode == EngineMode::GAME){
+                //stk.blit(Src::TARGET, Dst::SWAPCHAIN)
                 stk.blitTargetToSwapchain();
             }
             stk.endFrame();

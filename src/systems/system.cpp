@@ -18,7 +18,7 @@ namespace Sys{
                     switch(req.cmd) 
                     {
                         case EngineAPI::LOAD_MODEL:{
-                                printf("parsing %s ...\n", req.path.c_str());
+                                printf("parsing %s ...", req.path.c_str());
                                 if (ast.StringToIntegerSkinnedModelMap.find(req.path.c_str()) != ast.StringToIntegerSkinnedModelMap.end()){
                                     printf(" already uploaded '%s'\n", req.path.c_str());
                                     continue;
@@ -90,10 +90,10 @@ namespace Sys{
                             
 
                             if(animations.hasEntity(req.EntityID)){
-                                printf("entity #%d updating animation slot to '%s' ...", req.EntityID, data.name.c_str());
+                                printf("entity #%d updating animation slot to '%lu' ...", req.EntityID, data.hash);
                             
                             }else{
-                                printf("entity #%d creating animation slot and setting it to '%s' ...", req.EntityID, data.name.c_str());
+                                printf("entity #%d creating animation slot and setting it to '%lu' ...", req.EntityID, data.hash);
                             }
 
                             animations.assign(req.EntityID, comp); //updates OR creates inside

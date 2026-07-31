@@ -13,18 +13,17 @@ class AssetRegistry{
     
 
     struct StaticMeshData{
-        glm::mat4 modelMat{};
-        std::string name{};
+        glm::mat4 mat{};
         uint32_t baseIndexLocalIBO{};
         uint32_t indexCount{};
     };
     
     struct StaticModel{
+        std::string name{};
         std::vector<Vertex> transientVertices{};
         std::vector<uint32_t> transientIndices{};
         std::vector<StaticMeshData> meshes{};
         glm::mat4 normalizeMat{1.0f};
-        std::string name{};
         uint32_t baseOffsetBytesVBO{};
         uint32_t baseOffsetBytesIBO{};
 
@@ -45,7 +44,6 @@ class AssetRegistry{
     
     struct SkinnedMeshData{
         glm::mat4 mat{};
-        std::string name{};
         uint32_t baseIndexLocalIBO{};
         uint32_t indexCount{};
         
@@ -53,55 +51,52 @@ class AssetRegistry{
         // uint32_t boneCount{};
     };
     struct AnimData{
-        std::string name{};
         uint64_t hash{};
 		uint32_t offsetInLocalBoneBuffer{}; // after how many mat4s does the next animation start?  [0] = 0, [1] = 128 [2] = 2500
         float duration{};
 		uint16_t totalFrames{};
         uint16_t boneCount{};
-
 	};
     
     struct SkinnedModel{
         std::string name{};
         std::vector<SkinnedVertex> transientVertices{};
         std::vector<uint32_t> transientIndices{};
+        std::vector<glm::mat4> transientBones{};
         std::vector<SkinnedMeshData> meshes{};
-        std::map<std::string, uint32_t> boneNameToIndexMap{};
+        std::vector<AnimData> animationsData{};
         glm::mat4 normalizeMat{1.0f};
 
-        aiMatrix4x4 globalInverseTransform{};       
+        uint32_t baseOffsetBytesSkinnedVBO{};
+        uint32_t baseOffsetBytesIBO{};
+        uint32_t baseOffsetBytesBoneBuffer{};
         uint32_t boneCount{};
-        std::vector<AnimData> animationsData{};
-        std::vector<glm::mat4> transientBones{};
-        std::vector<aiMatrix4x4> boneOffsetMats{};
-        
-        
+
         struct AABB{
             glm::vec3 max{1.0};
             glm::vec3 min{1.0};
         } bounds;
         float boundScale = 0.01; // magic number, a usual scale for the raw vertices when decomposing a models finalmat traversing node hiuerarchy...
 
-        uint32_t baseOffsetBytesSkinnedVBO{};
-        uint32_t baseOffsetBytesIBO{};
-        uint32_t baseOffsetBytesBoneBuffer{};
+        std::map<std::string, uint32_t> boneNameToIndexMap{};
+        aiMatrix4x4 globalInverseTransform{};       
+        std::vector<aiMatrix4x4> boneOffsetMats{};
+        
 
-
-        int getAnimation(const std::string& animName)  {
+        // int getAnimation(const std::string& animName)  {
             
-            for (int a{}; a < animationsData.size(); a++){
-                auto& anim = animationsData[a];
+        //     for (int a{}; a < animationsData.size(); a++){
+        //         auto& anim = animationsData[a];
                 
-                if (animName == anim.name){
-                    printf("Found '%s' at index #%d! \n", animName.c_str(), a);
-                    return a;
-                }
-            }
-            printf("uh oh %s aint in the map!!\n",animName.c_str());
-            assert(0);
-            return -1;
-        }
+        //         if (animName == anim.name){
+        //             printf("Found '%s' at index #%d! \n", animName.c_str(), a);
+        //             return a;
+        //         }
+        //     }
+        //     printf("uh oh %s aint in the map!!\n",animName.c_str());
+        //     assert(0);
+        //     return -1;
+        // }
 
         int getAnimation(const uint64_t hash)  {
             
@@ -109,7 +104,7 @@ class AssetRegistry{
                 auto& anim = animationsData[a];
                 
                 if (hash == anim.hash){
-                    printf("Found '%s' at index #%d! \n", anim.name.c_str(), a);
+                    printf("Found '%ul' at index #%d! \n", anim.hash, a);
                     return a;
                 }
             }
@@ -135,7 +130,8 @@ class AssetRegistry{
             baseOffsetBytesBoneBuffer = availOffsetGlobalBonesBuffer;
         }
     };
-    std::map<uint32_t, std::string> IntegerToStringStaticModelMap{};
+
+        std::map<uint32_t, std::string> IntegerToStringStaticModelMap{};
         std::map<uint32_t, std::string> IntegerToStringSkinnedModelMap{};
         std::map<std::string, uint32_t> StringToIntegerStaticModelMap{};
         std::map<std::string, uint32_t> StringToIntegerSkinnedModelMap{};

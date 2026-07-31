@@ -5,19 +5,19 @@
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
-	api.loadModels({"models/dragon.glb","models/shibahu.glb","models/fps_character_animation_pack_ak-47.glb"});
+	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb"});
 	
 
 	Transform t = {.position = glm::vec3(3.0, -3.0, 0.0), .rotation = {}, .scale = glm::vec3{ 4.0, 1.0, 4.0 } };
 	//int floor = reg.createEntity();
 	// reg.add(floor, t);
-	// api.attachModel("models/cube_gltf.glb", floor);
+	// api.attachModel("cube_gltf.glb", floor);
 	
 	
 	int women = reg.createEntity();
 	Transform w = {.position = {2.0, -1.5, 0.0}, .rotation = {}, .scale = glm::vec3{ 2.0f }};
 	reg.add(women, w);
-	api.attachModel("models/shibahu.glb", women);
+	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
 		
 	int gun = reg.createEntity();
@@ -26,7 +26,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.getPool<Weapon>().assign(gun,{gun,30});
 
 	reg.add(gun, g);
-	api.attachModel("models/fps_character_animation_pack_ak-47.glb", gun);
+	api.attachModel("fps_character_animation_pack_ak-47.glb", gun);
 	api.setAnimation("RIG_UE5_Comando_AK_Idle", gun);
 	
 
@@ -63,6 +63,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 static bool CR_STATE alreadyInitialized = false;
 static bool CR_STATE rejectStepExecution = false;
+
 /*
 NOTICE!!!!!!!!!
 

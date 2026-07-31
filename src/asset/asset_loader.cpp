@@ -1,9 +1,6 @@
     #include "asset_loader.hpp"
     #include "glm/gtc/matrix_transform.hpp"
-    #include <glm/gtx/string_cast.hpp>
-    #include <iostream>
     #include "glm/gtc/type_ptr.hpp"
-    #include "glm/matrix.hpp"      
     #include "string_hasher.hpp"
     void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl)
     {
@@ -48,7 +45,7 @@
             
 
 
-            meshData.name = mesh->mName.C_Str();
+            //meshData.name = mesh->mName.C_Str();
             meshData.indexCount = num_indices;
             meshData.baseIndexLocalIBO = total_indices;
             //printf("mesh #%d Name: '%s', vertices: %d, indices: %d, bones: %d \n", i , mesh->mName.C_Str(), num_vertices,num_indices, num_bones);
@@ -118,7 +115,7 @@
             maxVertex.z = (maxVertex.z < mesh->mAABB.mMax.z) ? mesh->mAABB.mMax.z : maxVertex.z;
             
 
-            skinnedMeshData.name = mesh->mName.C_Str();
+            //skinnedMeshData.name = mesh->mName.C_Str();
             skinnedMeshData.indexCount = num_indices;
             skinnedMeshData.baseIndexLocalIBO = total_indices;
             
@@ -241,6 +238,7 @@
         else{
             AssetRegistry::SkinnedModel mdl{};//TITANIC AINT STATIC!!!!
             mdl.name = path;
+            
             parseMeshes(scn, mdl);
          
             parseNodes(scn, mdl);
@@ -249,7 +247,7 @@
                 printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
                 assert(0);
             }
-            printf("model: %s, id: %d\n", mdl.name.c_str(), mdlCounter);
+            //printf("model: %s, id: %d\n", mdl.name.c_str(), mdlCounter);
             reg.IntegerToStringSkinnedModelMap[mdlCounter] = mdl.name;
             reg.StringToIntegerSkinnedModelMap[mdl.name] = mdlCounter;
             reg.skinnedModelMap[mdl.name] = std::move(mdl);
@@ -340,8 +338,8 @@
             float durationInTicks = (float)anim->mDuration;
             float ticksPerSecond = (anim->mTicksPerSecond != 0) ? anim->mTicksPerSecond : 25.0f;
 
-            animData.name = std::string(anim->mName.C_Str());
-            animData.hash = Hasher::stringview(animData.name);
+            //animData.name = std::string(anim->mName.C_Str());
+            animData.hash = Hasher::stringview(std::string(anim->mName.C_Str()));
             animData.boneCount = boneCount;
             animData.duration = (float)anim->mDuration / ticksPerSecond; //duration in sec
             
@@ -384,19 +382,6 @@
         return scn;
     }
 
-    void AssetLoader::loadModel(std::string path) {   
-        const aiScene* scn = getScene(path);
-        parseScene(scn, path);        
-    }
-
-
-
-    // void AssetLoader::loadScene(const aiScene* scn, std::string path)
-    // {
-    //     parseScene(scn, path);
-
-    // }
-
     void AssetLoader::processNodes(aiScene* scn, std::vector<RenderPkt>& packets, RenderPkt pkt)
     {
         aiNode* root = scn->mRootNode;
@@ -431,3 +416,64 @@
     }
 
 
+    void AssetLoader::loadModel(std::string filename) {   
+        namespace fs = std::filesystem;
+        
+        bool inSkinnedFolder = fs::exists("models/skinned/" + filename) && fs::is_regular_file("models/skinned/"+ filename);
+        bool inStaticFolder = fs::exists("models/static/"+ filename) && fs::is_regular_file("models/static/"+ filename);
+        std::string cachedPath = {};
+        assert(inSkinnedFolder != inStaticFolder);
+
+        std::string subFolder = (inSkinnedFolder) ? "skinned/" : "static/"; 
+
+        if (inSkinnedFolder){
+            cachedPath = "models/cached/skinned/" + filename + ".syd";
+            bool cacheExist =fs::exists(cachedPath) && fs::is_regular_file(cachedPath);
+            bool notInRegistry =  reg.StringToIntegerSkinnedModelMap.find(filename) == reg.StringToIntegerSkinnedModelMap.end();
+            bool isFileEmpty = false;
+            if (cacheExist && notInRegistry){
+                printf(" %s is in cache!! skipping assimp.. ", filename.c_str());
+                AssetRegistry::SkinnedModel mdl = {.name = filename};
+                readSkinnedFile(cachedPath, mdl);
+                reg.IntegerToStringSkinnedModelMap[mdlCounter] = mdl.name;
+                reg.StringToIntegerSkinnedModelMap[mdl.name] = mdlCounter;
+                reg.skinnedModelMap[mdl.name] = std::move(mdl);
+                mdlCounter++;
+                return;
+            }
+        }
+        if(inStaticFolder){
+            cachedPath = "models/cached/static/" + filename + ".syd";
+            bool cacheExist =fs::exists(cachedPath) && fs::is_regular_file(cachedPath);
+            bool notInRegistry =  reg.StringToIntegerSkinnedModelMap.find(filename) == reg.StringToIntegerSkinnedModelMap.end();
+            bool isFileEmpty = false;
+            if (cacheExist && notInRegistry){
+                printf(" %s is in cache!! skipping assimp.. ", filename.c_str());
+                AssetRegistry::StaticModel mdl = {.name = filename};
+                readStaticFile(cachedPath, mdl);
+                reg.IntegerToStringStaticModelMap[mdlCounter] = mdl.name;
+                reg.StringToIntegerStaticModelMap[mdl.name] = mdlCounter;
+                reg.staticModelMap[mdl.name] = std::move(mdl);
+                mdlCounter++;
+                return;
+            }
+        }
+        
+
+
+        std::string path = "models/"+ subFolder + filename;
+        const aiScene* scn = getScene(path);
+        parseScene(scn, filename);        
+
+        
+        if (inSkinnedFolder){
+            printf(" %s is not in cache..writing to models/cached/skinned..", filename.c_str());
+            AssetRegistry::SkinnedModel& mdl = reg.getSkinnedModelFromID(reg.getModelID(filename)); 
+            writeSkinnedFile(cachedPath, mdl);
+        }
+        if (inStaticFolder){
+            printf(" %s is not in cache..writing to models/cached/static..", filename.c_str());
+            AssetRegistry::StaticModel& mdl = reg.getStaticModelFromID(reg.getModelID(filename)); 
+            writeStaticFile(cachedPath, mdl);
+        }
+    }
