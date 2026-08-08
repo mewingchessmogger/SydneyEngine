@@ -4,29 +4,52 @@
 
 #include "reflections.hpp"
 
-struct Transform {
-    //glm::mat4 model{1.0f};
+
+// struct Hierarchic{
+//     int parent = -1;
+//     uint32_t level{};
+// };
+
+struct TransformInfo{
     glm::vec3 position{ 0.0f };
     glm::vec3 rotation{ 0.0f, 0.0f, 0.0f }; // IN DEGREES example : {90, 45, 0} NOT from 0 to 1 or euler 0 to 3.14
     glm::vec3 scale{ 1.0f };
+    uint32_t dirty = true;
     
-    glm::vec3 worldPosition{ 0.0f };
-    glm::vec3 worldRotation{ 0.0f, 0.0f, 0.0f }; // IN DEGREES example : {90, 45, 0} NOT from 0 to 1 or euler 0 to 3.14
-    glm::vec3 worldScale{ 1.0f };
+    void setPos(const glm::vec3& newPosition) {dirty = true; position = newPosition;}
+    void setRot(const glm::vec3& newRotation) {dirty = true; rotation = newRotation;}
+    void setScale(const glm::vec3& newScale)  {dirty = true; scale = newScale;}
+    
+    
+    // void SetPos(const glm::vec3&& newPosition) {setPos(newPosition);}
+    // void SetRot(const glm::vec3&& newRotation) {setRot(newRotation);}
+    // void SetScale(const glm::vec3&& newScale)  {setScale(newScale);}
 
-    glm::mat4 matrix() const {
+
+    void addPos(const glm::vec3& newPosition) {dirty = true; position += newPosition;}
+    void addRot(const glm::vec3& newRotation) {dirty = true; rotation += newRotation;}
+    void addScale(const glm::vec3& newScale)  {dirty = true; scale += newScale;}
+
+
+    glm::mat4 getLocalMatrix() const {
         glm::mat4 m{ 1.0f };
-        m = glm::translate(m, worldPosition);
-        glm::quat qRotation = glm::quat(glm::radians(glm::vec3(worldRotation.x, worldRotation.y, worldRotation.z)));
+        m = glm::translate(m, position);
+        glm::quat qRotation = glm::quat(glm::radians(glm::vec3(rotation.x, rotation.y, rotation.z)));
         m = m * glm::mat4_cast(qRotation);
-        m = glm::scale(m, worldScale);
+        m = glm::scale(m, scale);
         return m;
     }
 
-    REFLECT_6(position, rotation, scale, worldPosition, worldRotation, worldScale);
-
-
+    REFLECT_4(position, rotation, scale, dirty);
+    
 };
+
+struct Transform {
+    glm::mat4 matrix{};
+};
+
+
+
 struct Camera {
     glm::mat4 model{};
     glm::mat4 view{};

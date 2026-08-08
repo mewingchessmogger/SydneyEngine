@@ -58,6 +58,10 @@ class AssetRegistry{
         uint16_t boneCount{};
 	};
     
+    struct BoneData{
+        uint64_t hash{};
+        uint32_t boneIndex{};
+    };
     struct SkinnedModel{
         std::string name{};
         std::vector<SkinnedVertex> transientVertices{};
@@ -65,6 +69,8 @@ class AssetRegistry{
         std::vector<glm::mat4> transientBones{};
         std::vector<SkinnedMeshData> meshes{};
         std::vector<AnimData> animationsData{};
+        std::vector<BoneData> boneData{};
+        std::vector<std::string> boneNames{};
         glm::mat4 normalizeMat{1.0f};
 
         uint32_t baseOffsetBytesSkinnedVBO{};
@@ -76,34 +82,20 @@ class AssetRegistry{
             glm::vec3 max{1.0};
             glm::vec3 min{1.0};
         } bounds;
-        float boundScale = 0.01; // magic number, a usual scale for the raw vertices when decomposing a models finalmat traversing node hiuerarchy...
+        float boundScale = 0.01; // magic number, this is the scale factor of the final mat produced by parsing nodes, check finalMat variablein  parseNodes function in asset_loader.cpp
 
         std::map<std::string, uint32_t> boneNameToIndexMap{};
+        
         aiMatrix4x4 globalInverseTransform{};       
         std::vector<aiMatrix4x4> boneOffsetMats{};
         
-
-        // int getAnimation(const std::string& animName)  {
-            
-        //     for (int a{}; a < animationsData.size(); a++){
-        //         auto& anim = animationsData[a];
-                
-        //         if (animName == anim.name){
-        //             printf("Found '%s' at index #%d! \n", animName.c_str(), a);
-        //             return a;
-        //         }
-        //     }
-        //     printf("uh oh %s aint in the map!!\n",animName.c_str());
-        //     assert(0);
-        //     return -1;
-        // }
 
         int getAnimation(const uint64_t hash)  {
             
             for (int a{}; a < animationsData.size(); a++){
                 auto& anim = animationsData[a];
                 
-                if (hash == anim.hash){
+                if (anim.hash == hash){
                     printf("Found '%ul' at index #%d! \n", anim.hash, a);
                     return a;
                 }
@@ -113,7 +105,33 @@ class AssetRegistry{
             return -1;
         }
 
-
+         uint32_t getBoneIndex(const uint64_t hash)  {
+            
+            for (int b{}; b < boneData.size(); b++){
+                auto& bone = boneData[b];
+                
+                if (bone.hash == hash){
+                    printf("Found '%ul' at index #%d! \n", bone.hash, b);
+                    return b;
+                }
+            }
+            printf("uh oh the hash %d aint corresponding to anything in the map!!\n",hash);
+            assert(0);
+            return -1;
+        }
+        // int getBoneIndex(std::string_view str){
+        //     uint64_t hash = Hasher::stringview(str);
+        //     for(int i {}; i < boneData.size(); i++){
+        //         if (boneData[i].hash = hash);
+        //             return boneData[i].boneIndex;
+        //     }
+        // }
+        // int getBoneIndex(uint64_t hash){
+        //     for(int i {}; i < boneData.size(); i++){
+        //         if (boneData[i].hash = hash);
+        //             return boneData[i].boneIndex;
+        //     }
+        // }
 
         void DestroyTransients(){
             transientVertices.clear();

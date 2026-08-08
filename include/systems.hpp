@@ -12,6 +12,6 @@ namespace Sys{
     void propagateNodes(ECS::Registry& reg);
     void updateAnimations(ECS::Registry& reg, float dt);
     void updatePhysics(ECS::Registry& reg, float dt);
-
+    void finalizeTransforms(ECS::Registry& reg);
     
 };

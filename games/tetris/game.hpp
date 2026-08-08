@@ -5,7 +5,7 @@
 
 
 
-inline void updateGameCamera(Camera& cam, Transform& camTrans, Input::State& state, float sens, float aspect, float dt)
+inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State& state, float sens, float aspect, float dt)
 {
         // float aspect = plt.aspectRatio;
 		// float dt = plt.deltaTime;
@@ -57,8 +57,8 @@ inline void updateGameCamera(Camera& cam, Transform& camTrans, Input::State& sta
 		
 		glm::mat4 camPos = inverse(glm::lookAt(eye, cameraFront+eye, cameraUp));
 
-		camTrans.worldPosition = glm::vec3{camPos[3]};
-		camTrans.worldRotation= glm::degrees(glm::eulerAngles(glm::quat_cast(camPos)));
+		camTrans.setPos(glm::vec3{camPos[3]});
+		camTrans.setRot(glm::vec3(glm::degrees(glm::eulerAngles(glm::quat_cast(camPos)))));
 		
 		cam.view = glm::lookAt(eye, cameraFront+eye, cameraUp);
 		cam.proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);

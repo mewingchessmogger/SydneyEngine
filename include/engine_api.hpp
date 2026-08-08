@@ -9,14 +9,10 @@ class EngineAPI{
 
     public:
     enum Command{
-      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_MESH_TO_BONE, COCONUT
+      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_ETE_BONE, COCONUT
     };
 
-    struct PayloadCSI{Command cmd; std::string path{}; int EntityID = -1; };
-
-    struct PayloadCSSI{Command cmd; std::string model{}; std::string bone{}; int EntityID = -1; }; // Command String String Integer -> CSSI
-
-
+   
     struct Request{
         Command cmd;
         std::string path{};
@@ -34,8 +30,15 @@ class EngineAPI{
         bool bypassLocked = false;
     };
 
+    struct AttachEntityToEntityRequest{
+        Command cmd{};
+        uint64_t hash{}; // bone
+        int srcEntity = -1;
+        int dstEntity = -1;
+    };
+
     
-    std::vector<std::variant<Request,AnimationRequest>> reqs{};
+    std::vector<std::variant<Request,AnimationRequest, AttachEntityToEntityRequest>> reqs{};
     
 
     void loadModel(const std::string path, int id = -1){
@@ -52,11 +55,6 @@ class EngineAPI{
         reqs.push_back(Request{ATTACH_MODEL, path, id});
     }
     
-    // void attachModel(std::string_view path, int id){
-    //     uint64_t hash = Hasher::stringview(name);
-
-    //     reqs.push_back(Request{ATTACH_MODEL, path, id});
-    // }
     void setGameCamera(int entityID){
         gameCameraEntity = entityID;
     }
@@ -81,8 +79,17 @@ class EngineAPI{
             locked,
             bypassLocked
         });
-}
+    }
     
+    void attachEntityToEntityBone(std::string_view boneName, int srcEntity, int dstEntity){
+        uint64_t hash = Hasher::stringview(boneName);
+        reqs.push_back(AttachEntityToEntityRequest{
+            ATTACH_ETE_BONE, 
+            hash,
+            srcEntity,
+            dstEntity
+        });
+    }
 
     /*
     void lerpAnimation(std::string animName, int entityID){

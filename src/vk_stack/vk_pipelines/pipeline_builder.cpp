@@ -201,8 +201,8 @@ PipelineBuilder& PipelineBuilder::setDepthStencilState(vk::Bool32 depthTestEnabl
 	return *this;
 }
 
-PipelineBuilder& PipelineBuilder::createPipeline()
-{
+PipelineBuilder& PipelineBuilder::createPipeline(){
+												
 	createPipelineInfo
 		.setPNext(&dynRenderInfo)			// setting or dynrendering
 		.setFlags(vk::PipelineCreateFlags{})// tweakiung pipelines set to nothing
@@ -220,18 +220,12 @@ PipelineBuilder& PipelineBuilder::createPipeline()
 		.setBasePipelineIndex(-1);
 
 
-	pipeline=device.createGraphicsPipeline({}, createPipelineInfo).value;
-	
-	
+	pipeline = device.createGraphicsPipeline({}, createPipelineInfo).value;
 	device.destroyShaderModule(vertShader);
 	device.destroyShaderModule(fragShader);
 
-
 	pipelineCreated = true;
 
-	
-
-	
 	return *this;
 }
 

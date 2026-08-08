@@ -16,8 +16,8 @@
 
 namespace ECS{
     using Entity = int;
-    struct Parent{
-        int parentID{};
+    struct Hierarchic{
+        int parent = -1;
         uint32_t level{};
     };
     struct IComponentPool{
@@ -207,7 +207,17 @@ namespace ECS{
             }
             assign(e, comp);
         }
+        
+        template<typename Dummy = T>
+        std::enable_if_t<std::is_same_v<Dummy, Hierarchic>> setSparseIndex(Entity e, int denseIndex) {
+            int page = e / PAGE_SIZE;
+            int offset = e % PAGE_SIZE;
+            if (page >= sparse.size() || sparse[page] == nullptr){// will never hpapen but whatever 
+              throw std::runtime_error ("page not allocated for this");
+            }
+            sparse[page][offset] = denseIndex;
 
+        }
     };
     
     class Registry{
@@ -223,14 +233,70 @@ namespace ECS{
         Entity counter{};
         int poolCounter{};
         bool registryDirty = false;
+        bool isHierarchyPoolDirty = false;
         public:
 
         std::unordered_map<std::type_index, std::unique_ptr<IComponentPool>>& getPoolMap(){
             return pools;
         }
         Registry(){
+            createPool<Hierarchic>();
+        }
+        void sortHierarchyPool(){
+            if(!isHierarchyPoolDirty){
+                return;
+            }
+            
+            auto& pool = getPool<Hierarchic>();
+            if (pool.dense.size() <= 1){
+                isHierarchyPoolDirty = false;
+                return;
+            }
+            std::vector<int> index(pool.dense.size(), 0);
+            assert(pool.data.size() == pool.dense.size());
+
+            //https://ideone.com/poHXGX
+            for(int i {}; i < pool.dense.size();i++){index[i] = i;}
+
+                sort(index.begin(), index.end(), [&](const int& a, const int& b){
+                    return (pool.data[a].level < pool.data[b].level);
+                });
+            
+            std::vector<Entity> tempDense(pool.count);
+            std::vector<Hierarchic> tempData(pool.count);
+
+            for (int i = 0; i < pool.count; ++i) {
+                int oldIdx = index[i];
+                tempDense[i] = pool.dense[oldIdx];
+                tempData[i] = std::move(pool.data[oldIdx]);
+            }
+            pool.dense.swap(tempDense);
+            pool.data.swap(tempData);
+
+            for (int i = 0; i < pool.count; ++i) {
+                pool.setSparseIndex(pool.dense[i], i);
+            }
+            isHierarchyPoolDirty  = false;
         }
 
+        void setParent(Entity e, Entity parent){
+            auto& pool = getPool<Hierarchic>();
+            if (pool.hasEntity(parent))
+                pool.assign(e, {parent, pool.get(parent).level + 1});
+            else
+                pool.assign(e, {parent, 0});
+            isHierarchyPoolDirty = true;
+
+        }
+        void detachParent(Entity e, bool keepLvl1_Children = true){
+            
+            isHierarchyPoolDirty = true;
+        }
+
+
+        bool getIsHierarchyDirty(){
+            return isHierarchyPoolDirty;
+        }
         Entity createEntity(){
             registryDirty = true;
 
@@ -265,6 +331,7 @@ namespace ECS{
         
         template<typename T>
         void createPool(){
+
             std::type_index typeKey = std::type_index(typeid(T));
 
             if (pools.find(typeKey) != pools.end()){
@@ -327,14 +394,6 @@ namespace ECS{
             (getPool<std::decay_t<Components>>().assign(e, std::forward<Components>(comps)), ...);
         }
 
-        // void addParent(Entity e, Entity parent){
-        //     auto& pool = getPool<Parent>();
-        //     if (pool.hasEntity(parent))
-        //         pool.assign(e, {parent, pool.get(parent).level + 1});
-        //     else
-        //         pool.assign(e, {parent, 0});
-        // }
-
         template<typename... Components>
         void emplace(Entity e){
             (getPool<Components>().assign(e, Components{}), ...);
@@ -342,8 +401,11 @@ namespace ECS{
 
         void destroy(Entity e){
             registryDirty = true;
-
+            std::type_index hierarchicType = std::type_index(typeid(Hierarchic));
             for(auto& [type,poolPtr] : pools){
+                if (type == hierarchicType) {
+                    continue; 
+                }
                 poolPtr->remove(e);
             }
             deadIDs.push_back(e);

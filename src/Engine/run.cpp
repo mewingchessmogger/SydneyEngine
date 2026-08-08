@@ -3,16 +3,15 @@
 #define CR_HOST CR_SAFE
 #include "cr.h"
 #include "systems.hpp"
-using Particle = physics::Particle;
 void Engine::run(){
     initialize(); // basically all parts of the engine
     
-    reg.createPool<Particle>();
+    reg.createPool<Sydphys::Particle>();
+    reg.createPool<TransformInfo>();
     reg.createPool<Transform>();
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
     reg.createPool<Animated>();
-    reg.createPool<Node>();
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
     
@@ -29,10 +28,22 @@ void Engine::run(){
         plt.updateState(); // update keyboard and dt
         if(plt.inputState.keyPressed(Input::Key::Escape)){
             mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
-            plt.inputState.requestCursorVisible = (mode == EngineMode::EDITOR);
+            if(mode == EngineMode::GAME){
+                plt.inputState.requestCursorVisible = false;
+            }
         }
         if(plt.inputState.keyPressed(Input::Key::L)){
             break;
+        }
+        if(plt.inputState.keyPressed(Input::Key::P)){
+            for (auto& [name, mdl] : ldr.getAssetReg().skinnedModelMap){
+                printf("\n\nModel: %s \n\n", name.c_str());
+                int i{};
+                for(auto& boneName : mdl.boneNames){
+                    printf("        Bone %d, Name: %s\n", i++,boneName.c_str());
+                }
+                printf("End!!\n");
+            }
         }
 
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
@@ -47,7 +58,8 @@ void Engine::run(){
 
         //processAPI();
         Sys::processAPI(reg, ldr.getAssetReg(), api, ldr); //A LOT HAPPENS IN HERE
-        Sys::propagateNodes(reg);
+        reg.sortHierarchyPool();
+        Sys::finalizeTransforms(reg);
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);
         
@@ -74,6 +86,7 @@ void Engine::run(){
             }
             else if(mode == EngineMode::GAME){
                 //stk.blit(Src::TARGET, Dst::SWAPCHAIN)
+                //edt.renderUI()
                 stk.blitTargetToSwapchain();
             }
             stk.endFrame();

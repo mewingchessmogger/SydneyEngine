@@ -1,12 +1,12 @@
 #include "systems.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
-#include "fysik_motor.hpp"
+#include "sydney_physics.hpp"
 
 namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
-    using Particle = physics::Particle;
+    using Particle = Sydphys::Particle;
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api,  IAssetLoader& loader){
         
         for (auto& reqT: api.reqs) {
@@ -27,8 +27,8 @@ namespace Sys{
                                     printf(" already uploaded '%s'\n", req.path.c_str());
                                     continue;
                                 }
-                                
-                                loader.loadModel(req.path.c_str());
+                               
+                                loader.loadModel(req.path.c_str(), true);
                                 //ldr.loadScene(req.path.c_str());
                                 printf("done!\n");
 
@@ -81,13 +81,7 @@ namespace Sys{
                             AssetRegistry::AnimData& data = mdl.animationsData[animID];
                             
                             Animated comp = {.animationIndex = animID, .duration = data.duration, .offset = data.offsetInLocalBoneBuffer, .totalFrames = data.totalFrames, .isLocked = req.locked };
-                            
-                            // comp.animationIndex = animID;
-                            // comp.duration = data.duration;
-                            // comp.totalFrames = data.totalFrames;
-                            // comp.offset = data.offsetInLocalBoneBuffer; // now only frame * bonecount offset left
-                            // comp.isLocked = req.locked;
-                            
+
 
                             if(animations.hasEntity(req.EntityID)){
                                 printf("entity #%d updating animation slot to '%lu' ...", req.EntityID, data.hash);
@@ -128,7 +122,7 @@ namespace Sys{
                 //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesSkinnedVBO/sizeof(SkinnedVertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
                 AssetRegistry::SkinnedModel& mdl = ast.getSkinnedModelFromID(rend.id);
                 
-                glm::mat4 modelMat = transPool.get(e).matrix() ;
+                glm::mat4 modelMat = transPool.get(e).matrix;
                 Animated& animated = animPool.get(e);
                 
                 
@@ -178,7 +172,7 @@ namespace Sys{
                 
                 AssetRegistry::StaticModel& mdl = ast.getStaticModelFromID(rend.id);
                 //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesVBO/sizeof(Vertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
-                glm::mat4 modelMat = transPool.get(e).matrix() * mdl.normalizeMat;
+                glm::mat4 modelMat = transPool.get(e).matrix * mdl.normalizeMat;
                 RenderPkt pkt{};
                 pkt.pc.modelSpace = modelMat;
                 pkt.type = Mesh::STATIC;
@@ -195,36 +189,46 @@ namespace Sys{
 
         }
     }
- 
-    
+   
 
-    void propagateNodes(ECS::Registry& reg)
-    {
-            auto [transPool, nodePool] = reg.getPools<Transform, Node>();
+    void finalizeTransforms(ECS::Registry& reg){
+        auto& infoPool = reg.getPool<TransformInfo>();
+        auto& transPool = reg.getPool<Transform>();
+        auto& hierPool = reg.getPool<ECS::Hierarchic>();
+        
+        if(reg.getIsHierarchyDirty()){
+            throw std::runtime_error("'finalizeTransforms()', pools closed");
+        }
+        
+        for (int i{}; i < infoPool.count; i++){
+            ECS::Entity e = infoPool.dense[i];
+            TransformInfo& info = infoPool.data[i];
+                if(info.dirty){
+                    if(!hierPool.hasEntity(e))
+                        transPool.assign(e,{info.getLocalMatrix()}); //updates or creates comp
+                }
             
-            for (int i{}; i < nodePool.count; i++){
-                ECS::Entity e = nodePool.dense[i];
-                Node& node = nodePool.data[i];
-                
-                Transform& parent = transPool.get(e);
-                Transform& child = transPool.get(node.child);
+        }
 
-                glm::quat parentQuat = glm::quat(glm::radians(parent.worldRotation));
-                glm::quat childLocalQuat = glm::quat(glm::radians(child.rotation)); // Local input!
+        for (int i{}; i < hierPool.count; i++){
+            ECS::Entity e = hierPool.dense[i];
+            ECS::Hierarchic& hc = hierPool.data[i];
 
-                // Compute World Scale
-                child.worldScale = parent.worldScale * child.scale;
-                // Compute World Rotation
-                glm::quat worldQuat = parentQuat * childLocalQuat;
-                child.worldRotation = glm::degrees(glm::eulerAngles(worldQuat)); // World output!
-
-                // Compute World Position
-                glm::vec3 scaledOffset = parent.worldScale * child.position;
-                child.worldPosition = parent.worldPosition + (parentQuat * scaledOffset); // World output!
+            TransformInfo& parentInfo = infoPool.get(hc.parent);
+            TransformInfo& entInfo = infoPool.get(e);
+            
+            if(parentInfo.dirty || entInfo.dirty){// entity will move either way
+                glm::mat4& parentMatrix = transPool.get(hc.parent).matrix;
+                transPool.assign(e, {parentMatrix * entInfo.getLocalMatrix()});
+                entInfo.dirty = true; //propagation of dirtyness ensuring children of this also moves                
             }
+
+        }
+
+        for (int i = 0; i < infoPool.count; i++) {
+            infoPool.data[i].dirty = false;
+        }
     }
-
-
 
     void updateAnimations(ECS::Registry& reg, float dt) {
         auto& animPool = reg.getPool<Animated>();
@@ -239,19 +243,39 @@ namespace Sys{
     }
 
 
-    
+    void integrateParticle(Particle& particle, TransformInfo& tinfo, float dt, bool accurateDamping = true){
+        
+        if (particle.inverseMass <= 0.0f) return;
+
+        
+        assert(dt >= 0);
+        // p is position 
+        // p' means derivative of p, p'' means second derivative and so on...
+        tinfo.addPos(particle.vel * dt); // p = p + p'*t + [(1/2) * p''*t^2] <- acc part usually neglibigle in pos update so we ignore 
+        //printf("Entity: %f, %f, %f", trans.worldPosition.x, trans.worldPosition.y,trans.worldPosition.z);
+        particle.vel += particle.acc * dt; // p' = p' * d + p'' * t
+        
+        
+        // CODE DOES THIS BUT THIS DOESNT FOLLOW MATH correctly! CHECK PAGE 53 IN IAN MILLINGTON
+        if (accurateDamping){
+            particle.vel *= powf(particle.damping,dt);    
+        }else{
+            particle.vel *= particle.damping;
+        }
+       
+    }
     
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
-            auto [transPool, particPool] = reg.getPools<Transform, Particle>();
+            auto [transInfoPool, particPool] = reg.getPools<TransformInfo, Particle>();
             /*scuffed PHYSICS*/
             for (int i{}; i < particPool.count; i++){
                 ECS::Entity e = particPool.dense[i];
                 Particle& p = particPool.data[i];
-                p.integrate(dt,true);
-                transPool.get(e).position = p.pos;
-                // std::cout << "VELOCITY of entity " << (int)e << ": " <<  p.vel.x << ", " <<  p.vel.y << ", " <<  p.vel.z << "\n";
+                TransformInfo& tinfo = transInfoPool.get(e);
+                integrateParticle(p,tinfo,dt);
+                //p.integrate(,dt);                
             }
     }
 }

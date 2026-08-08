@@ -1,6 +1,6 @@
-Entity 2 {
+Entity 3 {
    struct Weapon {
-      int id 2
+      int id 3
       int bullets 30
    }
 }

@@ -1,6 +1,4 @@
     #include "asset_loader.hpp"
-    #include "glm/gtc/matrix_transform.hpp"
-    #include "glm/gtc/type_ptr.hpp"
     #include "string_hasher.hpp"
     void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl)
     {
@@ -134,9 +132,18 @@
         
         mdl.boneOffsetMats = std::move(boneOffsetMatrices);
         mdl.boneNameToIndexMap = std::move(boneNameToIndexMap);
-        
+
+        for ( auto& [name,index] : mdl.boneNameToIndexMap){
+            mdl.boneData.emplace_back(AssetRegistry::BoneData{.hash = Hasher::stringview(std::string_view(name)), .boneIndex = index});
+            mdl.boneNames.emplace_back(name);
+        }
+
+
         boneOffsetMatrices.clear();
         boneOffsetMatrices.shrink_to_fit();
+        
+
+
         boneNameToIndexMap.clear();
         mdl.bounds = {.max = glm::vec3{maxVertex.x, maxVertex.y, maxVertex.z}, .min = glm::vec3{minVertex.x, minVertex.y, minVertex.z}};
         //printf("\nskinned_model: %s, total bones: %d, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f )", mdl.name.c_str(), boneNameToIndexMap.size(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z);
@@ -317,7 +324,6 @@
     }
 
 
-    #include <cmath>
     void AssetLoader::parseNodes(const aiScene* scn, AssetRegistry::SkinnedModel& mdl ){
         
         aiMatrix4x4 dummy{};
@@ -416,13 +422,13 @@
     }
 
 
-    void AssetLoader::loadModel(std::string filename) {   
+    void AssetLoader::loadModel(std::string filename, bool tryCaching) {   
         namespace fs = std::filesystem;
         
         bool inSkinnedFolder = fs::exists("models/skinned/" + filename) && fs::is_regular_file("models/skinned/"+ filename);
         bool inStaticFolder = fs::exists("models/static/"+ filename) && fs::is_regular_file("models/static/"+ filename);
         std::string cachedPath = {};
-        assert(inSkinnedFolder != inStaticFolder);
+        assert(inSkinnedFolder != inStaticFolder); //cant be in BOTH or in NEITHER
 
         std::string subFolder = (inSkinnedFolder) ? "skinned/" : "static/"; 
 
@@ -445,7 +451,7 @@
         if(inStaticFolder){
             cachedPath = "models/cached/static/" + filename + ".syd";
             bool cacheExist =fs::exists(cachedPath) && fs::is_regular_file(cachedPath);
-            bool notInRegistry =  reg.StringToIntegerSkinnedModelMap.find(filename) == reg.StringToIntegerSkinnedModelMap.end();
+            bool notInRegistry =  reg.StringToIntegerStaticModelMap.find(filename) == reg.StringToIntegerStaticModelMap.end();
             bool isFileEmpty = false;
             if (cacheExist && notInRegistry){
                 printf(" %s is in cache!! skipping assimp.. ", filename.c_str());
@@ -459,13 +465,14 @@
             }
         }
         
-
+        // if not cache we parse here and cache it + upload to gpu
 
         std::string path = "models/"+ subFolder + filename;
         const aiScene* scn = getScene(path);
         parseScene(scn, filename);        
 
-        
+        if (tryCaching){
+
         if (inSkinnedFolder){
             printf(" %s is not in cache..writing to models/cached/skinned..", filename.c_str());
             AssetRegistry::SkinnedModel& mdl = reg.getSkinnedModelFromID(reg.getModelID(filename)); 
@@ -475,5 +482,6 @@
             printf(" %s is not in cache..writing to models/cached/static..", filename.c_str());
             AssetRegistry::StaticModel& mdl = reg.getStaticModelFromID(reg.getModelID(filename)); 
             writeStaticFile(cachedPath, mdl);
+        }
         }
     }

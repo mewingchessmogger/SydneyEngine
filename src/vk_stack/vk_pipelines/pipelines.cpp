@@ -117,7 +117,7 @@ PipelineBundle VulkanStack::createPipeline(const std::vector<uint32_t>& vertSpv,
 		.createPipeLineLayout()
 		.setDepthStencilState(p.depthTestEnable,p.depthWriteEnable)
 		.createPipeline();
-	
+		
 
 	PipelineBundle pso{};
 	pso.handle = plb.getPipeline();

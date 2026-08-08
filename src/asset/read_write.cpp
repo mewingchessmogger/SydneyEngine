@@ -1,13 +1,15 @@
 #include "asset_loader.hpp"
 
 
+
+// ALL YOU GOTTA DO WRITING FILES IS FILE.READ(ADDRES OF THE VARIABLE, VARIABLE SIZE!!) THATS IT
+
     void AssetLoader::readSkinnedFile(std::string& path, AssetRegistry::SkinnedModel& mdl) {
         std::ifstream file(path, std::ios::binary);
         if (!file.is_open()) {
-            assert(0); // Kunde inte öppna filen
+            assert(0); 
         }
 
-        // 1. Läs modellens namn
         uint32_t nameLen = 0;
         file.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
         mdl.name.resize(nameLen);
@@ -15,7 +17,6 @@
             file.read(&mdl.name[0], nameLen);
         }
 
-        // Hjälplambda för att läsa vektorer
         auto readVector = [&file](auto& vec) {
             uint64_t size = 0;
             file.read(reinterpret_cast<char*>(&size), sizeof(uint64_t));
@@ -25,12 +26,10 @@
             }
         };
 
-        // 2. Läs vektorer (ordningen måste matcha skrivningen exakt!)
         readVector(mdl.transientVertices);
         readVector(mdl.transientIndices);
         readVector(mdl.transientBones);
 
-        // 3. Läs meshes
         uint64_t meshCount = 0;
         file.read(reinterpret_cast<char*>(&meshCount), sizeof(uint64_t));
         mdl.meshes.resize(meshCount);
@@ -40,7 +39,6 @@
             file.read(reinterpret_cast<char*>(&mesh.indexCount), sizeof(uint32_t));
         }
 
-        // 4. Läs animationsdata
         uint64_t animDataCount = 0;
         file.read(reinterpret_cast<char*>(&animDataCount), sizeof(uint64_t));
         mdl.animationsData.resize(animDataCount);
@@ -52,7 +50,30 @@
             file.read(reinterpret_cast<char*>(&animData.boneCount), sizeof(uint16_t));
         }
 
-        // 5. Läs övriga fält och AABB
+        uint64_t boneDataCount = 0;
+        file.read(reinterpret_cast<char*>(&boneDataCount), sizeof(uint64_t));
+        mdl.boneData.resize(boneDataCount);
+        for (auto& data: mdl.boneData){
+            file.read(reinterpret_cast<char*>(&data.hash), sizeof(uint64_t));
+            file.read(reinterpret_cast<char*>(&data.boneIndex), sizeof(uint32_t));
+        }
+        
+        int64_t boneNameCount = 0;
+        file.read(reinterpret_cast<char*>(&boneNameCount), sizeof(uint64_t));
+        assert(boneNameCount > 0);
+        mdl.boneNames.resize(boneNameCount);
+        for (int i {}; i < boneNameCount; i++){
+            uint32_t boneNameLength =  0;
+            file.read(reinterpret_cast<char*>(&boneNameLength), sizeof(uint32_t));
+            if (boneNameLength <= 0){
+                printf("this bone aint have a name!!\n");
+            }
+            mdl.boneNames[i].resize(boneNameLength);
+            file.read(mdl.boneNames[i].data(), boneNameLength);
+        }
+// add bonedata and names
+
+
         file.read(reinterpret_cast<char*>(&mdl.normalizeMat), sizeof(glm::mat4));
         file.read(reinterpret_cast<char*>(&mdl.baseOffsetBytesSkinnedVBO), sizeof(uint32_t));
         file.read(reinterpret_cast<char*>(&mdl.baseOffsetBytesIBO), sizeof(uint32_t));
@@ -101,6 +122,28 @@
             file.write(reinterpret_cast<const char*>(&animData.totalFrames), sizeof(uint16_t));
             file.write(reinterpret_cast<const char*>(&animData.boneCount), sizeof(uint16_t));
         }
+
+        uint64_t boneDataCount = mdl.boneData.size();
+        file.write(reinterpret_cast<const char*>(&boneDataCount), sizeof(uint64_t));
+        for (auto& data: mdl.boneData){
+            file.write(reinterpret_cast<const char*>(&data.hash), sizeof(uint64_t));
+            file.write(reinterpret_cast<const char*>(&data.boneIndex), sizeof(uint32_t));
+        }
+
+        int64_t boneNameCount = mdl.boneNames.size();
+        file.write(reinterpret_cast<const char*>(&boneNameCount), sizeof(uint64_t));
+        for (auto& name: mdl.boneNames){
+            
+            uint32_t boneNameLength =  name.size();
+            file.write(reinterpret_cast<const char*>(&boneNameLength), sizeof(uint32_t));
+            if (boneNameLength <= 0){
+                printf("this bone aint have a name!!\n");
+            }
+            file.write(name.data(), boneNameLength);
+        }
+ 
+        
+
         file.write(reinterpret_cast<const char*>(&mdl.normalizeMat), sizeof(glm::mat4));
         file.write(reinterpret_cast<const char*>(&mdl.baseOffsetBytesSkinnedVBO), sizeof(uint32_t));
         file.write(reinterpret_cast<const char*>(&mdl.baseOffsetBytesIBO), sizeof(uint32_t));

@@ -62,14 +62,14 @@ class AssetLoader : public IAssetLoader{
     void parseNodeHierarchy(float time, int frameTimesBonesPlusAnimOffset, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, AssetRegistry::SkinnedModel &mdl);
     void buildNodeAnimCache(const aiAnimation *anim, const aiNode *node);
     void parseNodes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
-    void loadModel(std::string filename) override;
-    void parseSkinnedFile(std::string &path);
+    
     // void loadModel(const aiScene *scn, std::string path);
     void processNodes(aiScene *scn, std::vector<RenderPkt> &packets, RenderPkt pkt);
     
     int getBoneID(const aiBone *bone);
     //void parseMeshes(const aiScene *scn);
     Vertex parseVertex(const aiMesh *mesh, int i);
+    void loadModel(std::string filename, bool tryCaching) override;
     void readSkinnedFile(std::string &path, AssetRegistry::SkinnedModel &mdl);
     void writeSkinnedFile(std::string &path, AssetRegistry::SkinnedModel &mdl);
     void readStaticFile(std::string &path, AssetRegistry::StaticModel &mdl);

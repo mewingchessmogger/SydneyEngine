@@ -3,5 +3,5 @@
 class IAssetLoader{
     public:
     virtual ~IAssetLoader() = default;
-    virtual void loadModel(std::string filename) = 0;
+    virtual void loadModel(std::string filename, bool  tryCaching) = 0;
 };

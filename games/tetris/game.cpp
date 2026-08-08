@@ -1,27 +1,30 @@
 
 #include "game.hpp"
 #include "serde.hpp"
-
+#include "sydney_physics.hpp"
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
-	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb"});
+	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube_gltf.glb"});
 	
 
-	Transform t = {.position = glm::vec3(3.0, -3.0, 0.0), .rotation = {}, .scale = glm::vec3{ 4.0, 1.0, 4.0 } };
-	//int floor = reg.createEntity();
-	// reg.add(floor, t);
-	// api.attachModel("cube_gltf.glb", floor);
+	TransformInfo t = {.position = glm::vec3(0.0, -3.0, 0.0), .rotation = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
+	int floor = reg.createEntity();
 	
+	reg.add(floor, t);
+	Sydphys::Particle p{};
+	p.inverseMass = 0.0;
+	//reg.add(floor,p);
+	api.attachModel("cube_gltf.glb", floor);
 	
 	int women = reg.createEntity();
-	Transform w = {.position = {2.0, -1.5, 0.0}, .rotation = {}, .scale = glm::vec3{ 2.0f }};
+	TransformInfo w = {.position = {2.0, -1.5, 0.0}, .rotation = {}, .scale = glm::vec3{ 2.0f }};
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
 		
 	int gun = reg.createEntity();
-	Transform g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
+	TransformInfo g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
 
 	reg.getPool<Weapon>().assign(gun,{gun,30});
 
@@ -31,11 +34,11 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	
 
     api.setGameCamera(reg.createEntity());
-	reg.emplace<Transform>(api.getGameCamera());
+	reg.emplace<TransformInfo>(api.getGameCamera());
 	reg.emplace<Camera>(api.getGameCamera());
-	Node n = {.child = gun};
-
-	reg.add(api.getGameCamera(),n);
+	
+	reg.setParent(gun, api.getGameCamera());
+	//reg.add(api.getGameCamera());
 	
 
 }
@@ -44,20 +47,42 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 {		
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
-		Transform& cameraPos = reg.getPool<Transform>().get(api.getGameCamera()); 
+		TransformInfo& cameraPos = reg.getPool<TransformInfo>().get(api.getGameCamera()); 
 		
 		updateGameCamera(camera,cameraPos, state, 0.3, aspect, dt);
 		updateWeaponSystem(state, api, reg);
+		
 
-		if(!reg.getPool<Transform>().dense.size()){
+
+
+		if(!reg.getPool<TransformInfo>().dense.size()){
 			return; 
 		}//TEMOPARRY BARRIER, SOMETIMES UPDATE CALLS WHEN
 
 
-		Transform& gun = reg.getPool<Transform>().get(reg.getPool<Node>().data[0].child);
+	
 
-		gun.position =  {0.0,-1.55, 0.02};
-		gun.rotation = {0.0, 180.0, 0.0};
+		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
+		if(state.keyPressed(Input::Key::MouseLeft)){
+			
+			Sydphys::Particle p{};
+			p.inverseMass = 1.0f;
+			p.vel = 3.0f * camera.dir;
+			p.acc = {0.0, -4.0,0.0};
+			p.damping = 0.99f;
+			TransformInfo t {};
+			t.position = camera.eye + 2.0f*camera.dir;
+			t.scale = {0.2,0.2,0.2};
+			int bull = reg.createEntity();
+			reg.add(bull,t);
+			reg.add(bull, p);
+			api.attachModel("cube_gltf.glb", bull);
+
+		}
+
+		gun.setPos({0.0,-1.55, 0.02});
+		gun.setRot({0.0, 180.0, 0.0});
+		 
 }
 
 
