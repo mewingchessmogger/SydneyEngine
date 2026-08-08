@@ -65,14 +65,8 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			
-			Sydphys::Particle p{};
-			p.inverseMass = 1.0f;
-			p.vel = 3.0f * camera.dir;
-			p.acc = {0.0, -4.0,0.0};
-			p.damping = 0.99f;
-			TransformInfo t {};
-			t.position = camera.eye + 2.0f*camera.dir;
-			t.scale = {0.2,0.2,0.2};
+			Sydphys::Particle p = {.inverseMass = 1.0f, .vel = 3.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
+			TransformInfo t = {.position = camera.eye + 2.0f*camera.dir, .scale = {0.2,0.2,0.2}};
 			int bull = reg.createEntity();
 			reg.add(bull,t);
 			reg.add(bull, p);

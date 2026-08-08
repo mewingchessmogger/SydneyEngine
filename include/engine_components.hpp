@@ -5,7 +5,7 @@
 #include "reflections.hpp"
 
 
-// struct Hierarchic{
+// struct Hierarchic{ // this is inside ECS registry, due to special behaviour
 //     int parent = -1;
 //     uint32_t level{};
 // };
@@ -20,12 +20,6 @@ struct TransformInfo{
     void setRot(const glm::vec3& newRotation) {dirty = true; rotation = newRotation;}
     void setScale(const glm::vec3& newScale)  {dirty = true; scale = newScale;}
     
-    
-    // void SetPos(const glm::vec3&& newPosition) {setPos(newPosition);}
-    // void SetRot(const glm::vec3&& newRotation) {setRot(newRotation);}
-    // void SetScale(const glm::vec3&& newScale)  {setScale(newScale);}
-
-
     void addPos(const glm::vec3& newPosition) {dirty = true; position += newPosition;}
     void addRot(const glm::vec3& newRotation) {dirty = true; rotation += newRotation;}
     void addScale(const glm::vec3& newScale)  {dirty = true; scale += newScale;}
@@ -40,12 +34,13 @@ struct TransformInfo{
         return m;
     }
 
-    REFLECT_4(position, rotation, scale, dirty);
+    REFLECT_4(position, rotation, scale, dirty); 
     
 };
 
 struct Transform {
-    glm::mat4 matrix{};
+    glm::mat4 matrix{}; //split up cuz i want this to be the what packets source transforms from, other alternative is having this inside TransformInfo, 
+                        //also easier to jsut pass this into GJK, not resolution tho..
 };
 
 

@@ -37,5 +37,6 @@ class Engine{
     AssetLoader ldr{};
     EngineAPI api{};
     void initialize();
+    bool debugStuff(PlatformGLFW& plt, EngineMode& mode, AssetRegistry& ast);
     void run();
 };

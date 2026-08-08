@@ -26,26 +26,9 @@ void Engine::run(){
 
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt
-        if(plt.inputState.keyPressed(Input::Key::Escape)){
-            mode = (mode == EngineMode::GAME) ? EngineMode::EDITOR : EngineMode::GAME;
-            if(mode == EngineMode::GAME){
-                plt.inputState.requestCursorVisible = false;
-            }
-        }
-        if(plt.inputState.keyPressed(Input::Key::L)){
-            break;
-        }
-        if(plt.inputState.keyPressed(Input::Key::P)){
-            for (auto& [name, mdl] : ldr.getAssetReg().skinnedModelMap){
-                printf("\n\nModel: %s \n\n", name.c_str());
-                int i{};
-                for(auto& boneName : mdl.boneNames){
-                    printf("        Bone %d, Name: %s\n", i++,boneName.c_str());
-                }
-                printf("End!!\n");
-            }
-        }
-
+        
+        bool shutDown = debugStuff(plt, mode, ldr.getAssetReg()); if(shutDown) { break;}
+        
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
         
         

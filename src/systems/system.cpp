@@ -204,8 +204,9 @@ namespace Sys{
             ECS::Entity e = infoPool.dense[i];
             TransformInfo& info = infoPool.data[i];
                 if(info.dirty){
-                    if(!hierPool.hasEntity(e))
+                    if(!hierPool.hasEntity(e))// DO NOT UPDATE POSSIBLE ENTITYES IN HIERARCHIC, THEY NEED TO DERIVE FROM PARENT
                         transPool.assign(e,{info.getLocalMatrix()}); //updates or creates comp
+                        //WHY NO DIRTY HERE? ITS CUZ WE SET THEM TO FALSE BELOW ALLR
                 }
             
         }

@@ -9,7 +9,6 @@ namespace Sys{
     
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api, IAssetLoader& loader);
     void buildRenderPackets(ECS::Registry& reg, AssetRegistry& ast, std::vector<RenderPkt>& packets);
-    void propagateNodes(ECS::Registry& reg);
     void updateAnimations(ECS::Registry& reg, float dt);
     void updatePhysics(ECS::Registry& reg, float dt);
     void finalizeTransforms(ECS::Registry& reg);

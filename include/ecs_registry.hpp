@@ -256,14 +256,15 @@ namespace ECS{
             assert(pool.data.size() == pool.dense.size());
 
             //https://ideone.com/poHXGX
-            for(int i {}; i < pool.dense.size();i++){index[i] = i;}
+            for(int i {}; i < pool.count;i++){index[i] = i;} //subtle, do not sort dense or data total size, there could be dead data past .count, 
 
                 sort(index.begin(), index.end(), [&](const int& a, const int& b){
                     return (pool.data[a].level < pool.data[b].level);
                 });
             
-            std::vector<Entity> tempDense(pool.count);
-            std::vector<Hierarchic> tempData(pool.count);
+                // standard way of swapping, but feels imperfect
+            std::vector<Entity> tempDense(pool.dense);
+            std::vector<Hierarchic> tempData(pool.data);
 
             for (int i = 0; i < pool.count; ++i) {
                 int oldIdx = index[i];
