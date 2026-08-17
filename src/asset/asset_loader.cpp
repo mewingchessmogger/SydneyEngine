@@ -104,13 +104,13 @@
                 }
             }
             
-            minVertex.x = (minVertex.x > mesh->mAABB.mMin.x) ? mesh->mAABB.mMin.x : minVertex.x;
-            minVertex.y = (minVertex.y > mesh->mAABB.mMin.y) ? mesh->mAABB.mMin.y : minVertex.y;
-            minVertex.z = (minVertex.z > mesh->mAABB.mMin.z) ? mesh->mAABB.mMin.z : minVertex.z;
+            // minVertex.x = (minVertex.x > mesh->mAABB.mMin.x) ? mesh->mAABB.mMin.x : minVertex.x;
+            // minVertex.y = (minVertex.y > mesh->mAABB.mMin.y) ? mesh->mAABB.mMin.y : minVertex.y;
+            // minVertex.z = (minVertex.z > mesh->mAABB.mMin.z) ? mesh->mAABB.mMin.z : minVertex.z;
             
-            maxVertex.x = (maxVertex.x < mesh->mAABB.mMax.x) ? mesh->mAABB.mMax.x : maxVertex.x;
-            maxVertex.y = (maxVertex.y < mesh->mAABB.mMax.y) ? mesh->mAABB.mMax.y : maxVertex.y;
-            maxVertex.z = (maxVertex.z < mesh->mAABB.mMax.z) ? mesh->mAABB.mMax.z : maxVertex.z;
+            // maxVertex.x = (maxVertex.x < mesh->mAABB.mMax.x) ? mesh->mAABB.mMax.x : maxVertex.x;
+            // maxVertex.y = (maxVertex.y < mesh->mAABB.mMax.y) ? mesh->mAABB.mMax.y : maxVertex.y;
+            // maxVertex.z = (maxVertex.z < mesh->mAABB.mMax.z) ? mesh->mAABB.mMax.z : maxVertex.z;
             
 
             //skinnedMeshData.name = mesh->mName.C_Str();
@@ -145,7 +145,7 @@
 
 
         boneNameToIndexMap.clear();
-        mdl.bounds = {.max = glm::vec3{maxVertex.x, maxVertex.y, maxVertex.z}, .min = glm::vec3{minVertex.x, minVertex.y, minVertex.z}};
+       // mdl.bounds = {.max = glm::vec3{maxVertex.x, maxVertex.y, maxVertex.z}, .min = glm::vec3{minVertex.x, minVertex.y, minVertex.z}};
         //printf("\nskinned_model: %s, total bones: %d, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f )", mdl.name.c_str(), boneNameToIndexMap.size(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z);
 
     }
@@ -217,7 +217,7 @@
         //printf("\n");
     }
 
-
+    
         
     void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
     {
@@ -249,6 +249,21 @@
             parseMeshes(scn, mdl);
          
             parseNodes(scn, mdl);
+            glm::vec3 minV{1e10f, 1e10f, 1e10f};
+            glm::vec3 maxV{-1e10f, -1e10f, -1e10f };
+            for(auto v: mdl.transientVertices){
+                glm::vec4 skinned(0.0f);
+                for (int i = 0; i < 1; ++i) {
+                    if (v.weights[i] > 0.0f) {
+                        skinned += v.weights[i] * (mdl.transientBones[v.boneIDs[i]] * glm::vec4(v.pos, 1.0f));
+                    }
+                }
+                minV = glm::min(minV, glm::vec3(skinned));
+                maxV = glm::max(maxV, glm::vec3(skinned));
+              
+            }
+            mdl.bounds = {.max =  maxV, .min = minV};
+
 
             if(reg.IntegerToStringSkinnedModelMap.find(mdlCounter) != reg.IntegerToStringSkinnedModelMap.end()){
                 printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
@@ -470,7 +485,7 @@
         std::string path = "models/"+ subFolder + filename;
         const aiScene* scn = getScene(path);
         parseScene(scn, filename);        
-
+        
         if (tryCaching){
 
         if (inSkinnedFolder){

@@ -1,7 +1,7 @@
 #pragma once 
 #include "variable_def.hpp"
 //#include <vector>
-
+#include "string_hasher.hpp"
 
 #define REFLECT_1(a) \
     auto reflect() { \
@@ -66,3 +66,14 @@
         auto& [a, b, c, d, e, f] = *this;\
         return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}, {&e}, {&f}};\
     }\
+
+
+    //no need for pretty function or shitty typeid that invalidates on hot reloads due to dll data diseappring 
+#define COMP_NAME(type) \
+    static constexpr std::string_view getName(){\
+        return #type; \
+    }\
+    static constexpr uint64_t getHash(){\
+        return Hasher::stringview(#type);\
+    }\
+    

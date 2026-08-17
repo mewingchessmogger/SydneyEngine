@@ -8,7 +8,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube_gltf.glb"});
 	
 
-	TransformInfo t = {.position = glm::vec3(0.0, -3.0, 0.0), .rotation = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
+	TransformInfo t = {.position = glm::vec3(0.0, -5.0, 0.0), .rotation = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
 	int floor = reg.createEntity();
 	
 	reg.add(floor, t);
@@ -18,7 +18,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	api.attachModel("cube_gltf.glb", floor);
 	
 	int women = reg.createEntity();
-	TransformInfo w = {.position = {2.0, -1.5, 0.0}, .rotation = {}, .scale = glm::vec3{ 2.0f }};
+	TransformInfo w = {.position = {0.0, 0.0, 0.0}, .rotation = {}, .scale = glm::vec3{ 1.0f }};
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
@@ -27,7 +27,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	TransformInfo g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
 
 	reg.getPool<Weapon>().assign(gun,{gun,30});
-
+	
 	reg.add(gun, g);
 	api.attachModel("fps_character_animation_pack_ak-47.glb", gun);
 	api.setAnimation("RIG_UE5_Comando_AK_Idle", gun);
@@ -42,7 +42,8 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	
 
 }
-
+static std::array<int,20> CR_STATE children{};
+static int CR_STATE count{};
 void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api)
 {		
 
@@ -71,14 +72,12 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			reg.add(bull,t);
 			reg.add(bull, p);
 			api.attachModel("cube_gltf.glb", bull);
-
 		}
 
 		gun.setPos({0.0,-1.55, 0.02});
 		gun.setRot({0.0, 180.0, 0.0});
 		 
 }
-
 
 static bool CR_STATE alreadyInitialized = false;
 static bool CR_STATE rejectStepExecution = false;
@@ -94,16 +93,24 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
  ALSO WEIRD QUIRK!!! INIT AND UPDATE CAN FOLLOW EACHOTHER INSIDE THE SAME FRAME!!! DONT THINK STEP WILL EXECUTE NEXT FRAME!! IT CAN EXEUCTE DIRECTLY AFTER INIT!!!;
  
 */
+
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
-	
 	ECS::Registry& reg = *psd->reg;
 	EngineAPI& api = *psd->api;
 	Input::State& state = *psd->state; 
 	float& aspect = *psd->aspect;
 	float& dt = *psd->dt;
-	
-	
+	RawMemory& raw = *psd->mem;
+	GameState* mem = reinterpret_cast<GameState*>(raw.data);
+	// mem->level = 100;
+	// mem->MaxHP = 100.0f;
+	// memcpy(mem->name, "Gunther", sizeof("Gunther"));
+	// printf("my name is %s, my  level is %d and my hp is %f!!\n",mem->name ,mem->level, mem->MaxHP);
+
+	//assert(sizeof(GameState) <= *psd->mem->bytes);
+
+
 	switch (operation) 
 		{
 			case CR_LOAD:
@@ -113,27 +120,12 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 					if(!alreadyInitialized){
 						init(reg, api);
 						alreadyInitialized = true;
-						
-					}else{
-						rejectStepExecution = false;
-						 printf("goo1");
-						reg.createPool<Weapon>();
-						std::ifstream is("games/tetris/temp.txt");
-						auto packets = std::move(Serde::deserializeFile(is));    				
-						printf("goo12\n");
-						is.close();
-						
-						for(auto& pkt: packets){
-							reg.deserializeComponent(pkt.id,pkt.sName,std::move(pkt.vars));
-						
-						}
-						
 					}
 				}
 				else{
 					printf("bad img still ..\n");
 				}
-			
+
 			}
 			break;
 
@@ -147,19 +139,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 
 			case CR_UNLOAD:{
 				printf("UNLOAD\n");
-				if(!rejectStepExecution){
-					auto& wPool = reg.getPool<Weapon>();	
-					std::ofstream os("games/tetris/temp.txt"); // std::ios_base::app
-					
-					Serde::serializePool<Weapon>(os, reg);		
-					os.close();
-
-					reg.destroyPool<Weapon>();
-					rejectStepExecution = true;
-				}
 				
-					
-
 			}
 			break;
 

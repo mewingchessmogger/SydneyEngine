@@ -112,7 +112,7 @@ namespace Sys{
         
         packets.clear();
 
-        auto [transPool, rendPool, animPool] = reg.getPools<Transform, Renderable, Animated>();
+        auto [transPool, rendPool, animPool] = reg.getPools<RawTransform, Renderable, Animated>();
         
         for (int i{}; i < rendPool.count; i++){
             ECS::Entity e = rendPool.dense[i];
@@ -147,23 +147,20 @@ namespace Sys{
                 //AssetRegistry::StaticModel& cube = ast.getStaticModelFromID(0);
                 RenderPkt cubePkt{};
                 cubePkt.type = Mesh::COLLIDER;
-                glm::vec3 minV = glm::vec3{mdl.bounds.min.x, mdl.bounds.min.y, mdl.bounds.min.z} * 0.01f;
-                glm::vec3 maxV = glm::vec3{mdl.bounds.max.x, mdl.bounds.max.y, mdl.bounds.max.z} * 0.01f;
-                glm::vec3 center      = (minV + maxV) * 0.5f;
-                glm::vec3 halfExtents = (maxV - minV) * 0.5f;
+                glm::vec3 minV = mdl.bounds.min;
+                glm::vec3 maxV = mdl.bounds.max;
 
-                // slim the box on X/Z to compensate for T-pose bind-pose arm spread
-                float horizontalShrink = 0.35f; // tune this — 1.0 = no change, lower = slimmer
-                halfExtents.x *= horizontalShrink;
-                halfExtents.z *= horizontalShrink;
+                glm::vec3 center = (minV + maxV) * 0.5f;
+                glm::vec3 extents = maxV - minV; // Full dimensions (width, height, depth)
 
-                glm::mat4 finalMat = glm::translate(glm::mat4(1.0f), center);
-                                //* glm::scale(glm::mat4(1.0f), halfExtents);
+            
+                glm::mat4 localTransform = glm::translate(glm::mat4(1.0f), center) ;
+                                        
 
-                cubePkt.pc.modelSpace =  modelMat * finalMat ;
+                
+                cubePkt.pc.modelSpace =  modelMat * localTransform ;
                 
                 packets.push_back(cubePkt);
-                 
                 
 
 
@@ -193,7 +190,7 @@ namespace Sys{
 
     void finalizeTransforms(ECS::Registry& reg){
         auto& infoPool = reg.getPool<TransformInfo>();
-        auto& transPool = reg.getPool<Transform>();
+        auto& transPool = reg.getPool<RawTransform>();
         auto& hierPool = reg.getPool<ECS::Hierarchic>();
         
         if(reg.getIsHierarchyDirty()){
@@ -242,7 +239,7 @@ namespace Sys{
             }
         }
     }
-
+    
 
     void integrateParticle(Particle& particle, TransformInfo& tinfo, float dt, bool accurateDamping = true){
         
@@ -265,18 +262,38 @@ namespace Sys{
         }
        
     }
-    
+
+/*  
+
+    3x3 top left is LINEAR trans OF ROTATION * SCALING // 
+mat4 = [a_x, b_x, c_x, T_x]     [x]
+       [a_y, b_y, c_y, T_y] *   [y]
+       [a_z, b_z, c_z, T_z]     [z]
+       [0.0, 0.0, 0.0, 1.0]     [1.0]
+*/
+
+    // bool GJK(Collider& c1, Collider& c2, RawTransform& rt1, RawTransform& rt1){
+        
+    //     glm::vec3 dir = glm::vec3([3]) - glm::vec3(A[3]);
+      
+    // }
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
-            auto [transInfoPool, particPool] = reg.getPools<TransformInfo, Particle>();
+            auto [transInfoPool, colliders, particPool] = reg.getPools<TransformInfo, Collider, Particle>();
             /*scuffed PHYSICS*/
+            
+
+
             for (int i{}; i < particPool.count; i++){
                 ECS::Entity e = particPool.dense[i];
                 Particle& p = particPool.data[i];
                 TransformInfo& tinfo = transInfoPool.get(e);
                 integrateParticle(p,tinfo,dt);
                 //p.integrate(,dt);                
+                /*
+                
+                */
             }
     }
 }

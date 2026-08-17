@@ -1,6 +1,0 @@
-Entity 3 {
-   struct Weapon {
-      int id 3
-      int bullets 30
-   }
-}

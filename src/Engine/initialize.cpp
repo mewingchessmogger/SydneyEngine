@@ -37,9 +37,21 @@ void Engine::initialize(){
     );
     printf("Done!\n");
 
+    /*not used at all 4 loc below*/
     fileWatcher.setCheckTime(5);
     fileWatcher.setFileDirectory("src/shaders");
     fileWatcher.warmupDirectory();  
     fileWatcher.setStandardResponse();// very much unused here
+
+    
+    reg.createPool<Sydphys::Particle>();
+    reg.createPool<TransformInfo>();
+    reg.createPool<RawTransform>();
+    reg.createPool<Collider>();
+    reg.createPool<Renderable>();
+    reg.createPool<Camera>();
+    reg.createPool<Animated>();
+   
+
 
 }

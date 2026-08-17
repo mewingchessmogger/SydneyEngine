@@ -5,10 +5,6 @@
 #include "reflections.hpp"
 
 
-// struct Hierarchic{ // this is inside ECS registry, due to special behaviour
-//     int parent = -1;
-//     uint32_t level{};
-// };
 
 struct TransformInfo{
     glm::vec3 position{ 0.0f };
@@ -35,14 +31,41 @@ struct TransformInfo{
     }
 
     REFLECT_4(position, rotation, scale, dirty); 
+    COMP_NAME("TransformInfo");
+};
+
+struct RawTransform {
+    glm::mat4 matrix{}; //split up cuz i want this to be the what packets source transforms from, other alternative is having this inside TransformInfo, 
+    
+    glm::mat3 linear() const { 
+        return glm::mat3(matrix); 
+    }
+    
+    glm::vec3 position() const { 
+        return glm::vec3(matrix[3]); 
+    }
+    
+    glm::vec3 scale() const {
+        glm::mat3 L = linear();
+        return glm::vec3(glm::length(L[0]), glm::length(L[1]), glm::length(L[2]));
+    }
+    
+    glm::mat3 rotationMatrix() const {
+        glm::mat3 L = linear();
+        glm::vec3 s = scale();
+        return glm::mat3(L[0] / s.x, L[1] / s.y, L[2] / s.z);
+    }
+
+    COMP_NAME("RawTransform");
     
 };
 
-struct Transform {
-    glm::mat4 matrix{}; //split up cuz i want this to be the what packets source transforms from, other alternative is having this inside TransformInfo, 
-                        //also easier to jsut pass this into GJK, not resolution tho..
+struct Collider{
+    glm::vec3 halfExtents{0.5f};  // Box
+    float     radius{0.5f};        // Sphere, Capsule
+    float     halfHeight{0.5f};    // Capsule
+    COMP_NAME("Collider");
 };
-
 
 
 struct Camera {
@@ -54,16 +77,20 @@ struct Camera {
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     float pitch{};
     float yaw{ };
+    COMP_NAME("Camera");
 };
 struct Renderable{
     uint32_t id{};
     REFLECT_1(id);
+
+    COMP_NAME("Renderable");
 };
 
 struct Parent{
     uint32_t parentID{};
     uint32_t level{};
     REFLECT_2(parentID, level);
+    COMP_NAME("Parent");
 };
 
 struct Animated{
@@ -79,7 +106,7 @@ struct Animated{
     bool isLocked = false;
 
 
-    int getFrame(){
+    int getFrame() const{
         float progress = time / duration;
         int frameIndex = static_cast<int>(progress * totalFrames) % totalFrames;
 
@@ -87,16 +114,7 @@ struct Animated{
 
         return frameIndex;
     }
-};
-
-
-
-
-struct Node{
-    int parent  = -1;
-    int sibling = -1;
-    int child   = -1;
-    int level = 0;
+    COMP_NAME("Animated");
 };
 
 

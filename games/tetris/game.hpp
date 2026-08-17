@@ -3,7 +3,11 @@
 #include "engine_components.hpp"
 #include "cr/cr.h"
 
-
+struct GameState{
+	int level{};
+	int Entities[16];
+	float MaxHP{};
+};
 
 inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State& state, float sens, float aspect, float dt)
 {
@@ -71,6 +75,7 @@ struct Weapon{
 	int bullets = 30;
 	REFLECT_2(id, bullets);
 	REFLECT_ADDRESS_2(id,bullets);
+	COMP_NAME("Weapon");
 };
 void init(ECS::Registry& reg, EngineAPI& api) ;
 void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) ;

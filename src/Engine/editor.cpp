@@ -212,7 +212,7 @@ void Editor::messingAround(vk::CommandBuffer buffer, ECS::Registry& reg, GameCon
     ImGui::Begin("viewport",nullptr,flags);
 
     if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)){
-         plt.inputState.requestCursorVisible = !plt.inputState.requestCursorVisible;
+         //plt.inputState.requestCursorVisible = !plt.inputState.requestCursorVisible;
          plt.updateState();
     }
 
@@ -276,29 +276,31 @@ void Editor::updateCamera(Camera& cam, PlatformGLFW& plt, float sens){
 		
         cameraYAxis = cameraFront.y;
 		
-
+		if (state.keyHeld(Input::Key::MouseLeft)){
+		float markiplier = 4.0f;
 		if (state.keyHeld(Input::Key::C)){
-			eye += 3.0f*glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
+			eye += markiplier*glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
 		if (state.keyHeld(Input::Key::X)){
-			eye -= 3.0f*glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
+			eye -= markiplier*glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
 		if (state.keyHeld(Input::Key::Z)){
-			eye -= 3.0f*glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
+			eye -= markiplier*glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 
 		}
 		if (state.keyHeld(Input::Key::V)){
-			eye += 3.0f*glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
+			eye += markiplier*glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 		}
 		
 		
 
 		if (state.keyHeld(Input::Key::ArrowLeft)){
-			eye.y -= 2.0 * dt;
+			eye.y -= markiplier* dt;
 		}
 		
 		if (state.keyHeld(Input::Key::ArrowRight)){
-			eye.y += 2.0 * dt;
+			eye.y += markiplier * dt;
+		}
 		}
 		
 		

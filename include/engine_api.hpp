@@ -11,14 +11,16 @@ class EngineAPI{
     enum Command{
       LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_ETE_BONE, COCONUT
     };
-
+    enum EventAction{
+      COLLISION, COUNT
+    };
    
     struct Request{
         Command cmd;
         std::string path{};
         int EntityID = -1;
     };
-
+    
 
     struct AnimationRequest{
         Command cmd{};
@@ -37,9 +39,14 @@ class EngineAPI{
         int dstEntity = -1;
     };
 
-    
+    struct Event{
+        EventAction event{};
+        int srcEntity{-1};
+        int dstEntity{-1};
+    };
+
     std::vector<std::variant<Request,AnimationRequest, AttachEntityToEntityRequest>> reqs{};
-    
+    std::vector<Event> events{};
 
     void loadModel(const std::string path, int id = -1){
         reqs.push_back(Request{LOAD_MODEL, path, -1});
@@ -69,7 +76,9 @@ class EngineAPI{
 
 
     void setAnimation(std::string_view name, int entityID,bool locked = false, bool bypassLocked = false, int layer = 0, float crossfade = 0.0f) {
+        
         uint64_t hash = Hasher::stringview(name);
+        
         reqs.push_back(AnimationRequest{
             SET_ANIMATION, 
             hash,
@@ -82,7 +91,9 @@ class EngineAPI{
     }
     
     void attachEntityToEntityBone(std::string_view boneName, int srcEntity, int dstEntity){
+        
         uint64_t hash = Hasher::stringview(boneName);
+        
         reqs.push_back(AttachEntityToEntityRequest{
             ATTACH_ETE_BONE, 
             hash,

@@ -4,7 +4,6 @@
 // #include <string>
 // #include <variant>
 // #include <vector>
-// #include <typeinfo> // Required for typeid
 // #include <array>
 // #include <sstream>
 // #include <cctype>
@@ -16,7 +15,7 @@ namespace Serde { //Seralizer//deserializer = Ser/de
     
         
     struct ComponentPacket{
-        std::string sName{}; // struct name from typeid
+        std::string sName{}; 
         std::vector<Variable> vars{};
         uint32_t id{};
     };
@@ -75,11 +74,11 @@ namespace Serde { //Seralizer//deserializer = Ser/de
     template <typename T>
     void serializePool(std::ofstream& os, ECS::Registry& reg){
         auto& pool = reg.getPool<T>();
-        std::type_index key = std::type_index(typeid(T));
+
         for(int e : pool.dense){
             os << "Entity " <<e <<   " {\n";
 
-            os << "   " << key.name() << " {";
+            os << "   " << "Component " << T::getName() << " {";
             std::vector<Variable> fields = pool.getComponentFields(e);
             if(!fields.empty()){
                 os << "\n";
@@ -160,9 +159,9 @@ namespace Serde { //Seralizer//deserializer = Ser/de
                 scope.push_back(Scope::Entity);
                 currentID = (uint32_t)std::stoul(getNextToken(is));
             }
-            else if(token == "struct"){
+            else if(token == "Component"){
                 scope.push_back(Scope::Struct);
-                sName = token + " " +  getNextToken(is);
+                sName = getNextToken(is);
             }
             else if(token == "{" && scope.back() == Scope::Struct){
                 

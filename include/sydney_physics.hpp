@@ -1,5 +1,6 @@
 #pragma once 
 #include "glm/mat4x4.hpp"
+#include "reflections.hpp"
 namespace Sydphys {
     using real = float;
     using vec3 = glm::vec3;
@@ -14,6 +15,7 @@ namespace Sydphys {
         vec3 vel{};
         vec3 acc{};
         real damping{};
+        COMP_NAME("Particle");
     };
 
     // struct ColliderView{
