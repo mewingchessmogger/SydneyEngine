@@ -19,7 +19,7 @@
         struct Hierarchic{
             int parent = -1;
             uint32_t level{};
-            COMP_NAME("Hierarchic");
+            COMP_NAME(Hierarchic);
         };
         struct IComponentPool{
             virtual ~IComponentPool() = default;
@@ -409,11 +409,6 @@
                     throw std::runtime_error("POOL DOES  NOT EXIST!");
                 }
 
-                
-                
-                
-                
-                
                 pools[Hasher::stringview(sName)]->assignComponentFields(e, std::move(vars));
             }
                 

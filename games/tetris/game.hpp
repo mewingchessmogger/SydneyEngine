@@ -75,7 +75,7 @@ struct Weapon{
 	int bullets = 30;
 	REFLECT_2(id, bullets);
 	REFLECT_ADDRESS_2(id,bullets);
-	COMP_NAME("Weapon");
+	COMP_NAME(Weapon);
 };
 void init(ECS::Registry& reg, EngineAPI& api) ;
 void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) ;

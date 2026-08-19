@@ -15,7 +15,7 @@ namespace Sydphys {
         vec3 vel{};
         vec3 acc{};
         real damping{};
-        COMP_NAME("Particle");
+        COMP_NAME(Particle);
     };
 
     // struct ColliderView{

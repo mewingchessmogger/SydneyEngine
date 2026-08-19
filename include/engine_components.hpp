@@ -31,7 +31,7 @@ struct TransformInfo{
     }
 
     REFLECT_4(position, rotation, scale, dirty); 
-    COMP_NAME("TransformInfo");
+    COMP_NAME(TransformInfo);
 };
 
 struct RawTransform {
@@ -56,7 +56,7 @@ struct RawTransform {
         return glm::mat3(L[0] / s.x, L[1] / s.y, L[2] / s.z);
     }
 
-    COMP_NAME("RawTransform");
+    COMP_NAME(RawTransform);
     
 };
 
@@ -64,7 +64,7 @@ struct Collider{
     glm::vec3 halfExtents{0.5f};  // Box
     float     radius{0.5f};        // Sphere, Capsule
     float     halfHeight{0.5f};    // Capsule
-    COMP_NAME("Collider");
+    COMP_NAME(Collider);
 };
 
 
@@ -77,20 +77,20 @@ struct Camera {
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     float pitch{};
     float yaw{ };
-    COMP_NAME("Camera");
+    COMP_NAME(Camera);
 };
 struct Renderable{
     uint32_t id{};
     REFLECT_1(id);
 
-    COMP_NAME("Renderable");
+    COMP_NAME(Renderable);
 };
 
 struct Parent{
     uint32_t parentID{};
     uint32_t level{};
     REFLECT_2(parentID, level);
-    COMP_NAME("Parent");
+    COMP_NAME(Parent);
 };
 
 struct Animated{
@@ -114,7 +114,7 @@ struct Animated{
 
         return frameIndex;
     }
-    COMP_NAME("Animated");
+    COMP_NAME(Animated);
 };
 
 

@@ -35,14 +35,14 @@ void Engine::run(){
             //physics.gjk();
             //physics.epa();
             //physics.sat();
-            /*
-            Sys::Integrate(reg,dt);
+            
+            //Sys::Integrate(reg,dt);
             
 
-            -> trans + info + colliders  -> [physics] -> events + collision resolutions  
+           // -> trans + info + colliders  -> [physics] -> events + collision resolutions  
             
             
-            */
+            
 
         }
         
