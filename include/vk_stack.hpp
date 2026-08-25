@@ -52,9 +52,10 @@ class VulkanStack{
 
                 default:
                     printf("NOO PIPELINE LOOK INSIDE VK_STACK.HPP AT gertPIPELIEN func\n");
-                    
+                    assert(0);
                     break;
             }
+            
         }
 
         } pipelines;

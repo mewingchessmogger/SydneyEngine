@@ -354,10 +354,12 @@ void VulkanStack::render(){
 
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
+	int numSwitches{};
 	for(auto& pkt: packets){
  		PipelineBundle& pipeline = pipelines.getPipeline(pkt.type);
 		
 		if (cachedPipeline != pipeline.handle){
+			numSwitches += 1;
 			cmdBuffer.bindDescriptorSets(
 				vk::PipelineBindPoint::eGraphics, 
 				pipeline.layout, 
@@ -370,7 +372,7 @@ void VulkanStack::render(){
 		
 		switch(pkt.type){
 			case Mesh::COLLIDER:
-				rdr.renderCollider(cmdBuffer, pipeline, pkt.pc, renderTarget.extent2D);
+				rdr.renderMesh(cmdBuffer, pipeline, pkt.pc,renderTarget.extent2D, pkt.indexCount, pkt.offsetIBO);
 				break;
 			
 			case Mesh::STATIC: 
@@ -387,7 +389,7 @@ void VulkanStack::render(){
 		}
 
 	}
-
+	//printf("number switches: %d\n", numSwitches);
 	rdr.endRenderPass(cmdBuffer); 
 }
 

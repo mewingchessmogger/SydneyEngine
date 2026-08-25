@@ -2,7 +2,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 #include "sydney_physics.hpp"
-
+#include <glm/gtx/norm.hpp>
 namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
@@ -84,10 +84,10 @@ namespace Sys{
 
 
                             if(animations.hasEntity(req.EntityID)){
-                                printf("entity #%d updating animation slot to '%lu' ...", req.EntityID, data.hash);
+                                printf("entity #%d updating animation slot to '%llu' ...", req.EntityID, data.hash);
                             
                             }else{
-                                printf("entity #%d creating animation slot and setting it to '%lu' ...", req.EntityID, data.hash);
+                                printf("entity #%d creating animation slot and setting it to '%llu' ...", req.EntityID, data.hash);
                             }
 
                             animations.assign(req.EntityID, comp); //updates OR creates inside
@@ -112,7 +112,7 @@ namespace Sys{
         
         packets.clear();
 
-        auto [transPool, rendPool, animPool] = reg.getPools<RawTransform, Renderable, Animated>();
+        auto [transPool, rendPool, animPool, collPool] = reg.getPools<RawTransform, Renderable, Animated, Collider>();
         
         for (int i{}; i < rendPool.count; i++){
             ECS::Entity e = rendPool.dense[i];
@@ -143,27 +143,7 @@ namespace Sys{
                     packets.push_back(pkt);
                 }
 
-                //if collider 
-                //AssetRegistry::StaticModel& cube = ast.getStaticModelFromID(0);
-                RenderPkt cubePkt{};
-                cubePkt.type = Mesh::COLLIDER;
-                glm::vec3 minV = mdl.bounds.min;
-                glm::vec3 maxV = mdl.bounds.max;
-
-                glm::vec3 center = (minV + maxV) * 0.5f;
-                glm::vec3 extents = maxV - minV; // Full dimensions (width, height, depth)
-
-            
-                glm::mat4 localTransform = glm::translate(glm::mat4(1.0f), center) ;
-                                        
-
-                
-                cubePkt.pc.modelSpace =  modelMat * localTransform ;
-                
-                packets.push_back(cubePkt);
-                
-
-
+              
             }
             else{
                 
@@ -185,6 +165,31 @@ namespace Sys{
 
 
         }
+
+        AssetRegistry::StaticModel& sphere = ast.getStaticModelFromString(std::string{"sphere.glb"});
+        for (int i{}; i < collPool.count; i++){
+            ECS::Entity e = collPool.dense[i];
+            const Collider& coll = collPool.data[i];
+            glm::mat4 modelMat = transPool.get(e).matrix;
+            
+            modelMat = glm::scale(modelMat, glm::vec3(coll.radius));
+            modelMat = glm::translate(modelMat,coll.offset);
+            
+            RenderPkt cubePkt{.pc{.modelSpace = modelMat}, .type = Mesh::COLLIDER};
+            
+            cubePkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+
+            for(auto& mesh : sphere.meshes){
+                cubePkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                cubePkt.indexCount = mesh.indexCount;
+                cubePkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                packets.push_back(cubePkt);
+            }
+         
+
+        }
+
+
     }
    
 
@@ -277,23 +282,43 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
     //     glm::vec3 dir = glm::vec3([3]) - glm::vec3(A[3]);
       
     // }
+    bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2){
+        float rSquared = (c1.radius + c2.radius) * (c1.radius + c2.radius);
+        return rSquared > glm::distance2(glm::vec3(r1[3])+ c1.offset, glm::vec3(r2[3]) + c2.offset);
+    }
+
+
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
-            auto [transInfoPool, colliders, particPool] = reg.getPools<TransformInfo, Collider, Particle>();
+            auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, Particle>();
             /*scuffed PHYSICS*/
             
-
-
             for (int i{}; i < particPool.count; i++){
                 ECS::Entity e = particPool.dense[i];
                 Particle& p = particPool.data[i];
                 TransformInfo& tinfo = transInfoPool.get(e);
                 integrateParticle(p,tinfo,dt);
-                //p.integrate(,dt);                
-                /*
-                
-                */
+
             }
-    }
+
+            for (int i{}; i < collPool.count; i++){
+                ECS::Entity e1 = collPool.dense[i]; Collider& c1 = collPool.data[i];
+                if(!rawTransPool.hasEntity(e1)){
+                    return;
+                }
+                RawTransform& r1 = rawTransPool.get(e1);
+
+                
+                for (int j = i + 1; j < collPool.count; j++){
+                    ECS::Entity e2 = collPool.dense[j]; Collider& c2 = collPool.data[j];
+                    RawTransform& r2 = rawTransPool.get(e2);
+                    bool collided = checkMidPhase(c1, c2, r1.matrix, r2.matrix);
+                    if (collided){
+                        printf("COLLISION BETWEEN TWO!\n");
+                    }
+                }
+            }
+            
+        }
 }

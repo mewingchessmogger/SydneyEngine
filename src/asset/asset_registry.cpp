@@ -28,6 +28,7 @@ AssetRegistry::SkinnedModel &AssetRegistry::getSkinnedModelFromID(uint32_t id)
 
 
 
+
 uint32_t AssetRegistry::getModelID(std::string& path)
 {
     if(StringToIntegerSkinnedModelMap.find(path) != StringToIntegerSkinnedModelMap.end()){
@@ -39,3 +40,18 @@ uint32_t AssetRegistry::getModelID(std::string& path)
     assert(0); // should have never come here...
     }
 }
+
+uint32_t AssetRegistry::getModelID(std::string&& path)
+{
+    return getModelID(path);
+}
+
+AssetRegistry::StaticModel &AssetRegistry::getStaticModelFromString(std::string&& path)
+{
+    uint32_t id = getModelID(path);
+    return getStaticModelFromID(id);
+
+}
+
+
+

@@ -43,9 +43,7 @@
                 reset();
             }
 
-            /// @brief FOR COMPONENTS thata arent unique_ptr<Script>
-            /// @param e 
-            /// @param p 
+           
             void assign(Entity e, T& p){
                 
                 int page = e / PAGE_SIZE;
@@ -209,16 +207,16 @@
                 assign(e, comp);
             }
             
-            template<typename Dummy = T>
-            std::enable_if_t<std::is_same_v<Dummy, Hierarchic>> setSparseIndex(Entity e, int denseIndex) {
-                int page = e / PAGE_SIZE;
-                int offset = e % PAGE_SIZE;
-                if (page >= sparse.size() || sparse[page] == nullptr){// will never hpapen but whatever 
-                throw std::runtime_error ("page not allocated for this");
-                }
-                sparse[page][offset] = denseIndex;
+            // template<typename Dummy = T>
+            // std::enable_if_t<std::is_same_v<Dummy, Hierarchic>> setSparseIndex(Entity e, int denseIndex) {
+            //     int page = e / PAGE_SIZE;
+            //     int offset = e % PAGE_SIZE;
+            //     if (page >= sparse.size() || sparse[page] == nullptr){// will never hpapen but whatever 
+            //     throw std::runtime_error ("page not allocated for this");
+            //     }
+            //     sparse[page][offset] = denseIndex;
 
-            }
+            // }
         };
         
         class Registry{
@@ -274,7 +272,12 @@
                 pool.data.swap(tempData);
 
                 for (int i = 0; i < pool.count; ++i) {
-                    pool.setSparseIndex(pool.dense[i], i);
+                    Entity e = pool.dense[i];
+                    int page = e / pool.PAGE_SIZE;
+                    int offset = e % pool.PAGE_SIZE;
+                    
+                    pool.sparse[page][offset] = i;
+
                 }
                 isHierarchyPoolDirty  = false;
             }
@@ -283,9 +286,9 @@
                 assert(e >= 0 && parent >= 0);
                 
                 auto& pool = getPool<Hierarchic>();
-                int parentLevel = pool.hasEntity(parent) ? pool.get(parent).level : -1;
+                int parentLevel = 1 + (pool.hasEntity(parent) ? pool.get(parent).level : -1);
 
-                pool.assign(e, {parent, static_cast<uint32_t>(parentLevel + 1)});
+                pool.assign(e, {parent, static_cast<uint32_t>(parentLevel)});
             
                 isHierarchyPoolDirty = true;
 
@@ -408,10 +411,19 @@
                 if(stringToPool.find(std::string{sName}) == stringToPool.end()){
                     throw std::runtime_error("POOL DOES  NOT EXIST!");
                 }
-
+                
                 pools[Hasher::stringview(sName)]->assignComponentFields(e, std::move(vars));
             }
+
+            void deserializeComponent(Entity e, uint64_t compHash, std::vector<Variable>&& vars){
                 
+                
+                if(pools.find(compHash) == pools.end()){
+                    throw std::runtime_error("POOL DOES  NOT EXIST!");
+                }
+                
+                pools[compHash]->assignComponentFields(e, std::move(vars));
+            }
             
 
             

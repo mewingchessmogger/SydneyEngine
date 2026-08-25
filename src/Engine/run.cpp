@@ -19,7 +19,8 @@ void Engine::run(){
     // plugin renderer
     // plugin sound
     // plugin 
-
+    //api.loadModel("sphere.glb");
+    
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt 
         bool shutDown = debugStuff(plt, mode, ldr.getAssetReg()); if(shutDown) { break;}
@@ -31,19 +32,24 @@ void Engine::run(){
         if (mode == EngineMode::GAME){        
             cr_plugin_update(game_plugin);
             Sys::updatePhysics(reg, plt.deltaTime);
+            /*
+            Mid (Colliders&)
+            
+            */
+            
+
+
+            
             //physics.integrate();
             //physics.gjk();
             //physics.epa();
             //physics.sat();
-            
+            // 
+
             //Sys::Integrate(reg,dt);
-            
+            //just add AABB collision checks            
 
            // -> trans + info + colliders  -> [physics] -> events + collision resolutions  
-            
-            
-            
-
         }
         
 

@@ -5,7 +5,7 @@
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
-	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube_gltf.glb"});
+	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube_gltf.glb", "sphere.glb"});
 	
 
 	TransformInfo t = {.position = glm::vec3(0.0, -5.0, 0.0), .rotation = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
@@ -22,7 +22,8 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
-		
+	reg.add(women, Collider{.offset = {0.0, 1.0, 0.0}, .radius = 2.0f});
+
 	int gun = reg.createEntity();
 	TransformInfo g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
 
@@ -31,7 +32,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.add(gun, g);
 	api.attachModel("fps_character_animation_pack_ak-47.glb", gun);
 	api.setAnimation("RIG_UE5_Comando_AK_Idle", gun);
-	
+	reg.add(gun, Collider{.offset = {0.0, 1.0, 0.0}, .radius = 1.0f});
 
     api.setGameCamera(reg.createEntity());
 	reg.emplace<TransformInfo>(api.getGameCamera());
@@ -64,6 +65,8 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 	
 
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
+		Collider& womenCollider = reg.getPool<Collider>().data[0];
+		Collider& gunCollider = reg.getPool<Collider>().data[1];
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			
 			Sydphys::Particle p = {.inverseMass = 1.0f, .vel = 3.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
@@ -76,7 +79,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		gun.setPos({0.0,-1.55, 0.02});
 		gun.setRot({0.0, 180.0, 0.0});
-		 
+		womenCollider.radius = 1.0f;
 }
 
 static bool CR_STATE alreadyInitialized = false;
@@ -91,6 +94,7 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
  CAN LOAD, FAIL, STEP, UNLOAD MULTIPLE TIMES BECAUES REBULILD STILL LOCKING DLL/PDB
 
  ALSO WEIRD QUIRK!!! INIT AND UPDATE CAN FOLLOW EACHOTHER INSIDE THE SAME FRAME!!! DONT THINK STEP WILL EXECUTE NEXT FRAME!! IT CAN EXEUCTE DIRECTLY AFTER INIT!!!;
+  EG CR_MAIN CAN BE CALLED TWICE WITHIN THE SAME UPDATE FUNC
  
 */
 

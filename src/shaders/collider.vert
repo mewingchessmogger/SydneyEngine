@@ -3,9 +3,26 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
+// Define the structure of a single vertex
+struct Vertex {
+    vec3 pos;
+    float pad0;
+    vec3 normal;
+    float pad1;
+    vec2 uv;
+    float pad2;
+    float pad3;
+};
 
 
 // Define the Buffer References (The "Types" for our pointers)
+layout(buffer_reference, scalar) readonly buffer IndexBuffer {
+    uint indices[];
+};
+
+layout(buffer_reference, scalar) readonly buffer VertexBuffer {
+    Vertex vertices[];
+};
 
 // Your Push Constant matches your C++ struct exactly
 layout(push_constant) uniform Constants {
@@ -29,33 +46,20 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
 } ubo;
 
 
-
 void main() {
-    const vec3 collider[8] = vec3[8] ( 
-    vec3(-1.0, -1.0, -1.0), // 0: Bottom-left-back
-    vec3( 1.0, -1.0, -1.0), // 1: Bottom-right-back
-    vec3( 1.0,  1.0, -1.0), // 2: Bottom-right-front
-    vec3(-1.0,  1.0, -1.0), // 3: Bottom-left-front
-    vec3(-1.0, -1.0,  1.0), // 4: Top-left-back
-    vec3( 1.0, -1.0,  1.0), // 5: Top-right-back
-    vec3( 1.0,  1.0,  1.0), // 6: Top-right-front
-    vec3(-1.0,  1.0,  1.0)  // 7: Top-left-front
-);
+    // Cast the raw 64-bit uints to our buffer types
+    IndexBuffer  indexBuffer  = IndexBuffer(ubo.indxAdress);
+    VertexBuffer vertexBuffer = VertexBuffer(ubo.vertAdress);
 
-    const int LINE_INDICES[24] = int[24](
-    // Bottom face loop
-    0, 1,   1, 2,   2, 3,   3, 0,
-    // Top face loop
-    4, 5,   5, 6,   6, 7,   7, 4,
-    // Vertical pillars
-    0, 4,   1, 5,   2, 6,   3, 7
-    );
-
-
+    // Step 1: Fetch the index using the hardware counter
+    uint vIndex = indexBuffer.indices[gl_VertexIndex] + pc.offsetVBO;
+    
+    // Step 2: Fetch the actual vertex data using that index
+    Vertex v = vertexBuffer.vertices[vIndex];
 
     // Step 3: Project to Clip Space
     CameraData cam = CameraData(ubo.projectionAddress);
     
-    gl_Position = cam.proj * cam.view * pc.model * vec4(collider[LINE_INDICES[gl_VertexIndex]], 1.0);
-    
+    gl_Position = cam.proj * cam.view * pc.model * vec4(v.pos, 1.0);
+
 }

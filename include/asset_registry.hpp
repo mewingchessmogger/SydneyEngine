@@ -96,11 +96,11 @@ class AssetRegistry{
                 auto& anim = animationsData[a];
                 
                 if (anim.hash == hash){
-                    printf("Found '%ul' at index #%d! \n", anim.hash, a);
+                    printf("Found '%llu' at index #%d! \n", anim.hash, a);
                     return a;
                 }
             }
-            printf("uh oh the hash %d aint corresponding to anything in the map!!\n",hash);
+            printf("uh oh the hash %llu aint corresponding to anything in the map!!\n",hash);
             assert(0);
             return -1;
         }
@@ -111,11 +111,11 @@ class AssetRegistry{
                 auto& bone = boneData[b];
                 
                 if (bone.hash == hash){
-                    printf("Found '%ul' at index #%d! \n", bone.hash, b);
+                    printf("Found '%llu' at index #%d! \n", bone.hash, b);
                     return b;
                 }
             }
-            printf("uh oh the hash %d aint corresponding to anything in the map!!\n",hash);
+            printf("uh oh the hash %llu aint corresponding to anything in the map!!\n",hash);
             assert(0);
             return -1;
         }
@@ -161,6 +161,10 @@ class AssetRegistry{
     SkinnedModel& getSkinnedModelFromID(uint32_t id);
 
     uint32_t getModelID(std::string &path);
+
+    uint32_t getModelID(std::string &&path);
+
+    AssetRegistry::StaticModel &getStaticModelFromString(std::string &&path);
 
     bool isSkinned(uint32_t id){
         

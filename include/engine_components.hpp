@@ -61,9 +61,14 @@ struct RawTransform {
 };
 
 struct Collider{
-    glm::vec3 halfExtents{0.5f};  // Box
-    float     radius{0.5f};        // Sphere, Capsule
-    float     halfHeight{0.5f};    // Capsule
+    //midCollider
+ 
+    glm::vec3 offset{};
+    float radius = 1.0f;
+
+    //narrowCollider
+
+
     COMP_NAME(Collider);
 };
 
@@ -84,13 +89,6 @@ struct Renderable{
     REFLECT_1(id);
 
     COMP_NAME(Renderable);
-};
-
-struct Parent{
-    uint32_t parentID{};
-    uint32_t level{};
-    REFLECT_2(parentID, level);
-    COMP_NAME(Parent);
 };
 
 struct Animated{
