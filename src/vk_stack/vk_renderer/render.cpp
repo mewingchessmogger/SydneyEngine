@@ -53,10 +53,11 @@ void Renderer::beginRenderPass(vk::CommandBuffer cmdBuffer, vk::ImageView imgVie
 
 void Renderer::renderMesh(vk::CommandBuffer cmdBuffer, PipelineBundle pipeline, Pkt_PC& pc, vk::Extent2D extent, uint32_t indexCount, uint32_t totalOffsetIBO)
 {
+	
 	cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.handle);
 	cmdBuffer.setViewport(0, vk::Viewport(0.0f, float(extent.height), float(extent.width), -float(extent.height), 0.0f, 1.0f));
 	cmdBuffer.setScissor(0, vk::Rect2D(vk::Offset2D(0, 0), extent));
-	cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, sizeof(pc), &pc);
+	cmdBuffer.pushConstants(pipeline.layout,vk::ShaderStageFlagBits::eVertex, 0, sizeof(pc), &pc);
 	
 	cmdBuffer.draw(indexCount,1,totalOffsetIBO,0);	
 }

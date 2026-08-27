@@ -165,6 +165,7 @@ PipelineBuilder& PipelineBuilder::setDynState()
 
 PipelineBuilder& PipelineBuilder::setPCRange(size_t sizePC, int offset, vk::ShaderStageFlags stage)
 {
+	
 	pcRange
 		.setOffset(offset)
 		.setSize(sizePC)

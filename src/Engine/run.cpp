@@ -31,32 +31,16 @@ void Engine::run(){
         
         if (mode == EngineMode::GAME){        
             cr_plugin_update(game_plugin);
-            Sys::updatePhysics(reg, plt.deltaTime);
-            /*
-            Mid (Colliders&)
-            
-            */
-            
-
-
-            
-            //physics.integrate();
-            //physics.gjk();
-            //physics.epa();
-            //physics.sat();
-            // 
-
-            //Sys::Integrate(reg,dt);
-            //just add AABB collision checks            
-
-           // -> trans + info + colliders  -> [physics] -> events + collision resolutions  
         }
         
 
         Sys::processAPI(reg, ldr.getAssetReg(), api, ldr); //A LOT HAPPENS IN HERE
+
         reg.updateHierarchyLevels();
         reg.sortHierarchyPool();
         Sys::finalizeTransforms(reg);
+        Sys::updatePhysics(reg, plt.deltaTime);
+
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  
         
@@ -95,3 +79,22 @@ void Engine::run(){
     plt.shutdown();
     cr_plugin_close(game_plugin);
 }
+  /*
+            Mid (Colliders&)
+            
+            */
+            
+
+
+            
+            //physics.integrate();
+            //physics.gjk();
+            //physics.epa();
+            //physics.sat();
+            // 
+
+            //Sys::Integrate(reg,dt);
+            //just add AABB collision checks            
+
+           // -> trans + info + colliders  -> [physics] -> events + collision resolutions  
+           

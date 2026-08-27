@@ -29,7 +29,7 @@ layout(push_constant) uniform Constants {
     mat4 model;
     uint offsetVBO;
     uint offsetBoneBuffer;
-  //  uint secOffsetBoneBuffer;
+    vec4 color;
 } pc;
 
 layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer CameraData{
@@ -45,6 +45,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     uint64_t animationAddress;
 } ubo;
 
+layout(location = 0) out vec4 outColor;
 
 void main() {
     // Cast the raw 64-bit uints to our buffer types
@@ -59,7 +60,7 @@ void main() {
 
     // Step 3: Project to Clip Space
     CameraData cam = CameraData(ubo.projectionAddress);
-    
+    outColor = pc.color;
     gl_Position = cam.proj * cam.view * pc.model * vec4(v.pos, 1.0);
 
 }

@@ -21,13 +21,16 @@ struct Pkt_PC{
     glm::mat4 modelSpace{1.0};
     uint32_t offsetVBO{};// represent either vbo or skinned vbo
     uint32_t offsetBoneBuffer{};
+    int pads[2];
+    glm::vec4 color = glm::vec4{1.0f,1.0f,1.0f,1.0f};
 };
+
+
 struct RenderPkt{
     Pkt_PC pc{};
     Mesh type{}; 
     uint32_t offsetIBO{};
-    uint32_t indexCount{};
-    
+    uint32_t indexCount{};  
 };
 
 

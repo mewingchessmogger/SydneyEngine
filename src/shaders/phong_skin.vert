@@ -42,7 +42,8 @@ layout(buffer_reference, std140, buffer_reference_align = 16) readonly buffer Ca
 layout(push_constant) uniform Constants {
     mat4 model;
     uint offsetVBO;
-    uint offsetBoneBuffer;    
+    uint offsetBoneBuffer;
+    vec4 color;
 } pc;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {

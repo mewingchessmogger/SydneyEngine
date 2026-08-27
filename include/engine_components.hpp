@@ -37,35 +37,40 @@ struct TransformInfo{
 struct RawTransform {
     glm::mat4 matrix{}; //split up cuz i want this to be the what packets source transforms from, other alternative is having this inside TransformInfo, 
     
-    glm::mat3 linear() const { 
+    inline glm::mat3 getLinear() const { 
         return glm::mat3(matrix); 
     }
     
-    glm::vec3 position() const { 
+    inline glm::vec3 getPosition() const { 
         return glm::vec3(matrix[3]); 
     }
     
-    glm::vec3 scale() const {
-        glm::mat3 L = linear();
+    inline glm::vec3 getScale() const {
+        glm::mat3 L = getLinear();
         return glm::vec3(glm::length(L[0]), glm::length(L[1]), glm::length(L[2]));
     }
     
-    glm::mat3 rotationMatrix() const {
-        glm::mat3 L = linear();
-        glm::vec3 s = scale();
+    inline glm::mat3 getRotationMatrix() const {
+        glm::mat3 L = getLinear();
+        glm::vec3 s = getScale();
         return glm::mat3(L[0] / s.x, L[1] / s.y, L[2] / s.z);
     }
-
+    
     COMP_NAME(RawTransform);
     
 };
 
 struct Collider{
-    //midCollider
- 
+    enum Shape {NONE, SPHERE, OBB, AABB, COCONUT};
+    //BROADCOLLIDER
     glm::vec3 offset{};
     float radius = 1.0f;
-
+    
+    //NARROW COLLIDER
+    Shape narrowShape = NONE;  
+    float narrowRadius = 0.2f;
+    glm::vec3 narrowExtents = glm::vec3(1.0f);
+    
     //narrowCollider
 
 

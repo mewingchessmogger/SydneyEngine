@@ -19,10 +19,12 @@ namespace PushC {
         glm::mat4 model{1.0f};
         uint32_t offsetVBO{};
         uint32_t offsetBoneBuffer{};
+        glm::vec4 color{};
         //uint32_t secOffsetBoneBuffer{};
         Model& setModel(const glm::mat4& m) { model = m; return *this; }
         Model& setVertexBufferOffset(const uint32_t m) { offsetVBO = m; return *this;}
         Model& setBoneBufferOffset(const uint32_t m) { offsetBoneBuffer = m; return *this;}
+        Model& setColor(const glm::vec4 clr) { color = clr; return *this;}
         
     };
 

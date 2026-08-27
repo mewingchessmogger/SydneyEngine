@@ -21,7 +21,5 @@
 #include <sstream>
 #include <chrono>
 #include <iostream>
-#include <typeinfo> 
 
-#include <typeindex>
 #include <tuple>

@@ -7,6 +7,7 @@ namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
     using Particle = Sydphys::Particle;
+
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api,  IAssetLoader& loader){
         
         for (auto& reqT: api.reqs) {
@@ -149,7 +150,7 @@ namespace Sys{
                 
                 AssetRegistry::StaticModel& mdl = ast.getStaticModelFromID(rend.id);
                 //printf("ID: %d, name: %s, offsetVBO is: %d, globalOffsetIBO is %d\n",rend.id, mdl.name.c_str(),mdl.baseOffsetBytesVBO/sizeof(Vertex),mdl.baseOffsetBytesIBO / sizeof(uint32_t));
-                glm::mat4 modelMat = transPool.get(e).matrix * mdl.normalizeMat;
+                glm::mat4 modelMat = transPool.get(e).matrix; //* mdl.normalizeMat;
                 RenderPkt pkt{};
                 pkt.pc.modelSpace = modelMat;
                 pkt.type = Mesh::STATIC;
@@ -167,29 +168,75 @@ namespace Sys{
         }
 
         AssetRegistry::StaticModel& sphere = ast.getStaticModelFromString(std::string{"sphere.glb"});
+        AssetRegistry::StaticModel& cube = ast.getStaticModelFromString(std::string{"cube.glb"});
+
         for (int i{}; i < collPool.count; i++){
             ECS::Entity e = collPool.dense[i];
             const Collider& coll = collPool.data[i];
-            glm::mat4 modelMat = transPool.get(e).matrix;
             
-            modelMat = glm::scale(modelMat, glm::vec3(coll.radius));
-            modelMat = glm::translate(modelMat,coll.offset);
+            RawTransform& rawTrans = transPool.get(e);
             
-            RenderPkt cubePkt{.pc{.modelSpace = modelMat}, .type = Mesh::COLLIDER};
+            glm::mat4 broadMat = glm::translate(glm::mat4(1.0f),coll.offset + rawTrans.getPosition());
+            broadMat = glm::scale(broadMat, glm::vec3(coll.radius));
             
-            cubePkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+            RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
+            
+            broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
 
             for(auto& mesh : sphere.meshes){
-                cubePkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                cubePkt.indexCount = mesh.indexCount;
-                cubePkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
-                packets.push_back(cubePkt);
+                broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                broadPkt.indexCount = mesh.indexCount;
+                broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                
+                packets.push_back(broadPkt);
             }
-         
+            
+            RenderPkt narrowPkt{.type = Mesh::COLLIDER};
+            narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
+
+
+            switch(coll.narrowShape){
+                case Collider::SPHERE:{
+                    glm::mat4 narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowRadius));
+                    narrowPkt.pc.modelSpace = narrowMat; 
+                    narrowPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+                    for(auto& mesh : sphere.meshes){
+                        narrowPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                        narrowPkt.indexCount = mesh.indexCount;
+                        narrowPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                        
+                        packets.push_back(narrowPkt);
+                    }
+                    break;
+                
+                case Collider::AABB:{
+                    glm::mat4 narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));
+                    narrowPkt.pc.modelSpace = narrowMat; 
+                    narrowPkt.pc.offsetVBO = cube.baseOffsetBytesVBO / sizeof(Vertex);
+
+                    for(auto& mesh : cube.meshes){
+                        narrowPkt.offsetIBO = cube.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                        narrowPkt.indexCount = mesh.indexCount;
+                        narrowPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+                        
+                        packets.push_back(narrowPkt);
+                    }
+                    break;
+
+                    default:
+                    break;
+
+                }
+            }
+
+
 
         }
 
 
+    }
     }
    
 
@@ -286,7 +333,98 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
         float rSquared = (c1.radius + c2.radius) * (c1.radius + c2.radius);
         return rSquared > glm::distance2(glm::vec3(r1[3])+ c1.offset, glm::vec3(r2[3]) + c2.offset);
     }
+    using  glm::dot;
+    using  glm::cross;
+    using  glm::normalize;
+    using glm::transpose;
+    struct GJK{
+        using  vec3 = glm::vec3;
+        using  vec4 = glm::vec4;
+        using mat3 = glm::mat3;
 
+        vec3 v;
+        vec3 b, c, d;
+        uint32_t n{};
+        
+
+        glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1){
+            assert(c1.narrowShape != c1.NONE);
+            dir = normalize(dir);
+            switch(c1.narrowShape){
+
+                case Collider::SPHERE:{
+                    return vec3(c1.radius)* normalize(dir) + c1.offset  + r1.getPosition();
+                }
+                case Collider::AABB: {
+                    vec3 extents = c1.narrowExtents;
+                    return vec3(
+                        (dir.x < 0) ? -extents.x : extents.x,
+                        (dir.y < 0) ? -extents.y : extents.y,
+                        (dir.z < 0) ? -extents.z : extents.z
+                    ) + c1.offset + r1.getPosition();
+
+                }
+                case Collider::OBB: {
+                    vec3 extents = c1.narrowExtents;
+                    glm::mat3 R = r1.getRotationMatrix();
+                    vec3 rotated = glm::transpose(R) * dir;
+                    
+                    vec3 localSupport{
+                        (rotated.x < 0) ? -extents.x : extents.x,
+                        (rotated.y < 0) ? -extents.y : extents.y,
+                        (rotated.z < 0) ? -extents.z : extents.z
+                    };
+
+                    return R * localSupport + c1.offset + r1.getPosition();
+
+                }
+            }
+        }
+        
+        bool update(const vec3& a){
+           
+            switch(n){
+                case 0:
+                    b = v;
+                    v = -a;
+                    n = 1;
+                    return false;
+                
+                case 1:
+                    v = cross(cross(b-a, -a), -a);
+                    c = b;
+                    b = a;
+                    n = 2;
+                    return false;
+                     
+                case 2:
+
+                default:
+                    assert(0);
+                    break;
+            }
+        
+        }
+        
+        
+        bool intersect(vec3 (*supportFn)(glm::vec3)){
+            v = vec3{1.0, 0.0, 0.0};
+            n = 0;    
+            for (int i {}; i < 32; i++){
+                vec3 a = supportFn(v);
+            
+                if(dot(a, v) < 0.0)
+                    return false;
+                
+                if (update(a))
+                    return true;
+
+            }
+        }
+
+    };
+    GJK gjk{};
+    
 
     void updatePhysics(ECS::Registry& reg, float dt)
     {
@@ -315,6 +453,17 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     RawTransform& r2 = rawTransPool.get(e2);
                     bool collided = checkMidPhase(c1, c2, r1.matrix, r2.matrix);
                     if (collided){
+                        
+                       
+                        /*
+                        checkNarrowPhase();
+                        GJK
+                        EPA,
+                        RESOLVE
+                        */
+                        
+                        //if has particle
+                        
                         printf("COLLISION BETWEEN TWO!\n");
                     }
                 }
