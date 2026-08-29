@@ -176,8 +176,9 @@ namespace Sys{
             
             RawTransform& rawTrans = transPool.get(e);
             
+            //printf("%f, %f, %f\n", rawTrans.getPosition().x, rawTrans.getPosition().y, rawTrans.getPosition().z);
             glm::mat4 broadMat = glm::translate(glm::mat4(1.0f),coll.offset + rawTrans.getPosition());
-            broadMat = glm::scale(broadMat, glm::vec3(coll.radius));
+            broadMat = glm::scale(broadMat, glm::vec3(coll.broadRadius));
             
             RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
             
@@ -188,7 +189,7 @@ namespace Sys{
                 broadPkt.indexCount = mesh.indexCount;
                 broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                 
-                packets.push_back(broadPkt);
+                //packets.push_back(broadPkt);
             }
             
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
@@ -212,7 +213,9 @@ namespace Sys{
                 
                 case Collider::AABB:{
                     glm::mat4 narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    
                     narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));
+                    //printf("%f, %f, %f\n", coll.narrowExtents.x,coll.narrowExtents.y,coll.narrowExtents.z);
                     narrowPkt.pc.modelSpace = narrowMat; 
                     narrowPkt.pc.offsetVBO = cube.baseOffsetBytesVBO / sizeof(Vertex);
 
@@ -324,13 +327,9 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
        [0.0, 0.0, 0.0, 1.0]     [1.0]
 */
 
-    // bool GJK(Collider& c1, Collider& c2, RawTransform& rt1, RawTransform& rt1){
-        
-    //     glm::vec3 dir = glm::vec3([3]) - glm::vec3(A[3]);
-      
-    // }
+
     bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2){
-        float rSquared = (c1.radius + c2.radius) * (c1.radius + c2.radius);
+        float rSquared = (c1.broadRadius + c2.broadRadius) * (c1.broadRadius + c2.broadRadius);
         return rSquared > glm::distance2(glm::vec3(r1[3])+ c1.offset, glm::vec3(r2[3]) + c2.offset);
     }
     using  glm::dot;
@@ -342,9 +341,9 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
         using  vec4 = glm::vec4;
         using mat3 = glm::mat3;
 
-        vec3 v;
+        vec3 dir;
         vec3 b, c, d;
-        uint32_t n{};
+        uint32_t n{}; // n refers to the amount of stored points excluding a!
         
 
         glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1){
@@ -353,7 +352,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
             switch(c1.narrowShape){
 
                 case Collider::SPHERE:{
-                    return vec3(c1.radius)* normalize(dir) + c1.offset  + r1.getPosition();
+                    return vec3(c1.narrowRadius)* normalize(dir) + c1.offset  + r1.getPosition();
                 }
                 case Collider::AABB: {
                     vec3 extents = c1.narrowExtents;
@@ -381,47 +380,141 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
             }
         }
         
-        bool update(const vec3& a){
+        glm::vec3 supportA_minus_B(glm::vec3 dir, Collider& c1, Collider& c2, RawTransform& r1, RawTransform& r2){
+            return support(dir, c1, r1) - support(-dir,c2,r2);
+        }
+
+        bool update(vec3 a){
            
             switch(n){
-                case 0:
-                    b = v;
-                    v = -a;
+
+                case 0: {// AAAH CASE
+                    b = a;
+                    dir = -a;
                     n = 1;
                     return false;
-                
-                case 1:
-                    v = cross(cross(b-a, -a), -a);
-                    c = b;
-                    b = a;
-                    n = 2;
-                    return false;
-                     
-                case 2:
+                }
+                case 1:{// LINE CASE
+                    vec3 ab = b-a;
+                    vec3 ao = -a;
+                    
+                    if (dot(ab, ao) > 0){
+                        c = b;
+                        b = a;
+                        dir = cross(cross(ab, ao), ab);
+                        n = 2;
+                    }else{
+                        n = 0;
+                        dir = ao;
+                    }
 
-                default:
+                    return false;
+                }
+                case 2: {// TRIANGLE CASE 
+                    vec3 ab = b-a;
+                    vec3 ac = c-a;
+                    vec3 ao = -a;
+                    vec3 norm_abc = cross(ab,ac);
+                    
+                    if (dot(cross(norm_abc, ac), ao) > 0){
+
+                        if(dot(ac,ao) > 0){
+                            b = c;
+                            dir = cross(cross(ac,ao),ac);
+                            n = 1;
+                            return false;
+                        }
+                        else{
+                            n = 1;
+                            return update(a);
+                        }
+                        
+                    }
+                    else{
+                        if(dot(cross(ab, norm_abc), ao) > 0){
+                            n = 1;
+                            return update(a);
+                        }
+                        else{
+                            //this is where we have concluded origo is bound inside a infinte triangle strip of our points
+                            n = 3;
+                            
+                            d = c;
+                            c = b;
+                            b = a;
+
+                            if(dot(norm_abc, ao) > 0){
+                                dir = norm_abc;
+                            }else{
+                                std::swap(c, d);
+                                dir = -norm_abc;
+                            }
+                        }
+                        return false;
+                    }
+                }
+                case 3:{ // TETRAHEDRON CASE
+                    vec3 ab = b-a;
+                    vec3 ac = c-a;
+                    vec3 ad = d-a;
+                    vec3 ao =  -a;
+                    vec3 abc = cross(ab,ac);
+                    vec3 acd = cross(ac,ad);
+                    vec3 adb = cross(ad,ab);
+
+                    if (dot(abc,ao) > 0){
+                        n = 2; 
+                        return update(a);
+                    }
+                    if (dot(acd,ao) > 0){
+                        n = 2;
+                        b = c;
+                        c = d;
+                        return update(a);
+                    }
+                    if (dot(adb,ao) > 0){
+                        n = 2;
+                        c = b;
+                        b = d;
+                        printf("adb\n");
+                        return update(a);
+                    }
+
+                    return true;
+                }
+                default:{
                     assert(0);
                     break;
+                }
             }
-        
-        }
-        
-        
-        bool intersect(vec3 (*supportFn)(glm::vec3)){
-            v = vec3{1.0, 0.0, 0.0};
-            n = 0;    
-            for (int i {}; i < 32; i++){
-                vec3 a = supportFn(v);
+
             
-                if(dot(a, v) < 0.0)
+        }
+
+        
+        template <typename supportFunc>
+        bool intersect(supportFunc&& supportFn){
+            
+            dir = vec3{1.0, 0.0, 0.0}; 
+           
+            for (int i {}; i < 32; i++){
+                vec3 a = supportFn(dir);
+            
+                if(dot(a, dir) < 0.0)
                     return false;
                 
                 if (update(a))
                     return true;
-
             }
+            return false;
         }
 
+        void reset(){
+            b = {};
+            c = {};
+            d ={};
+            n = {};
+        }
     };
     GJK gjk{};
     
@@ -437,7 +530,6 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                 Particle& p = particPool.data[i];
                 TransformInfo& tinfo = transInfoPool.get(e);
                 integrateParticle(p,tinfo,dt);
-
             }
 
             for (int i{}; i < collPool.count; i++){
@@ -447,24 +539,21 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                 }
                 RawTransform& r1 = rawTransPool.get(e1);
 
-                
                 for (int j = i + 1; j < collPool.count; j++){
                     ECS::Entity e2 = collPool.dense[j]; Collider& c2 = collPool.data[j];
                     RawTransform& r2 = rawTransPool.get(e2);
-                    bool collided = checkMidPhase(c1, c2, r1.matrix, r2.matrix);
-                    if (collided){
+                    
+                    if (checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+
+                        if(gjk.intersect([&](glm::vec3 dir) {return gjk.supportA_minus_B(dir, c1, c2, r1, r2);})){
+                            printf("NARROW COLLISION!!!\n");
+                        }else{
+                            printf("FALSE COLLISION!!!\n");
+                        }
+                        gjk.reset();
+
+
                         
-                       
-                        /*
-                        checkNarrowPhase();
-                        GJK
-                        EPA,
-                        RESOLVE
-                        */
-                        
-                        //if has particle
-                        
-                        printf("COLLISION BETWEEN TWO!\n");
                     }
                 }
             }

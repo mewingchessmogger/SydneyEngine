@@ -22,7 +22,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
-	reg.add(women, Collider{.offset = {0.0, 1.0, 0.0}, .radius = 2.0f, .narrowShape = Collider::AABB, .narrowExtents = {1.0,0.5,0.5}});
+	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::AABB, .narrowExtents = {0.25,0.75,0.25}});
 
 	int gun = reg.createEntity();
 	TransformInfo g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
@@ -32,13 +32,15 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.add(gun, g);
 	api.attachModel("fps_character_animation_pack_ak-47.glb", gun);
 	api.setAnimation("RIG_UE5_Comando_AK_Idle", gun);
-	reg.add(gun, Collider{.offset = {0.0, 1.0, 0.0}, .radius = 1.0f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.9f});
+	
 
     api.setGameCamera(reg.createEntity());
 	reg.emplace<TransformInfo>(api.getGameCamera());
 	reg.emplace<Camera>(api.getGameCamera());
-	
+	reg.add(api.getGameCamera(), Collider{.offset = {0.0, -0.2, 0.0}, .broadRadius = 1.0f, .narrowShape = Collider::SPHERE,.narrowRadius =0.5, .narrowExtents = {0.25,0.75,0.25}});
 	reg.setParent(gun, api.getGameCamera());
+	
+	
 	//reg.add(api.getGameCamera());
 	
 
@@ -66,22 +68,20 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
 		Collider& womenCollider = reg.getPool<Collider>().data[0];
-		Collider& gunCollider = reg.getPool<Collider>().data[1];
+		Collider& camCollider = reg.getPool<Collider>().data[1];
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			
-			Sydphys::Particle p = {.inverseMass = 1.0f, .vel = 3.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
+			Sydphys::Particle p = {.inverseMass = 1.0f, .vel = 5.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
 			TransformInfo t = {.position = camera.eye + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}};
 			int bull = reg.createEntity();
 			reg.add(bull,t);
 			reg.add(bull, p);
-			reg.add(bull, Collider{.radius = 1.5f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.1});
+			reg.add(bull, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.7});
 			api.attachModel("cube.glb", bull);
 		}
 
 		gun.setPos({0.0,-1.55, 0.02});
-		gun.setRot({0.0, 180.0, 0.0});
-		womenCollider.radius = 1.0f;
-		gunCollider.narrowRadius = 0.8f;
+		gun.setRot({0.0, 180.0, 0.0});		
 				
 }
 

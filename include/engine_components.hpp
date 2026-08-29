@@ -64,7 +64,7 @@ struct Collider{
     enum Shape {NONE, SPHERE, OBB, AABB, COCONUT};
     //BROADCOLLIDER
     glm::vec3 offset{};
-    float radius = 1.0f;
+    float broadRadius = 1.0f;
     
     //NARROW COLLIDER
     Shape narrowShape = NONE;  
