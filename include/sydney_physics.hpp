@@ -1,16 +1,23 @@
 #pragma once 
-#include "glm/mat4x4.hpp"
+
+#include "glm/matrix.hpp"      
+#include <glm/gtx/norm.hpp>
 #include "reflections.hpp"
-namespace Sydphys {
+
+#include "engine_components.hpp"
+namespace SydX {
     using real = float;
     using vec3 = glm::vec3;
     using vec4 = glm::vec4;
-    enum ShapeType{
-        CUBE, ORB, COUNT
-    };
+    using  glm::dot;
+    using  glm::cross;
+    using  glm::normalize;
+    using glm::transpose;
+    using  vec3 = glm::vec3;
+    using  vec4 = glm::vec4;
+    using mat3 = glm::mat3;
    
-    class Particle {
-    public:
+    struct Particle{
         real inverseMass{};
         vec3 vel{};
         vec3 acc{};
@@ -18,205 +25,195 @@ namespace Sydphys {
         COMP_NAME(Particle);
     };
 
-    // struct ColliderView{
-    //     glm::mat4& trans{};
-    //     std::variant<vec3, real> params{};
-    //     ShapeType& type{};
-    // };
+    bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2);
     
-    // struct Simplexes{
-    //     std::array<vec3,4> points{};
-    //     int size{};
+    glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1);
+    glm::vec3 supportA_minus_B(glm::vec3 dir, Collider& c1, Collider& c2, RawTransform& r1, RawTransform& r2);
+
+    struct GJK{
         
-    //     void appendPoint(vec4 point){
-    //         assert(size <= 4);
-    //         points[size] = point;
-    //         size++;
-    //     }
-        
-    // };
+        vec3 dir;
+        vec3 a, b, c, d;
+        uint32_t n{}; // n refers to the amount of stored points excluding a!
     
+        bool update(){
+           
+            switch(n){
 
-    // inline vec3 center(ColliderView& c){
-    //     switch(c.type){
-    //     case(CUBE): {
-    //         vec3 minCorner = vec3(-1.0f);
-    //         vec3 maxCorner = vec3(1.0f);
-    //         return vec3(c.trans * vec4((minCorner + maxCorner) / 2.0f),1.0f);
-    //     }
-       
-    //     default: 
-    //         throw std::runtime_error("'center()' invalid shape type");
-    //         break;
+                case 0: {// AAAH CASE
+                    b = a;
+                    dir = -a;
+                    n = 1;
+                    return false;
+                }
+                case 1:{// LINE CASE
+                    vec3 ab = b-a;
+                    vec3 ao = -a;
+                    
+                    if (dot(ab, ao) > 0){
+                        c = b;
+                        b = a;
+                        dir = cross(cross(ab, ao), ab);
+                        n = 2;
+                    }else{
+                        n = 0;
+                        dir = ao;
+                    }
 
-    // }
-    //     return {};
-    // }
-        
-    // inline  vec3 furthestPoint(ColliderView& c, vec3 d){
-    //     vec3 furthestPoint{};
-    //     switch(c.type){
-    //         case(CUBE): {
+                    return false;
+                }
+                case 2: {// TRIANGLE CASE 
+                    vec3 ab = b-a;
+                    vec3 ac = c-a;
+                    vec3 ao = -a;
+                    vec3 norm_abc = cross(ab,ac);
+                    
+                    if (dot(cross(norm_abc, ac), ao) > 0){
 
-    //             vec3 minCorner = vec3(-1.0f);
-    //             vec3 maxCorner = vec3(1.0f);
-    //             float x = (d.x >= 0) ? maxCorner.x : minCorner.x;
-    //             float y = (d.y >= 0) ? maxCorner.y : minCorner.y;
-    //             float z = (d.z >= 0) ? maxCorner.z : minCorner.z;
-    //             furthestPoint = {x,y,z};
-    //             break;
-    //         }
-    //         case(ORB):{
-    //             real radius = std::get<real>(c.params);
-    //             vec3 normalizedDir = glm::normalize(d);
-    //             furthestPoint = normalizedDir  * radius;
-    //             break;
-    //         }
-    //         default:
-    //             throw std::runtime_error("'furthestPoint()' invalid shape type");
-    //             break;
-    //     }
+                        if(dot(ac,ao) > 0){
+                            b = c;
+                            dir = cross(cross(ac,ao),ac);
+                            n = 1;
+                            return false;
+                        }
+                        else{
+                            n = 1;
+                            return update();
+                        }
+                        
+                    }
+                    else{
+                        if(dot(cross(ab, norm_abc), ao) > 0){
+                            n = 1;
+                            return update();
+                        }
+                        else{
+                            //this is where we have concluded origo is bound inside a infinte triangle strip of our points, imagine a triangular infinte pillar going through the triangles in the direciton of its normal, we have determined that origio is inside it, 
+                            n = 3;
+                            
+                            d = c;
+                            c = b;
+                            b = a;
 
-    //     return vec3(c.trans * vec4(furthestPoint, 1.0));
-    // }
-  
-    // inline vec3 supportFn(ColliderView& c1, ColliderView& c2, vec3 d){
-    //     return furthestPoint(c1, d) - furthestPoint(c2, -d); //max⁡{D→⋅(A−B)}
-    // }
+                            /*convince yourself that using this triangle which normal pointing towards origo, when interacted with hte future point a, with all 3 face have normals faceing away from origo*/
+                            if(dot(norm_abc, ao) > 0){ 
+                                dir = norm_abc;
+                            }else{
+                                std::swap(c, d);
+                                dir = -norm_abc;
+                            }
+                        }
+                        return false;
+                    }
+                }
+                case 3:{ // TETRAHEDRON CASE
+                    vec3 ab = b-a;
+                    vec3 ac = c-a;
+                    vec3 ad = d-a;
+                    
+                    vec3 ao =  -a;
+                    vec3 abc = cross(ab,ac);
+                    vec3 acd = cross(ac,ad);
+                    vec3 adb = cross(ad,ab);
 
-    // bool Line(Simplexes& simplex, vec3& dir){
-    //     vec3 B = simplex.points[0]; // first point is b 
-    //     vec3 A = simplex.points[1]; // A was checkd aftger is direction of b and after origo
-    //     vec3 AB = B-A;
-    //     vec3 AO = vec3(0) - A;
-    //     vec3 ABCrossAO = glm::cross(AB, AO);
-    //     vec3 ABPerp = glm::cross(ABCrossAO,AB);
-    //     bool greater = glm::dot(AB, AO) > 0;
+                    if (dot(abc,ao) > 0){
+                        n = 2; 
+                        return update();
+                    }
+                    if (dot(acd,ao) > 0){
+                        n = 2;
+                        b = c;
+                        c = d;
+                        return update();
+                    }
+                    if (dot(adb,ao) > 0){
+                        n = 2;
+                        c = b;
+                        b = d;
+                        //printf("adb\n");
+                        return update();
+                    }
 
+                    return true;
+                }
+                default:{
+                    assert(0);
+                    break;
+                }
+            }
 
-    //     if(greater){
-    //         dir = ABPerp;
-    //     }
-    //     /*
-    //     in beginning of the while loop, we add a point and check if its past origin,if line is called after this, those points wont trigger this "else"
-    //     , in triangle case, wee call create points, and call line, those might trigger this, i tweaked over this "else" for 2 hours..
-    //     */
-    //     else{ 
-    //         simplex.points = {A};
-    //         simplex.size = 1;
-    //         dir = AO;
-
-    //     }
-    //     // if ab is crossing AO
-    //     // if(dot(ABCrossAO,ABCrossAO) <= 0.01)){
-    //     //     return true;
-    //     // }
-
-    //     return false;
-
-    // }
-    // bool Triangle(Simplexes& simplex, vec3& dir){
-    //     vec3 A = simplex.points[2]; 
-    //     vec3 B = simplex.points[1]; 
-    //     vec3 C = simplex.points[0];
-    //     vec3 AB = B - A;
-    //     vec3 AC = C - A;
-    //     vec3 AO = vec3(0) - A;
-    //     vec3 ABC = glm::cross(AB, AC);
-        
-        
-    //     vec3 AB_T = glm::cross(glm::cross(AC, AB),AB); // CA Perpendicualr vector towards possible region R_AC and R_C
-    //     vec3 AC_T = glm::cross(glm::cross(AB, AC),AC); // CA Perpendicualr vector towards possible region R_AB and R_B
-
-
-
-    //     if(glm::dot(AC_T, AO) > 0){ //is origo in R_AC or R_C?  
-    //         if(glm::dot(AC, AO) > 0){ // this ensures that origo is in R_AC
-    //             simplex.points = {A,C}; // discard B
-    //             dir = glm::cross(glm::cross(AC,AO),AC); 
-    //         }
-    //         else{ // if this its not in R_AC! its Region to the Right
-    //             simplex.points = {A,B};
-    //             simplex.size = 2;
-    //             return Line(simplex,dir);
-    //         }
-    //     }
-    //     else{ // ok it wasnt in R_AC.. check R_AB
             
-    //         if(glm::dot(AB_T, AO) > 0){ //is origo in R_AB or R_B?  
-    //             if(glm::dot(AB, AO) > 0){ // this ensures that origo is in R_AB
-    //                 simplex.points = {A,B}; // discard C
-    //                 simplex.size = 2;
-    //                 dir = glm::cross(glm::cross(AB,AO),AB); 
-    //             }
-    //             else{ 
-    //                 if(glm::dot(ABC, AO) > 0){
-    //                     dir = ABC;
-    //                 }
-    //                 else{
-    //                     simplex.points = {A,C,B};
-    //                     dir = -1.0f * ABC;
-    //                 }
-    //                 simplex.points = {A,C};
-    //                 simplex.size = 2;
-    //                 return Line(simplex,dir);
-    //             }
-    //         }
-        
-
-
-
-    //     }if (glm::dot(AB_T, AO) > 0){
-    //         simplex.points = {A,C};
-    //         simplex.size = 2;
-    //         dir = AB_T;
-    //         return false;
-    //     }
-    //     else if(glm::dot(AC_T, AO) > 0.0f){
-    //         simplex.points = {A,B};
-    //         simplex.size = 2;
-    //         dir = AC_T;
-    //         return false;
-    //     }
-    // }
+        }
 
         
-    
-    // bool handleSimplex(Simplexes& simplex, vec3& dir){
-    //     switch(simplex.size){
-    //         case 2: return Line        (simplex,dir);
-    //         case 3: return Triangle   (simplex,dir);
-    //         case 4: return Tetrahedron(simplex, dir);
-    //         default: 
-    //             break;
-    //     }   
-    //     return false;
-        
-    // }
-
-
-    // //https://winter.dev/articles/gjk-algorithm/
-    // inline void GJK(ColliderView& c1, ColliderView& c2, bool &result, Simplexes& simplex){
-
-    //     //get both id transofrms
-    //     //get shape type
-    //     vec3 d  = glm::normalize(center(c1) - center(c2));
-    //     simplex.appendPoint(supportFn(c1,c2,d));
-    //     d = vec3(0.0f) - simplex[0]; // origo - first    
-
-    //     while (true){
-    //         vec3 A = supportFn(c1,c2,d);
-    //         if (glm::dot(A,d) < 0) 
-    //             return false;
+        template <typename supportFunc>
+        bool intersect(supportFunc&& supportFn){
             
-    //         simplex.appendPoint(A);
-
-    //         if (handleSimplex(simplex, d))
-    //             return true;
+            dir = vec3{1.0, 0.0, 0.0}; 
+           
+            for (int i {}; i < 32; i++){
+                a = supportFn(dir);
             
-    //     }
-    // }    
- 
+                if(dot(a, dir) < 0.0){
+                    //printf("%d", i);
+                    return false;
+                }
+                
+                if (update()){
+                    //printf("%d", i);
+                    return true;
+                }
+            }
+            return false;
+        }
+        std::array<vec3,4> abcd(){
+            return {a,b,c,d};
+        }
+        void reset(){
+            a = {};
+            b = {};
+            c = {};
+            d = {};
+            n = {};
+        }
+    };
+    struct EPA{
+        vec3 contactNormal{};
+        float penDepth{};
+        vec3 a, b, c, d;
+        std::vector<vec3> vertexList{};
+        std::vector<std::array<vec3,3>> triangleList{};
+        std::vector<vec3> edgeList{};
 
+        template <typename supportFunc>
+        void run(std::array<vec3,4> points, supportFunc&& supportFn){
+           glm::vec3 a = points[0], b = points[1], c = points[2], d = points[3];
+            // Compute outward-facing normals via cross products
+            glm::vec3 n_abc = glm::cross(b - a, c - a);
+            glm::vec3 n_bdc = glm::cross(d - b, c - b);
+            glm::vec3 n_acd = glm::cross(c - a, d - a);
+            glm::vec3 n_adb = glm::cross(d - a, b - a);
+
+            // If dot(normal, vertex) > 0, the face normal points outward (away from origo)
+            if (glm::dot(n_abc, -a) > 0.0f) printf("abc outward: %.3f\n", glm::dot(n_abc, -a));
+            if (glm::dot(n_bdc, -b) > 0.0f) printf("bdc outward: %.3f\n", glm::dot(n_bdc, -b));
+            if (glm::dot(n_acd, -a) > 0.0f) printf("acd outward: %.3f\n", glm::dot(n_acd, -a));
+            if (glm::dot(n_adb, -a) > 0.0f) printf("adb outward: %.3f\n", glm::dot(n_adb, -a));
+                        
+            /*
+            while 1:
+                pick closest face
+                    if no closer than previous return 
+                    else:
+                    
+
+                
+            
+            
+            */
+
+
+        }
+    };
   
 };

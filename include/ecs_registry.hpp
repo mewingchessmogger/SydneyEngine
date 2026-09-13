@@ -207,16 +207,6 @@
                 assign(e, comp);
             }
             
-            // template<typename Dummy = T>
-            // std::enable_if_t<std::is_same_v<Dummy, Hierarchic>> setSparseIndex(Entity e, int denseIndex) {
-            //     int page = e / PAGE_SIZE;
-            //     int offset = e % PAGE_SIZE;
-            //     if (page >= sparse.size() || sparse[page] == nullptr){// will never hpapen but whatever 
-            //     throw std::runtime_error ("page not allocated for this");
-            //     }
-            //     sparse[page][offset] = denseIndex;
-
-            // }
         };
         
         class Registry{

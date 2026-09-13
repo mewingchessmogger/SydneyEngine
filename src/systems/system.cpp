@@ -6,7 +6,7 @@
 namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
-    using Particle = Sydphys::Particle;
+    using Particle = SydX::Particle;
 
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api,  IAssetLoader& loader){
         
@@ -195,52 +195,49 @@ namespace Sys{
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
             narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
 
+            glm::mat4 narrowMat{};
 
             switch(coll.narrowShape){
                 case Collider::SPHERE:{
-                    glm::mat4 narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
                     narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowRadius));
-                    narrowPkt.pc.modelSpace = narrowMat; 
-                    narrowPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
-                    for(auto& mesh : sphere.meshes){
-                        narrowPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                        narrowPkt.indexCount = mesh.indexCount;
-                        narrowPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
-                        
-                        packets.push_back(narrowPkt);
-                    }
-                    break;
-                
-                case Collider::AABB:{
-                    glm::mat4 narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
                     
-                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));
-                    //printf("%f, %f, %f\n", coll.narrowExtents.x,coll.narrowExtents.y,coll.narrowExtents.z);
-                    narrowPkt.pc.modelSpace = narrowMat; 
-                    narrowPkt.pc.offsetVBO = cube.baseOffsetBytesVBO / sizeof(Vertex);
-
-                    for(auto& mesh : cube.meshes){
-                        narrowPkt.offsetIBO = cube.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                        narrowPkt.indexCount = mesh.indexCount;
-                        narrowPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
-                        
-                        packets.push_back(narrowPkt);
-                    }
                     break;
-
-                    default:
-                    break;
-
                 }
+                case Collider::AABB:{
+                    narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));
+                   
+                    break;
+                }
+                case Collider::OBB:{
+                    narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = narrowMat * glm::mat4(rawTrans.getRotationMatrix());
+                    
+                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));                   
+                    break;
+                }
+                default:
+                    assert(0);
+                    break;  
             }
+            AssetRegistry::StaticModel& collMesh = (coll.narrowShape == Collider::SPHERE) ? sphere : cube;
 
+            narrowPkt.pc.modelSpace = narrowMat; 
+            narrowPkt.pc.offsetVBO = collMesh.baseOffsetBytesVBO / sizeof(Vertex);
+            for(auto& mesh : collMesh.meshes){
+                narrowPkt.offsetIBO = collMesh.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                narrowPkt.indexCount = mesh.indexCount;
+                narrowPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local                   
+                packets.push_back(narrowPkt);
+            }
 
 
         }
 
 
     }
-    }
+    
    
 
     void finalizeTransforms(ECS::Registry& reg){
@@ -328,201 +325,13 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
 */
 
 
-    bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2){
-        float rSquared = (c1.broadRadius + c2.broadRadius) * (c1.broadRadius + c2.broadRadius);
-        return rSquared > glm::distance2(glm::vec3(r1[3])+ c1.offset, glm::vec3(r2[3]) + c2.offset);
-    }
-    using  glm::dot;
-    using  glm::cross;
-    using  glm::normalize;
-    using glm::transpose;
-    struct GJK{
-        using  vec3 = glm::vec3;
-        using  vec4 = glm::vec4;
-        using mat3 = glm::mat3;
-
-        vec3 dir;
-        vec3 b, c, d;
-        uint32_t n{}; // n refers to the amount of stored points excluding a!
-        
-
-        glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1){
-            assert(c1.narrowShape != c1.NONE);
-            dir = normalize(dir);
-            switch(c1.narrowShape){
-
-                case Collider::SPHERE:{
-                    return vec3(c1.narrowRadius)* normalize(dir) + c1.offset  + r1.getPosition();
-                }
-                case Collider::AABB: {
-                    vec3 extents = c1.narrowExtents;
-                    return vec3(
-                        (dir.x < 0) ? -extents.x : extents.x,
-                        (dir.y < 0) ? -extents.y : extents.y,
-                        (dir.z < 0) ? -extents.z : extents.z
-                    ) + c1.offset + r1.getPosition();
-
-                }
-                case Collider::OBB: {
-                    vec3 extents = c1.narrowExtents;
-                    glm::mat3 R = r1.getRotationMatrix();
-                    vec3 rotated = glm::transpose(R) * dir;
-                    
-                    vec3 localSupport{
-                        (rotated.x < 0) ? -extents.x : extents.x,
-                        (rotated.y < 0) ? -extents.y : extents.y,
-                        (rotated.z < 0) ? -extents.z : extents.z
-                    };
-
-                    return R * localSupport + c1.offset + r1.getPosition();
-
-                }
-            }
-        }
-        
-        glm::vec3 supportA_minus_B(glm::vec3 dir, Collider& c1, Collider& c2, RawTransform& r1, RawTransform& r2){
-            return support(dir, c1, r1) - support(-dir,c2,r2);
-        }
-
-        bool update(vec3 a){
-           
-            switch(n){
-
-                case 0: {// AAAH CASE
-                    b = a;
-                    dir = -a;
-                    n = 1;
-                    return false;
-                }
-                case 1:{// LINE CASE
-                    vec3 ab = b-a;
-                    vec3 ao = -a;
-                    
-                    if (dot(ab, ao) > 0){
-                        c = b;
-                        b = a;
-                        dir = cross(cross(ab, ao), ab);
-                        n = 2;
-                    }else{
-                        n = 0;
-                        dir = ao;
-                    }
-
-                    return false;
-                }
-                case 2: {// TRIANGLE CASE 
-                    vec3 ab = b-a;
-                    vec3 ac = c-a;
-                    vec3 ao = -a;
-                    vec3 norm_abc = cross(ab,ac);
-                    
-                    if (dot(cross(norm_abc, ac), ao) > 0){
-
-                        if(dot(ac,ao) > 0){
-                            b = c;
-                            dir = cross(cross(ac,ao),ac);
-                            n = 1;
-                            return false;
-                        }
-                        else{
-                            n = 1;
-                            return update(a);
-                        }
-                        
-                    }
-                    else{
-                        if(dot(cross(ab, norm_abc), ao) > 0){
-                            n = 1;
-                            return update(a);
-                        }
-                        else{
-                            //this is where we have concluded origo is bound inside a infinte triangle strip of our points
-                            n = 3;
-                            
-                            d = c;
-                            c = b;
-                            b = a;
-
-                            if(dot(norm_abc, ao) > 0){
-                                dir = norm_abc;
-                            }else{
-                                std::swap(c, d);
-                                dir = -norm_abc;
-                            }
-                        }
-                        return false;
-                    }
-                }
-                case 3:{ // TETRAHEDRON CASE
-                    vec3 ab = b-a;
-                    vec3 ac = c-a;
-                    vec3 ad = d-a;
-                    vec3 ao =  -a;
-                    vec3 abc = cross(ab,ac);
-                    vec3 acd = cross(ac,ad);
-                    vec3 adb = cross(ad,ab);
-
-                    if (dot(abc,ao) > 0){
-                        n = 2; 
-                        return update(a);
-                    }
-                    if (dot(acd,ao) > 0){
-                        n = 2;
-                        b = c;
-                        c = d;
-                        return update(a);
-                    }
-                    if (dot(adb,ao) > 0){
-                        n = 2;
-                        c = b;
-                        b = d;
-                        printf("adb\n");
-                        return update(a);
-                    }
-
-                    return true;
-                }
-                default:{
-                    assert(0);
-                    break;
-                }
-            }
-
-            
-        }
-
-        
-        template <typename supportFunc>
-        bool intersect(supportFunc&& supportFn){
-            
-            dir = vec3{1.0, 0.0, 0.0}; 
-           
-            for (int i {}; i < 32; i++){
-                vec3 a = supportFn(dir);
-            
-                if(dot(a, dir) < 0.0)
-                    return false;
-                
-                if (update(a))
-                    return true;
-            }
-            return false;
-        }
-
-        void reset(){
-            b = {};
-            c = {};
-            d ={};
-            n = {};
-        }
-    };
-    GJK gjk{};
-    
+    SydX::GJK gjk{};
+    SydX::EPA epa{};
 
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
-            auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, Particle>();
+            auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::Particle>();
             /*scuffed PHYSICS*/
             
             for (int i{}; i < particPool.count; i++){
@@ -543,10 +352,13 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     ECS::Entity e2 = collPool.dense[j]; Collider& c2 = collPool.data[j];
                     RawTransform& r2 = rawTransPool.get(e2);
                     
-                    if (checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+                    if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+                        auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
 
-                        if(gjk.intersect([&](glm::vec3 dir) {return gjk.supportA_minus_B(dir, c1, c2, r1, r2);})){
+                        if(gjk.intersect(supportFn)){
                             printf("NARROW COLLISION!!!\n");
+                            epa.run(gjk.abcd(), supportFn);
+                            //epa.normal
                         }else{
                             printf("FALSE COLLISION!!!\n");
                         }

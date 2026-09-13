@@ -130,8 +130,9 @@ class VulkanStack{
 
         void transitionImage(AllocatedImage &img, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, BarrierMasks masks = {});
 
-        void render();
+        void renderToTarget();
 
+        
 
 
 

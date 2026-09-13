@@ -110,7 +110,7 @@ PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::Fr
 		.setFrontFace(frontFace)
 		.setDepthBiasEnable(vk::True)
 		.setDepthBiasSlopeFactor(1.0)
-		.setLineWidth(1.0);
+		.setLineWidth(3.0);
 	return *this;
 }
 

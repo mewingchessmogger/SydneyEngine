@@ -325,7 +325,7 @@ void VulkanStack::transitionImage(AllocatedImage& img, vk::ImageLayout oldLayout
 	vkutils::setPipelineBarrier(cmdBuffer, img.handle, oldLayout, newLayout, vk::ImageAspectFlagBits::eColor, masks);
 }
 
-void VulkanStack::render(){ 
+void VulkanStack::renderToTarget(){ 
 
 	
 	vk::CommandBuffer cmdBuffer = cmdBuffers[currentFrame];

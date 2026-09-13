@@ -2,31 +2,35 @@
 #include "game.hpp"
 #include "serde.hpp"
 #include "sydney_physics.hpp"
+inline glm::quat eulerDeg(glm::vec3 deg){
+	return glm::quat(glm::radians(deg));
+}
+
 void init(ECS::Registry& reg, EngineAPI& api){
 	reg.createPool<Weapon>();
 	
 	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb"});
 	
 
-	TransformInfo t = {.position = glm::vec3(0.0, -5.0, 0.0), .rotation = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
+	TransformInfo t = {.position = glm::vec3(0.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
 	int floor = reg.createEntity();
 	
 	reg.add(floor, t);
-	Sydphys::Particle p{};
+	SydX::Particle p{};
 	p.inverseMass = 0.0;
 	//reg.add(floor,p);
 	api.attachModel("cube.glb", floor);
 	
 	int women = reg.createEntity();
-	TransformInfo w = {.position = {0.0, 0.0, 0.0}, .rotation = {}, .scale = glm::vec3{ 1.0f }};
+	TransformInfo w = {.position = {0.0, 0.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
-	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::AABB, .narrowExtents = {0.25,0.75,0.25}});
+	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {0.50,0.75,0.25}});
 
 	int gun = reg.createEntity();
-	TransformInfo g = {.position = {0.0,-2.0, -1.5},.rotation = {0.0, 180.0, 0.0}};
-
+	TransformInfo g = {.position = {0.0,-2.0, -1.5},.quatRot = eulerDeg({0.0, 180.0, 0.0})};
+	
 	reg.getPool<Weapon>().assign(gun,{gun,30});
 	
 	reg.add(gun, g);
@@ -68,10 +72,13 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
 		Collider& womenCollider = reg.getPool<Collider>().data[0];
+		ECS::Entity womenID = reg.getPool<Collider>().dense[0];
+		reg.getPool<TransformInfo>().get(womenID).addRot({0.0,30.0f,0.0f},dt);
+
 		Collider& camCollider = reg.getPool<Collider>().data[1];
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			
-			Sydphys::Particle p = {.inverseMass = 1.0f, .vel = 5.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
+			SydX::Particle p = {.inverseMass = 1.0f, .vel = 5.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f}; // c++20 forever
 			TransformInfo t = {.position = camera.eye + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}};
 			int bull = reg.createEntity();
 			reg.add(bull,t);
@@ -82,11 +89,10 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		gun.setPos({0.0,-1.55, 0.02});
 		gun.setRot({0.0, 180.0, 0.0});		
-				
+		
 }
 
 static bool CR_STATE alreadyInitialized = false;
-static bool CR_STATE rejectStepExecution = false;
 
 /*
 NOTICE!!!!!!!!!
@@ -110,6 +116,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	float& dt = *psd->dt;
 	RawMemory& raw = *psd->mem;
 	GameState* mem = reinterpret_cast<GameState*>(raw.data);
+	
 	// mem->level = 100;
 	// mem->MaxHP = 100.0f;
 	// memcpy(mem->name, "Gunther", sizeof("Gunther"));
@@ -138,7 +145,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 
 			case CR_STEP:{
 				
-				if(ctx->failure != CR_BAD_IMAGE && !rejectStepExecution){
+				if(ctx->failure != CR_BAD_IMAGE){
 					update(aspect, dt, state ,reg, api);
 				}
 			}
