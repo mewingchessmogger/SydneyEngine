@@ -26,7 +26,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
-	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {0.50,0.75,0.25}});
+	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
 
 	int gun = reg.createEntity();
 	TransformInfo g = {.position = {0.0,-2.0, -1.5},.quatRot = eulerDeg({0.0, 180.0, 0.0})};
@@ -41,7 +41,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
     api.setGameCamera(reg.createEntity());
 	reg.emplace<TransformInfo>(api.getGameCamera());
 	reg.emplace<Camera>(api.getGameCamera());
-	reg.add(api.getGameCamera(), Collider{.offset = {0.0, -0.2, 0.0}, .broadRadius = 1.0f, .narrowShape = Collider::SPHERE,.narrowRadius =0.5, .narrowExtents = {0.25,0.75,0.25}});
+	reg.add(api.getGameCamera(), Collider{.offset = {0.0, -0.2, 0.0}, .narrowShape = Collider::SPHERE});
 	reg.setParent(gun, api.getGameCamera());
 	
 	

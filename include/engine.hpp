@@ -25,6 +25,12 @@ class Engine{
         GAME, 
         EDITOR,
     };
+    enum class toggle: uint8_t {
+        GAME_LOGIC, 
+        PHYSICS,
+        ANIMATION,
+    };
+
     
     GameContext ctx{};
     PlatformGLFW plt{};

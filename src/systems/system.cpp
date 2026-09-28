@@ -327,7 +327,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
 
     SydX::GJK gjk{};
     SydX::EPA epa{};
-
+    
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
@@ -353,12 +353,11 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     RawTransform& r2 = rawTransPool.get(e2);
                     
                     if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+                        
                         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
-
                         if(gjk.intersect(supportFn)){
                             printf("NARROW COLLISION!!!\n");
                             epa.run(gjk.abcd(), supportFn);
-                            //epa.normal
                         }else{
                             printf("FALSE COLLISION!!!\n");
                         }

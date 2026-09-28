@@ -35,14 +35,14 @@ void Engine::run(){
         reg.updateHierarchyLevels(); reg.sortHierarchyPool();
 
         Sys::finalizeTransforms(reg); 
+
         Sys::updatePhysics(reg, plt.deltaTime);
         
         Sys::updateAnimations(reg, plt.deltaTime);
-
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  
         
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
-
+        
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))/*buncha stuff rebuilt inside validateImage if window is resized including imgui stuff, */
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
@@ -64,7 +64,6 @@ void Engine::run(){
                 edt.updateEditorInput();
             }
             else if(mode == EngineMode::GAME){
-                //edt.renderUI()
                 stk.blitTargetToSwapchain();
             }
             stk.endFrame();

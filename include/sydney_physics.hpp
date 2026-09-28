@@ -5,6 +5,8 @@
 #include "reflections.hpp"
 
 #include "engine_components.hpp"
+#include <limits>
+#include <utility>
 namespace SydX {
     using real = float;
     using vec3 = glm::vec3;
@@ -88,14 +90,15 @@ namespace SydX {
                             return update();
                         }
                         else{
-                            //this is where we have concluded origo is bound inside a infinte triangle strip of our points, imagine a triangular infinte pillar going through the triangles in the direciton of its normal, we have determined that origio is inside it, 
+                            //imagine a triangular infinte pillar going through the triangles in the direciton of its normal, we have determined that origio is inside the pillar, 
                             n = 3;
                             
                             d = c;
                             c = b;
                             b = a;
 
-                            /*convince yourself that using this triangle which normal pointing towards origo, when interacted with hte future point a, with all 3 face have normals faceing away from origo*/
+                            /*convince yourself that using this triangle which normal WILL point towards origo,
+                             with that choice, the future three faces will ALWAYS have a normal that points OUTWARDS from ORIGO IF we did enclose it properly,*/
                             if(dot(norm_abc, ao) > 0){ 
                                 dir = norm_abc;
                             }else{
@@ -181,39 +184,71 @@ namespace SydX {
         vec3 contactNormal{};
         float penDepth{};
         vec3 a, b, c, d;
-        std::vector<vec3> vertexList{};
         std::vector<std::array<vec3,3>> triangleList{};
-        std::vector<vec3> edgeList{};
+        //std::vector<std::array<vec3,2> edgeList{};
+        std::vector<vec3> vertexList{};
+       
 
         template <typename supportFunc>
         void run(std::array<vec3,4> points, supportFunc&& supportFn){
-           glm::vec3 a = points[0], b = points[1], c = points[2], d = points[3];
-            // Compute outward-facing normals via cross products
-            glm::vec3 n_abc = glm::cross(b - a, c - a);
-            glm::vec3 n_bdc = glm::cross(d - b, c - b);
-            glm::vec3 n_acd = glm::cross(c - a, d - a);
-            glm::vec3 n_adb = glm::cross(d - a, b - a);
-
-            // If dot(normal, vertex) > 0, the face normal points outward (away from origo)
-            if (glm::dot(n_abc, -a) > 0.0f) printf("abc outward: %.3f\n", glm::dot(n_abc, -a));
-            if (glm::dot(n_bdc, -b) > 0.0f) printf("bdc outward: %.3f\n", glm::dot(n_bdc, -b));
-            if (glm::dot(n_acd, -a) > 0.0f) printf("acd outward: %.3f\n", glm::dot(n_acd, -a));
-            if (glm::dot(n_adb, -a) > 0.0f) printf("adb outward: %.3f\n", glm::dot(n_adb, -a));
-                        
-            /*
-            while 1:
-                pick closest face
-                    if no closer than previous return 
-                    else:
-                    
-
-                
+            double lastFaceDistance = std::numeric_limits<double>::infinity();
+            glm::vec3 a = points[0], b = points[1], c = points[2], d = points[3];
             
+            triangleList = {{a,b,c}, {b,d,c}, {a,c,d}, {a,d,b}};
+            auto result = getClosestFace();
+        }
+
+
+         std::pair<vec3, double> getClosestFace(){
+            int index{};
+            double smallestDistance = std::numeric_limits<double>::max();
             
-            */
-
-
+            double distance{};
+            vec3 currentNormal{};
+            for(auto& tri : triangleList){
+                vec3 normalFace = normalize(cross(tri[1]-tri[0], tri[2]-tri[0])); 
+                distance = abs(dot(normalFace, tri[0]));
+                if (distance < smallestDistance){
+                    smallestDistance = distance;
+                    currentNormal = normalFace;
+                }
+            }
+            return std::pair<vec3, double>(currentNormal, distance);
         }
     };
   
 };
+
+/*   From https://allenchou.net/2013/12/game-physics-contact-generation-epa/
+1.Take over the simplex from GJK when GJK terminated, and “blow up” the simplex to a tetrahedron if it contains less than 4 vertices.
+2. Use the 4 faces (triangles) of the tetrahedron to construct an initial polytope.
+3. Pick the closest face of the polytope to the origin.
+4. If the closest face is no closer (by a certain threshold) to the origin than the previously picked one, go to 8.
+5. Remove the closest face, use the face normal (outward pointing) as the search direction to find a support point on the CSO.
+6. Remove all faces from the polytope that can be “seen” by this new support point,
+    and add new faces to cover up the “hole” on the polytope,
+    where all new faces share the new support point as a common vertex (this is the expanding part of the algorithm).
+7. Go to 3.
+8..Project the origin onto the closest triangle. This is our closest point to the origin on the CSO’s boundary. 
+    Compute the barycentric coordinates of this closest point using the vertices from this triangle. 
+    The barycentric coordinates are linear combination coefficients of vertices from the triangle.
+    For each collider, linearly combine the support points corresponding to the vertices of the triangle, using the same barycentric coordinates as coefficients.
+    This gives us contact points on each collider in local space. We can then convert these contact points to world space.
+End EPA.
+*/
+
+/*
+
+
+            glm::vec3 n_abc = glm::cross(b - a, c - a);
+            glm::vec3 n_bdc = glm::cross(d - b, c - b);
+            glm::vec3 n_acd = glm::cross(c - a, d - a);
+            glm::vec3 n_adb = glm::cross(d - a, b - a);
+            
+            // we are checking if these faces normals are pointing away from origo, notice -b in bdc case
+            if (glm::dot(n_abc, -a) > 0.0f) printf("abc outward: %.3f\n", glm::dot(n_abc, -a));
+            if (glm::dot(n_bdc, -b) > 0.0f) printf("bdc outward: %.3f\n", glm::dot(n_bdc, -b));
+            if (glm::dot(n_acd, -a) > 0.0f) printf("acd outward: %.3f\n", glm::dot(n_acd, -a));
+            if (glm::dot(n_adb, -a) > 0.0f) printf("adb outward: %.3f\n", glm::dot(n_adb, -a));
+            
+*/

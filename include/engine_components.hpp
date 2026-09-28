@@ -84,7 +84,7 @@ struct Collider{
     
     //NARROW COLLIDER
     enum Shape {NONE, SPHERE, OBB, AABB, COCONUT} narrowShape = NONE;  
-    float narrowRadius = 0.2f;
+    float narrowRadius = 0.5f;
     glm::vec3 narrowExtents = glm::vec3(1.0f);
     
     //narrowCollider
