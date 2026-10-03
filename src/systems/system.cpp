@@ -182,15 +182,15 @@ namespace Sys{
             
             RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
             
-            broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
-
-            for(auto& mesh : sphere.meshes){
-                broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                broadPkt.indexCount = mesh.indexCount;
-                broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+            // broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+            // broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
+            // for(auto& mesh : sphere.meshes){
+            //     broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+            //     broadPkt.indexCount = mesh.indexCount;
+            //     broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                 
-                //packets.push_back(broadPkt);
-            }
+            //     packets.push_back(broadPkt);
+            // }
             
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
             narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
@@ -225,6 +225,7 @@ namespace Sys{
 
             narrowPkt.pc.modelSpace = narrowMat; 
             narrowPkt.pc.offsetVBO = collMesh.baseOffsetBytesVBO / sizeof(Vertex);
+            
             for(auto& mesh : collMesh.meshes){
                 narrowPkt.offsetIBO = collMesh.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
                 narrowPkt.indexCount = mesh.indexCount;
@@ -314,7 +315,6 @@ namespace Sys{
         }
        
     }
-
 /*  
 
     3x3 top left is LINEAR trans OF ROTATION * SCALING // 
@@ -327,13 +327,13 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
 
     SydX::GJK gjk{};
     SydX::EPA epa{};
-    
+    std::vector<SydX::CandidatePair> pairs{};
     void updatePhysics(ECS::Registry& reg, float dt)
     {
             /*you get a copy of vector filled with refs*/
             auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::Particle>();
             /*scuffed PHYSICS*/
-            
+            /*INTEGRATION STEP */
             for (int i{}; i < particPool.count; i++){
                 ECS::Entity e = particPool.dense[i];
                 Particle& p = particPool.data[i];
@@ -341,6 +341,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                 integrateParticle(p,tinfo,dt);
             }
 
+            /*COLLISION DETECTION*/
             for (int i{}; i < collPool.count; i++){
                 ECS::Entity e1 = collPool.dense[i]; Collider& c1 = collPool.data[i];
                 if(!rawTransPool.hasEntity(e1)){
@@ -353,21 +354,43 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     RawTransform& r2 = rawTransPool.get(e2);
                     
                     if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
-                        
                         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
                         if(gjk.intersect(supportFn)){
                             printf("NARROW COLLISION!!!\n");
                             epa.run(gjk.abcd(), supportFn);
+                            pairs.push_back({.A = e1, .B = e2, .n = {0.0, 1.0, 0.0}, .depth = 0.2});
+                            //add candidate
                         }else{
                             printf("FALSE COLLISION!!!\n");
                         }
                         gjk.reset();
 
 
-                        
                     }
+
                 }
             }
-            
+            for(int i{}; i < 3; i++){           
+                for (auto& pair : pairs){
+                    
+                    Particle& A = particPool.get(pair.A);
+                    Particle& B = particPool.get(pair.B);
+                    glm::vec3 n = pair.n;
+                    float depth = pair.depth;
+                    
+                    float v_rel = glm::dot((B.vel - A.vel), n);
+                    if (v_rel < 0.0){
+
+                        float J = -((A.bounciness + B.bounciness)/2 + 1.0) * v_rel;
+                        J = J / (A.inverseMass + B.inverseMass); // assert no div by 0
+                        
+                        A.vel = A.vel - (J * A.inverseMass) * n;
+                        B.vel = B.vel + (J * B.inverseMass) * n;
+
+                    }
+
+                }
+            }
+            pairs.clear();
         }
 }

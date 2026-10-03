@@ -39,7 +39,7 @@ void Engine::run(){
         Sys::updatePhysics(reg, plt.deltaTime);
         
         Sys::updateAnimations(reg, plt.deltaTime);
-        Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  
+        Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
         
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
         

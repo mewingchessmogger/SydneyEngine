@@ -24,7 +24,15 @@ namespace SydX {
         vec3 vel{};
         vec3 acc{};
         real damping{};
+        float bounciness = 0.5; // 1.0f : completely elastic, 0.0f : Everything becomes heat
         COMP_NAME(Particle);
+    };
+
+    struct CandidatePair{
+        int A{};
+        int B{};
+        vec3 n{};
+        float depth{};
     };
 
     bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2);

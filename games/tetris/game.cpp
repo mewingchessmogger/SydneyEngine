@@ -12,22 +12,26 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb"});
 	
 
-	TransformInfo t = {.position = glm::vec3(0.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
+	
+	TransformInfo t = {.position = glm::vec3(2.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
+	Collider c = {.offset = {0.0,0.8,0.0}, .broadRadius = 3.0f, .narrowShape = Collider::AABB, .narrowExtents = {3.0,1.2,4.0}};
+
 	int floor = reg.createEntity();
 	
-	reg.add(floor, t);
+	reg.add(floor, t, c);
 	SydX::Particle p{};
 	p.inverseMass = 0.0;
-	//reg.add(floor,p);
+	reg.add(floor,p);
 	api.attachModel("cube.glb", floor);
-	
+
 	int women = reg.createEntity();
 	TransformInfo w = {.position = {0.0, 0.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
 	reg.add(women, w);
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
 	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
-
+	
+	reg.add(women, SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f});
 	int gun = reg.createEntity();
 	TransformInfo g = {.position = {0.0,-2.0, -1.5},.quatRot = eulerDeg({0.0, 180.0, 0.0})};
 	
@@ -71,9 +75,9 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 	
 
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
-		Collider& womenCollider = reg.getPool<Collider>().data[0];
-		ECS::Entity womenID = reg.getPool<Collider>().dense[0];
-		reg.getPool<TransformInfo>().get(womenID).addRot({0.0,30.0f,0.0f},dt);
+		Collider& womenCollider = reg.getPool<Collider>().data[1];
+		ECS::Entity womenID = reg.getPool<Collider>().dense[1];
+		//reg.getPool<TransformInfo>().get(womenID).addRot({0.0,30.0f,0.0f},dt);
 
 		Collider& camCollider = reg.getPool<Collider>().data[1];
 		if(state.keyPressed(Input::Key::MouseLeft)){
@@ -83,7 +87,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			int bull = reg.createEntity();
 			reg.add(bull,t);
 			reg.add(bull, p);
-			reg.add(bull, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.7});
+			reg.add(bull, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.3});
 			api.attachModel("cube.glb", bull);
 		}
 
