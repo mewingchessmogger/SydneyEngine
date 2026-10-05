@@ -35,6 +35,10 @@ namespace SydX {
         float depth{};
     };
 
+    struct ResultEPA{
+        vec3 normal{};
+        float depth{};
+    };
     bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2);
     
     glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1);
@@ -106,7 +110,7 @@ namespace SydX {
                             b = a;
 
                             /*convince yourself that using this triangle which normal WILL point towards origo,
-                             with that choice, the future three faces will ALWAYS have a normal that points OUTWARDS from ORIGO IF we did enclose it properly,*/
+                             with that choice, the future three faces will ALWAYS have a normal that points OUTWARDS from ORIGO !!!IF we did enclose it properly!!!,  SUBTLE SHIT*/
                             if(dot(norm_abc, ao) > 0){ 
                                 dir = norm_abc;
                             }else{
@@ -188,43 +192,111 @@ namespace SydX {
             n = {};
         }
     };
+
+    
     struct EPA{
-        vec3 contactNormal{};
-        float penDepth{};
-        vec3 a, b, c, d;
-        std::vector<std::array<vec3,3>> triangleList{};
-        //std::vector<std::array<vec3,2> edgeList{};
-        std::vector<vec3> vertexList{};
-       
+        
+
+        struct FaceResult{
+            vec3 normal{};
+            float distance{};
+            int dyingFace{};
+        };
+        struct Edge{
+            vec3 A{};
+            vec3 B{};
+        };
 
         template <typename supportFunc>
-        void run(std::array<vec3,4> points, supportFunc&& supportFn){
-            double lastFaceDistance = std::numeric_limits<double>::infinity();
-            glm::vec3 a = points[0], b = points[1], c = points[2], d = points[3];
+        ResultEPA run(std::array<vec3,4> points, supportFunc&& supportFn){
+            auto [a, b, c, d] = points;
+            std::vector<std::array<vec3,3>> polytope = {{a,b,c}, {b,d,c}, {a,c,d}, {a,d,b}};        /*WELL ITS ACTULALLY CLEARED HERE SO... HAHA*/
+            std::vector<Edge> uniqueEdges{};
             
-            triangleList = {{a,b,c}, {b,d,c}, {a,c,d}, {a,d,b}};
-            auto result = getClosestFace();
+            float minDistance = -std::numeric_limits<float>::infinity(); /*its MINUS INFINITY*/
+
+            while(true){
+
+                FaceResult result = getClosestFace(polytope); /*3. Pick the closest face of the polytope to the origin.*/
+
+                if((result.distance - minDistance) > 0.001f){ /*4. If the closest face is no closer (by a certain threshold) to the origin than the previously picked one, return*/
+                    return {result.normal, result.distance};
+                }
+                minDistance = result.distance;
+                
+                std::swap(polytope[result.dyingFace], polytope.back()); /*5. Remove the closest face, */
+                polytope.pop_back();
+                
+
+                vec3 supportPoint = supportFn(result.normal); /*use the face normal (outward pointing) as the search direction to find a support point on the CSO.*/
+
+                /*. Remove all faces from the polytope that can be “seen” by this new support point,
+                and add new faces to cover up the “hole” on the polytope,
+                where all new faces share the new support point as a common vertex (this is the expanding part of the algorithm).*/
+                
+                expand(polytope, uniqueEdges, supportPoint);
+            }
+            
+            return {};
+
         }
+        void expand(std::vector<std::array<vec3,3>>& polytope,std::vector<Edge>& edges, vec3 point){
+            for(int i = 0; i < polytope.size();){
+                auto& face = polytope[i];
+                vec3 v01 = face[1] - face[0];
+                vec3 v02 = face[2] - face[0];
+                vec3 n = cross(v01,v02);
+                if(dot(n,(point - face[0])) > 0.0f){ /*face can be "seen" by point*/  
+                    addUniqueEdge(edges, face[0], face[1]);// add or remove edges accordinlgy 3 times, order inside the edgelist doesnt matter, but the points order insid each Edge struct does matter striving for CCW
+                    addUniqueEdge(edges, face[1], face[2]);
+                    addUniqueEdge(edges, face[2], face[0]);
 
-
-         std::pair<vec3, double> getClosestFace(){
-            int index{};
-            double smallestDistance = std::numeric_limits<double>::max();
-            
-            double distance{};
-            vec3 currentNormal{};
-            for(auto& tri : triangleList){
-                vec3 normalFace = normalize(cross(tri[1]-tri[0], tri[2]-tri[0])); 
-                distance = abs(dot(normalFace, tri[0]));
-                if (distance < smallestDistance){
-                    smallestDistance = distance;
-                    currentNormal = normalFace;
+                    std::swap(polytope.back(), polytope[i]);//remove face
+                    polytope.pop_back();
+                }else{
+                    i++;
                 }
             }
-            return std::pair<vec3, double>(currentNormal, distance);
+            for (auto& edge : edges) {
+                polytope.push_back({ edge.A, edge.B, point });
+            }
+            edges.clear();
+
+        }
+
+        void addUniqueEdge(std::vector<Edge>& edges, vec3 v0, vec3 v1){
+            for(int e = 0; auto& egg : edges){
+                if (v0 == egg.B && v1 == egg.A){
+                    std::swap(edges.back(), edges[e]);
+                    edges.pop_back();
+                    return;
+                }
+                e++;
+            }
+                edges.push_back({v0,v1});
+
+        }
+
+        FaceResult getClosestFace(std::vector<std::array<vec3,3>>& polytope){
+            float minDistance = std::numeric_limits<float>::infinity();
+            vec3 minNormal{};
+            int faceToBeExecuted{};
+
+            for(int i = 0; auto& face : polytope){
+                vec3 v0 = face[0]; vec3 v1 = face[1]; vec3 v2 = face[2];
+                vec3 n = normalize(cross(v1-v0, v2-v0));
+                float d = dot(v0,n); 
+                if(d < minDistance){
+                    minDistance = d;
+                    minNormal = n;
+                    faceToBeExecuted = i;
+                }
+                i++;
+            }
+            
+            return {minNormal, minDistance, faceToBeExecuted};
         }
     };
-  
 };
 
 /*   From https://allenchou.net/2013/12/game-physics-contact-generation-epa/
@@ -243,20 +315,4 @@ namespace SydX {
     For each collider, linearly combine the support points corresponding to the vertices of the triangle, using the same barycentric coordinates as coefficients.
     This gives us contact points on each collider in local space. We can then convert these contact points to world space.
 End EPA.
-*/
-
-/*
-
-
-            glm::vec3 n_abc = glm::cross(b - a, c - a);
-            glm::vec3 n_bdc = glm::cross(d - b, c - b);
-            glm::vec3 n_acd = glm::cross(c - a, d - a);
-            glm::vec3 n_adb = glm::cross(d - a, b - a);
-            
-            // we are checking if these faces normals are pointing away from origo, notice -b in bdc case
-            if (glm::dot(n_abc, -a) > 0.0f) printf("abc outward: %.3f\n", glm::dot(n_abc, -a));
-            if (glm::dot(n_bdc, -b) > 0.0f) printf("bdc outward: %.3f\n", glm::dot(n_bdc, -b));
-            if (glm::dot(n_acd, -a) > 0.0f) printf("acd outward: %.3f\n", glm::dot(n_acd, -a));
-            if (glm::dot(n_adb, -a) > 0.0f) printf("adb outward: %.3f\n", glm::dot(n_adb, -a));
-            
 */

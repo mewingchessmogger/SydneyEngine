@@ -61,7 +61,12 @@ inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State&
 		
 		glm::mat4 camPos = inverse(glm::lookAt(eye, cameraFront+eye, cameraUp));
 
-		camTrans.setPos(glm::vec3{camPos[3]});
+		camTrans.position.x = camPos[3].x;
+		camTrans.position.z = camPos[3].z;
+		eye.y = camTrans.position.y;
+		
+		camTrans.dirty = true;
+
 		camTrans.setRot(glm::vec3(glm::degrees(glm::eulerAngles(glm::quat_cast(camPos)))));
 		
 		cam.view = glm::lookAt(eye, cameraFront+eye, cameraUp);

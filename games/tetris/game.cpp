@@ -14,7 +14,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 
 	
 	TransformInfo t = {.position = glm::vec3(2.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
-	Collider c = {.offset = {0.0,0.8,0.0}, .broadRadius = 3.0f, .narrowShape = Collider::AABB, .narrowExtents = {3.0,1.2,4.0}};
+	Collider c = {.offset = {0.0,0.8,0.0}, .broadRadius = 5.0f, .narrowShape = Collider::AABB, .narrowExtents = {3.0,1.2,4.0}};
 
 	int floor = reg.createEntity();
 	
@@ -49,7 +49,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.setParent(gun, api.getGameCamera());
 	
 	
-	//reg.add(api.getGameCamera());
+	reg.add(api.getGameCamera(), SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f, .bounciness = 0.8});
 	
 
 }
@@ -61,7 +61,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
 		TransformInfo& cameraPos = reg.getPool<TransformInfo>().get(api.getGameCamera()); 
 		
-		updateGameCamera(camera,cameraPos, state, 0.3, aspect, dt);
+		updateGameCamera(camera, cameraPos, state, 0.3, aspect, dt);
 		updateWeaponSystem(state, api, reg);
 		
 
@@ -77,7 +77,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
 		Collider& womenCollider = reg.getPool<Collider>().data[1];
 		ECS::Entity womenID = reg.getPool<Collider>().dense[1];
-		//reg.getPool<TransformInfo>().get(womenID).addRot({0.0,30.0f,0.0f},dt);
+		//reg.getPool<TransformInfo>().get(womenID).addRot({30.0,0.0f,0.0f},dt);
 
 		Collider& camCollider = reg.getPool<Collider>().data[1];
 		if(state.keyPressed(Input::Key::MouseLeft)){

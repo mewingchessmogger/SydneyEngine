@@ -40,7 +40,7 @@ void Engine::run(){
         
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
-        
+        Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
         
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))/*buncha stuff rebuilt inside validateImage if window is resized including imgui stuff, */

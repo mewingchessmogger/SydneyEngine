@@ -167,6 +167,15 @@ namespace Sys{
 
         }
 
+        
+        
+
+
+    }
+    
+    void buildColliderPackets(ECS::Registry& reg, AssetRegistry& ast, std::vector<RenderPkt>& packets){
+        
+        auto [transPool, rendPool, collPool] = reg.getPools<RawTransform, Renderable, Collider>();
         AssetRegistry::StaticModel& sphere = ast.getStaticModelFromString(std::string{"sphere.glb"});
         AssetRegistry::StaticModel& cube = ast.getStaticModelFromString(std::string{"cube.glb"});
 
@@ -235,10 +244,7 @@ namespace Sys{
 
 
         }
-
-
     }
-    
    
 
     void finalizeTransforms(ECS::Registry& reg){
@@ -356,12 +362,13 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
                         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
                         if(gjk.intersect(supportFn)){
-                            printf("NARROW COLLISION!!!\n");
-                            epa.run(gjk.abcd(), supportFn);
-                            pairs.push_back({.A = e1, .B = e2, .n = {0.0, 1.0, 0.0}, .depth = 0.2});
+                            //printf("NARROW COLLISION!!!\n");
+                            SydX::ResultEPA result = epa.run(gjk.abcd(), supportFn);
+                            //printf("EPA Result - Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", result.normal.x, result.normal.y, result.normal.z, result.depth);
+                            pairs.push_back({.A = e1, .B = e2, .n = result.normal, .depth = result.depth});
                             //add candidate
                         }else{
-                            printf("FALSE COLLISION!!!\n");
+                            //printf("FALSE COLLISION!!!\n");
                         }
                         gjk.reset();
 
@@ -370,6 +377,8 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
 
                 }
             }
+
+            /*COLLISION RESOLUTION, NO ANGULAR KINEMATICS!*/
             for(int i{}; i < 3; i++){           
                 for (auto& pair : pairs){
                     
