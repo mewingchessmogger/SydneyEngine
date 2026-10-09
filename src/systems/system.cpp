@@ -379,7 +379,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
             }
 
             /*COLLISION RESOLUTION, NO ANGULAR KINEMATICS!*/
-            for(int i{}; i < 3; i++){           
+            for(int i{}; i < 8; i++){           
                 for (auto& pair : pairs){
                     
                     Particle& A = particPool.get(pair.A);

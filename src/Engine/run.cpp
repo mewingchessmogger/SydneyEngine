@@ -5,14 +5,13 @@
 #include "systems.hpp"
 
 void Engine::run(){
-
     initialize(); // basically all parts of the engine, loading assets are done at runtime not in here
     
     int editorCamID = reg.createEntity();
     reg.emplace<Camera>(editorCamID);
     EngineMode mode = EngineMode::GAME;// can either start in game or editor
     
-    //planned future is that you can switch out games like a cartridge, cr.h is amazing library used here to enable hot reload DLLs
+    //planned future is that you can switch out games like a cartridge, cr.h is amazing library used here to streamline hot reload DLLs
     RawMemory mem(1024*1024); // 1024 kilobytes
     PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime, .mem = &mem};
     cr_plugin game_plugin = {.userdata = &psd}; // we just pass all state we want in dll as a pointer here!
@@ -29,7 +28,7 @@ void Engine::run(){
             cr_plugin_update(game_plugin);
         }
         
-       
+        
         Sys::processAPI(reg, ldr.getAssetReg(), api, ldr);  // the way game sends requests to engine via api, api queue can be pushed anywhere aswell, future also in editor?
        
         reg.updateHierarchyLevels(); reg.sortHierarchyPool();
@@ -41,6 +40,7 @@ void Engine::run(){
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
         Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
+        
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
         
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))/*buncha stuff rebuilt inside validateImage if window is resized including imgui stuff, */
@@ -68,7 +68,6 @@ void Engine::run(){
             }
             stk.endFrame();
         }
-              
         plt.inputState.clearCursorDeltas();
     }
     plt.shutdown();

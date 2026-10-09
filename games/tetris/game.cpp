@@ -49,7 +49,7 @@ void init(ECS::Registry& reg, EngineAPI& api){
 	reg.setParent(gun, api.getGameCamera());
 	
 	
-	reg.add(api.getGameCamera(), SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f, .bounciness = 0.8});
+	reg.add(api.getGameCamera(), SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f, .bounciness = 0.2});
 	
 
 }
@@ -59,9 +59,11 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 {		
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
+		SydX::Particle& camParticle =  reg.getPool<SydX::Particle>().get(api.getGameCamera()); 
 		TransformInfo& cameraPos = reg.getPool<TransformInfo>().get(api.getGameCamera()); 
-		
-		updateGameCamera(camera, cameraPos, state, 0.3, aspect, dt);
+
+		updateCameraOrientation(camera,state,0.3,aspect);
+		updatePlayerMovement(camParticle, cameraPos, camera, state, 2.0);
 		updateWeaponSystem(state, api, reg);
 		
 
@@ -96,6 +98,34 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		
 }
 
+
+
+void mainMenu(ECS::Registry& reg, GameMemory* mem,Input::State& state){
+
+	/*
+		so get the correct iD? where should it be stored 
+		make some cube spin around 
+		int id = mem->rnt.spinningCubeID;
+
+		reg.getPool<TransformInfo>().get(id).addRot({30.0,0.0f,0.0f},dt);
+
+	*/
+
+	//load game
+	if(state.keyPressed(Input::Key::Num1)){
+		//api.loadScene(level1.txt)
+		//dumpSaveFile(save1.txt)// let dll manipulate whole mem blcok? it doesnt own it anyways
+		//mem->rnt.currentScene = SaveData::Scene::SCENE_1;
+		return;
+	}
+	//newgame
+	if(state.keyPressed(Input::Key::Num2)){
+		//mem->rnt.currentScene = mem->save.scene // maybe rnt?
+		return;
+	}
+
+
+}
 static bool CR_STATE alreadyInitialized = false;
 
 /*
@@ -119,7 +149,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	float& aspect = *psd->aspect;
 	float& dt = *psd->dt;
 	RawMemory& raw = *psd->mem;
-	GameState* mem = reinterpret_cast<GameState*>(raw.data);
+	GameMemory* mem = reinterpret_cast<GameMemory*>(raw.data);
 	
 	// mem->level = 100;
 	// mem->MaxHP = 100.0f;
@@ -133,9 +163,17 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 		{
 			case CR_LOAD:
 			{
+
 				printf("RELOADING DONE (OR FIRST LOAD)\n");
 				if(ctx->failure != CR_BAD_IMAGE){
 					if(!alreadyInitialized){
+						/*
+						api.loadScene("main_menu.txt")
+						mem->scene == GameState::Scene::MAIN_MENU;
+						*/
+
+
+
 						init(reg, api);
 						alreadyInitialized = true;
 					}
@@ -150,6 +188,28 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 			case CR_STEP:{
 				
 				if(ctx->failure != CR_BAD_IMAGE){
+					/*
+
+					switch(mem->save.scene){
+						case: MAIN_MENU:{
+							mainMenu(reg, mem, state);
+							break;
+						}
+						case: LEVEL_1:{
+							runGame();
+							break;
+						}				
+						case: LEVEL_2:{
+							runMainMenu();
+							break;
+						
+						}		
+						default:
+							break;
+					}
+					
+					
+					*/
 					update(aspect, dt, state ,reg, api);
 				}
 			}

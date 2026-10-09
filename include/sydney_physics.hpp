@@ -7,6 +7,7 @@
 #include "engine_components.hpp"
 #include <limits>
 #include <utility>
+#include "sydney_physics_components.hpp"
 namespace SydX {
     using real = float;
     using vec3 = glm::vec3;
@@ -19,14 +20,6 @@ namespace SydX {
     using  vec4 = glm::vec4;
     using mat3 = glm::mat3;
    
-    struct Particle{
-        real inverseMass{};
-        vec3 vel{};
-        vec3 acc{};
-        real damping{};
-        float bounciness = 0.5; // 1.0f : completely elastic, 0.0f : Everything becomes heat
-        COMP_NAME(Particle);
-    };
 
     struct CandidatePair{
         int A{};
