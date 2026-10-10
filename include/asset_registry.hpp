@@ -177,7 +177,18 @@ class AssetRegistry{
         assert(0);
         return false;
     }
-    
+    bool isUploaded(const std::string& path){
+         if (StringToIntegerSkinnedModelMap.find(path.c_str()) != StringToIntegerSkinnedModelMap.end()){
+            printf(" already uploaded '%s'\n", path.c_str());
+            return true;
+        }
+        else if (StringToIntegerStaticModelMap.find(path.c_str()) != StringToIntegerStaticModelMap.end()){
+            printf(" already uploaded '%s'\n", path.c_str());
+            return true;
+        }
+
+        return false;
+    }
     
 
 };

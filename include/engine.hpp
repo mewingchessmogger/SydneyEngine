@@ -15,6 +15,7 @@
 #include "render_packet_def.hpp"
 #include "engine_api.hpp"
 #include "script_component.hpp"
+
 class Engine{
 
 
@@ -37,6 +38,7 @@ class Engine{
     VulkanStack stk{};
     ECS::Registry reg{};
     Editor edt{};
+    nlohmann::json json{};
     ShaderCompiler shaderCompiler{};
     FileWatcher fileWatcher{};
     FileReader fileReader{};

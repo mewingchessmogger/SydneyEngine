@@ -46,7 +46,7 @@ struct TransformInfo{
         return m;
     }
 
-    //REFLECT_4(position, rotation, scale, dirty); 
+    REFLECT_ADDRESS_4(position, quatRot, scale, dirty); 
     COMP_NAME(TransformInfo);
 };
 
@@ -83,13 +83,14 @@ struct Collider{
     float broadRadius = 1.0f;
     
     //NARROW COLLIDER
-    enum Shape {NONE, SPHERE, OBB, AABB, COCONUT} narrowShape = NONE;  
+    enum Shape : uint32_t {NONE, SPHERE, OBB, AABB, COCONUT};
+    Shape narrowShape = NONE;  
     float narrowRadius = 0.5f;
     glm::vec3 narrowExtents = glm::vec3(1.0f);
     
     //narrowCollider
 
-
+    REFLECT_ADDRESS_5(offset, broadRadius, (uint32_t)narrowShape, narrowRadius, narrowExtents);
     COMP_NAME(Collider);
 };
 
@@ -133,7 +134,6 @@ struct Animated{
 
         return frameIndex;
     }
+    REFLECT_ADDRESS_9(animationIndex, time, speed, duration, offset, totalFrames, layer, crossfade, isLocked);
     COMP_NAME(Animated);
 };
-
-

@@ -1,0 +1,75 @@
+{
+    "scene_name": "Level 1 - Test Chamber",
+    "required_models": [
+        "dragon.glb",
+        "cube.glb",
+        "sphere.glb",
+        "shibahu.glb",
+        "fps_character_animation_pack_ak-47.glb"
+    ],
+    "entities": [
+        {
+            "tag": "MainCamera",
+            "is_game_camera" : true,
+            "parent_to": "PlayerGun",
+            "TransformInfo": {
+                "position": [0.0, 1.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "Collider": {
+                "offset": [0.0, -0.2, 0.0],
+                "broadRadius": 1.0,
+                "narrowShape": 1,
+                "narrowRadius": 0.3,
+                "narrowExtents": [1.0, 1.0, 1.0]
+            }
+           
+
+        },
+        {
+            "tag": "Floor",
+            "model": "cube.glb",
+            "TransformInfo": {
+                "position": [2.0, -5.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [3.0, 1.0, 4.0]
+            },
+            "Collider": {
+                "offset": [0.0, 0.8, 0.0],
+                "broadRadius": 5.0,
+                "narrowShape": 3,
+                "narrowExtents": [3.0, 1.2, 4.0]
+            }
+        },
+        {
+            "tag": "NPC_Woman",
+            "model": "shibahu.glb",
+            "animation": "Take 001",
+            "TransformInfo": {
+                "position": [0.0, 2.0, 0.0],
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "Collider": {
+                "offset": [0.0, 0.8, 0.0],
+                "broadRadius": 1.0,
+                "narrowShape": 2,
+                "narrowExtents": [1.0, 0.75, 0.25]
+            }
+        },
+        {
+            "tag": "PlayerGun",
+            "model": "fps_character_animation_pack_ak-47.glb",
+            "animation": "RIG_UE5_Comando_AK_Idle",
+            "TransformInfo": {
+                "position": [0.0, 5.0, -1.5],
+                "rotation": [0.0, 180.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "Weapon": {
+                "ammo": 30
+            }
+        }
+    ]
+}

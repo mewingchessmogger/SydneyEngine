@@ -7,9 +7,42 @@ namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
     using Particle = SydX::Particle;
+    inline Variable JsonToVariable(const std::string& name, const nlohmann::json& jVal) {
+        Variable var;
+        var.name = name;
 
+        if (jVal.is_number_integer()) {
+            // Handles standard ints, counts, and uint8_t enums (like narrowShape)
+            var.var = jVal.get<int>();
+        } 
+        else if (jVal.is_number_unsigned()) {
+            // Handles explicit uint32_t fields
+            var.var = jVal.get<uint32_t>();
+        }
+        else if (jVal.is_number_float()) {
+            // Handles floats (radii, scale, damping, etc.)
+            var.var = jVal.get<float>();
+        } 
+        else if (jVal.is_array() && jVal.size() == 3) {
+            // Handles glm::vec3 arrays ([x, y, z]) for positions, rotations, and extents
+            var.var = glm::vec3(
+                jVal[0].get<float>(), 
+                jVal[1].get<float>(), 
+                jVal[2].get<float>()
+            );
+        }
+        else if (jVal.is_array() && jVal.size() == 4) {
+            var.var = glm::quat(jVal[0].get<float>(), jVal[1].get<float>(), jVal[2].get<float>(), jVal[3].get<float>());
+        }
+        else if (jVal.is_boolean()) {
+            // Handles boolean flags
+            var.var = jVal.get<bool>() ? 1 : 0;
+        }
+
+        return var;
+    }
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api,  IAssetLoader& loader){
-        
+        api.reqs.reserve(500);
         for (auto& reqT: api.reqs) {
 
             switch (reqT.index()) { 
@@ -20,15 +53,9 @@ namespace Sys{
                     {
                         case EngineAPI::LOAD_MODEL:{
                                 printf("parsing %s ...", req.path.c_str());
-                                if (ast.StringToIntegerSkinnedModelMap.find(req.path.c_str()) != ast.StringToIntegerSkinnedModelMap.end()){
-                                    printf(" already uploaded '%s'\n", req.path.c_str());
+                                if(!ast.isUploaded(req.path)){
                                     continue;
                                 }
-                                else if (ast.StringToIntegerStaticModelMap.find(req.path.c_str()) != ast.StringToIntegerStaticModelMap.end()){
-                                    printf(" already uploaded '%s'\n", req.path.c_str());
-                                    continue;
-                                }
-                               
                                 loader.loadModel(req.path.c_str(), true);
                                 //ldr.loadScene(req.path.c_str());
                                 printf("done!\n");
@@ -50,6 +77,77 @@ namespace Sys{
 
                                 break;
                         }
+                        case EngineAPI::LOAD_SCENE:{
+                                std::ifstream file(req.path,std::ios::binary);
+                                nlohmann::json j = nlohmann::json::parse(file);
+                                
+                                if(j.contains("required_models") && j["required_models"].is_array()){
+                                    for (const auto& model : j["required_models"]) {
+                                    
+                                        std::string path = model.get<std::string>();
+                                        if(!ast.isUploaded(path)){
+                                            loader.loadModel(path, true);
+                                        }
+                                    }
+                                }
+                                std::unordered_map<std::string, int> tagToEntity{};
+
+                                if(j.contains("entities") && j["entities"].is_array()){
+                                    for(const auto& entJson : j["entities"]){
+                                        int id = (int)reg.createEntity();
+                                        std::string tag = entJson.value("tag", ""); // the "" is a fallback value if cant find the key tag
+                                        if(!tag.empty()){
+                                            tagToEntity[tag] = id;
+                                        }
+                                        
+                                        if (entJson.contains("model")) {
+                                            api.attachModel(entJson["model"].get<std::string>(), id);
+                                        }
+                                        if (entJson.contains("animation")) {
+                                            api.setAnimation(entJson["animation"].get<std::string>(), id);
+                                        }
+                                        if (entJson.value("is_game_camera", true)) {
+                                            reg.emplace<Camera>(id);
+                                            api.setGameCamera(id);
+                                        }
+
+                                        for (auto& [key, val] : entJson.items()) {
+                                            // Skip non-component metadata keys
+                                            if (key == "tag" || key == "model" || key == "animation" || 
+                                                key == "is_game_camera" || key == "parent_to") {
+                                                continue;
+                                            }
+                                            std::vector<Variable> vars{};
+                                            if(val.is_object()){
+                                                for(auto& [fieldName, fieldVal] :val.items()){
+                                                    vars.push_back(JsonToVariable(fieldName, fieldVal));
+                                                }
+                                            }
+                                            
+                                            reg.deserializeComponent(id,key,std::move(vars));
+                                        }
+
+                                    }
+                                    for (const auto& entJson : j["entities"]){
+                                        if(entJson.contains("Tag") && entJson.contains("parent_to")){
+                                            std::string childTag = entJson["tag"];  
+                                            std::string parentTag = entJson["parent_to"];
+                                            int childId = tagToEntity[childTag];
+                                            int parentId = tagToEntity[parentTag];
+                                            reg.setParent(childId, parentId);
+                                        }
+                                    }
+                                        
+
+                                }
+                                
+                                printf("done!\n");
+
+                                break;
+                                
+                        }		
+
+
                     }	
                     break;
                 }

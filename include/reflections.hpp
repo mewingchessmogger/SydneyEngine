@@ -27,7 +27,11 @@
         return std::vector<Variable>{{a, #a}, {b, #b}, {c, #c}, {d, #d}};\
     }\
 
-
+#define REFLECT_5(a, b, c, d, e) \
+    auto reflect() {\
+        auto& [a, b, c, d, e] = *this;\
+        return std::vector<Variable>{{a, #a}, {b, #b}, {c, #c}, {d, #d}, {e, #e}};\
+    }
 
 #define REFLECT_6(a, b, c, d, e ,f) \
     auto reflect() {\
@@ -35,7 +39,11 @@
         return std::vector<Variable>{{a, #a}, {b, #b}, {c, #c}, {d, #d}, {e, #e}, {f, #f}};\
     }\
 
-
+#define REFLECT_9(a, b, c, d, e, f, g, h, i) \
+    auto reflect() {\
+        auto& [a, b, c, d, e, f, g, h, i] = *this;\
+        return std::vector<Variable>{{a, #a}, {b, #b}, {c, #c}, {d, #d}, {e, #e}, {f, #f}, {g, #g}, {h, #h}, {i, #i}};\
+    }
 
 #define REFLECT_ADDRESS_1(a) \
     auto reflectAddress() { \
@@ -61,12 +69,23 @@
         return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}};\
     }\
 
+#define REFLECT_ADDRESS_5(a, b, c, d, e) \
+    auto reflectAddress() {\
+        auto& [a, b, c, d, e] = *this;\
+        return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}, {&e}};\
+    }
+
 #define REFLECT_ADDRESS_6(a, b, c, d, e, f) \
     auto reflectAddress() {\
         auto& [a, b, c, d, e, f] = *this;\
         return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}, {&e}, {&f}};\
     }\
 
+#define REFLECT_ADDRESS_9(a, b, c, d, e, f, g, h, i) \
+    auto reflectAddress() {\
+        auto& [a, b, c, d, e, f, g, h, i] = *this;\
+        return std::vector<VariableAddress>{{&a}, {&b}, {&c}, {&d}, {&e}, {&f}, {&g}, {&h}, {&i}};\
+    }
 
     //no need for pretty function or shitty typeid that invalidates on hot reloads due to dll data diseappring 
 #define COMP_NAME(type) \

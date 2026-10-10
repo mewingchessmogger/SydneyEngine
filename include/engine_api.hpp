@@ -73,7 +73,7 @@ class EngineAPI{
         reqs.push_back(req);
         //reqs.push_back({SET_ANIMATION,animationName,entityID,});
     }
-
+    
 
     void setAnimation(std::string_view name, int entityID,bool locked = false, bool bypassLocked = false, int layer = 0, float crossfade = 0.0f) {
         
@@ -88,6 +88,12 @@ class EngineAPI{
             locked,
             bypassLocked
         });
+    }
+    void loadScene(const std::string path, int id = -1){
+        reqs.push_back(Request{LOAD_SCENE, path, -1});
+    }
+    void saveScene(const std::string path, int id = -1){
+        reqs.push_back(Request{SAVE_SCENE, path, -1});
     }
     
     void attachEntityToEntityBone(std::string_view boneName, int srcEntity, int dstEntity){

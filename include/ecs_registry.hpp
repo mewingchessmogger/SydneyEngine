@@ -192,11 +192,22 @@
                         float* ptr = std::get<float*>(v.address);
                         *ptr = std::get<float>(vars[i].var);
                     }
+                    else if(std::holds_alternative<uint8_t*>(v.address)){
+                        uint8_t* ptr = std::get<uint8_t*>(v.address);
+                        *ptr = std::get<uint8_t>(vars[i].var);
+                    }
+                    else if(std::holds_alternative<uint16_t*>(v.address)){
+                        uint16_t* ptr = std::get<uint16_t*>(v.address);
+                        *ptr = std::get<uint16_t>(vars[i].var);
+                    }
                     else if(std::holds_alternative<uint32_t*>(v.address)){
                         uint32_t* ptr = std::get<uint32_t*>(v.address);
                         *ptr = std::get<uint32_t>(vars[i].var);
                     }
-
+                    else if(std::holds_alternative<glm::quat*>(v.address)){
+                        glm::quat* ptr = std::get<glm::quat*>(v.address);
+                        *ptr = std::get<glm::quat>(vars[i].var);
+                    }
                     else if(std::holds_alternative<glm::vec<3,float>*>(v.address)){
                         glm::vec<3,float>* ptr = std::get<glm::vec<3,float>*>(v.address);
                         *ptr = std::get<glm::vec<3,float>>(vars[i].var);

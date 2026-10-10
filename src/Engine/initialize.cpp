@@ -59,6 +59,7 @@ void Engine::initialize(){
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
     reg.createPool<Animated>();
+    
    
 
 
