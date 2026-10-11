@@ -9,7 +9,7 @@ inline glm::quat eulerDeg(glm::vec3 deg){
 void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	reg.createPool<Weapon>();
 	
-	api.loadScene("level1.json");
+	api.loadScene("games/tetris/scenes/level1.json");
 	
 	// api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb"});
 	
@@ -58,22 +58,22 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	// rnt.Entities[1]= women;
 	// rnt.Entities[2]= gun;
 	
-
+	rnt.Entities[0] = 4;
 
 }
 static std::array<int,20> CR_STATE children{};
 static int CR_STATE count{};
-void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api)
+void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, EngineAPI& api, GameMemory* mem)
 {		
 
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
-		SydX::Particle& camParticle =  reg.getPool<SydX::Particle>().get(api.getGameCamera()); 
+		//SydX::Particle& camParticle =  reg.getPool<SydX::Particle>().get(api.getGameCamera()); 
 		TransformInfo& cameraPos = reg.getPool<TransformInfo>().get(api.getGameCamera()); 
 
-		updateCameraOrientation(camera,state,0.3,aspect);
-		updatePlayerMovement(camParticle, cameraPos, camera, state, 2.0);
-		//updateGameCamera()
-		updateWeaponSystem(state, api, reg);
+		//updateCameraOrientation(camera,state,0.3,aspect);
+		//updatePlayerMovement(camParticle, cameraPos, camera, state, 2.0);
+		updateGameCamera(camera, cameraPos, state, 0.3, aspect, dt);
+		updateWeaponSystem(state, api, reg, mem->rnt);
 		
 
 
@@ -102,8 +102,8 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			api.attachModel("cube.glb", bull);
 		}
 
-		gun.setPos({0.0,-1.55, 0.02});
-		gun.setRot({0.0, 180.0, 0.0});		
+		//gun.setPos({0.0,-1.55, 0.02});
+		//gun.setRot({0.0, 180.0, 0.0});		
 		
 }
 
@@ -136,6 +136,7 @@ void mainMenu(ECS::Registry& reg, GameMemory* mem,Input::State& state){
 
 }
 static bool CR_STATE alreadyInitialized = false;
+static bool CR_STATE firstBootup = false;
 
 /*
 NOTICE!!!!!!!!!
@@ -148,6 +149,8 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
  ALSO WEIRD QUIRK!!! INIT AND UPDATE CAN FOLLOW EACHOTHER INSIDE THE SAME FRAME!!! DONT THINK STEP WILL EXECUTE NEXT FRAME!! IT CAN EXEUCTE DIRECTLY AFTER INIT!!!;
   EG CR_MAIN CAN BE CALLED TWICE WITHIN THE SAME UPDATE FUNC
  
+
+  OBSERVER that cr load will hpappne first iteration and then immeidately after cr step will happen aswell
 */
 
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
@@ -181,10 +184,9 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 						mem->scene == GameState::Scene::MAIN_MENU;
 						*/
 
-
-
 						init(reg, api,mem->rnt);
 						alreadyInitialized = true;
+						firstBootup = true;
 					}
 				}
 				else{
@@ -197,7 +199,10 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 			case CR_STEP:{
 				
 				if(ctx->failure != CR_BAD_IMAGE){
-					
+					if(firstBootup){
+						firstBootup = false;
+						return 0;
+					}
 					
 					/*
 					switch(mem->save.scene){
@@ -220,7 +225,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 					
 					
 					*/
-					update(aspect, dt, state ,reg, api);
+					update(aspect, dt, state ,reg, api, mem);
 				}
 			}
 			break;

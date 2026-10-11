@@ -22,18 +22,28 @@ namespace Sys{
         else if (jVal.is_number_float()) {
             // Handles floats (radii, scale, damping, etc.)
             var.var = jVal.get<float>();
+            
         } 
+        
         else if (jVal.is_array() && jVal.size() == 3) {
-            // Handles glm::vec3 arrays ([x, y, z]) for positions, rotations, and extents
-            var.var = glm::vec3(
-                jVal[0].get<float>(), 
-                jVal[1].get<float>(), 
-                jVal[2].get<float>()
-            );
+            if(name != "rotation"){
+                var.var = glm::vec3(
+                    jVal[0].get<float>(), 
+                    jVal[1].get<float>(), 
+                    jVal[2].get<float>()
+                );
+            }else{
+                var.var = glm::quat(glm::radians(glm::vec3(
+                    jVal[0].get<float>(), 
+                    jVal[1].get<float>(), 
+                    jVal[2].get<float>()
+                )));
+            }
+           
         }
-        else if (jVal.is_array() && jVal.size() == 4) {
-            var.var = glm::quat(jVal[0].get<float>(), jVal[1].get<float>(), jVal[2].get<float>(), jVal[3].get<float>());
-        }
+        // else if (jVal.is_array() && jVal.size() == 4) {
+        //     var.var = glm::quat(jVal[0].get<float>(), jVal[1].get<float>(), jVal[2].get<float>(), jVal[3].get<float>());
+        // }
         else if (jVal.is_boolean()) {
             // Handles boolean flags
             var.var = jVal.get<bool>() ? 1 : 0;
@@ -43,8 +53,9 @@ namespace Sys{
     }
     void processAPI(ECS::Registry& reg, AssetRegistry& ast, EngineAPI& api,  IAssetLoader& loader){
         api.reqs.reserve(500);
-        for (auto& reqT: api.reqs) {
-
+        for (size_t i = 0; i < api.reqs.size(); ++i) {
+            auto& reqT = api.reqs[i];
+            
             switch (reqT.index()) { 
                 case 0: // REQEUEST
                 {// REQUEST{}
@@ -79,7 +90,7 @@ namespace Sys{
                         }
                         case EngineAPI::LOAD_SCENE:{
                                 std::ifstream file(req.path,std::ios::binary);
-                                nlohmann::json j = nlohmann::json::parse(file);
+                                nlohmann::ordered_json j = nlohmann::ordered_json::parse(file);
                                 
                                 if(j.contains("required_models") && j["required_models"].is_array()){
                                     for (const auto& model : j["required_models"]) {
@@ -114,7 +125,7 @@ namespace Sys{
                                         for (auto& [key, val] : entJson.items()) {
                                             // Skip non-component metadata keys
                                             if (key == "tag" || key == "model" || key == "animation" || 
-                                                key == "is_game_camera" || key == "parent_to") {
+                                                key == "is_game_camera" || key == "parent") {
                                                 continue;
                                             }
                                             std::vector<Variable> vars{};
@@ -129,9 +140,10 @@ namespace Sys{
 
                                     }
                                     for (const auto& entJson : j["entities"]){
-                                        if(entJson.contains("Tag") && entJson.contains("parent_to")){
-                                            std::string childTag = entJson["tag"];  
-                                            std::string parentTag = entJson["parent_to"];
+                                        if(entJson.contains("tag") && entJson.contains("parent")){
+                                            std
+                                            ::string childTag = entJson["tag"];  
+                                            std::string parentTag = entJson["parent"];
                                             int childId = tagToEntity[childTag];
                                             int parentId = tagToEntity[parentTag];
                                             reg.setParent(childId, parentId);

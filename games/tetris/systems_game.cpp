@@ -146,7 +146,7 @@ constexpr StateTransitions stateTable[] = {
 
 };
 
-void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg){
+void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg, RuntimeData& rnt){
     constexpr static std::array<std::string_view, 11> anims = {
     "RIG_UE5_Comando_AK_Equip",        // 0
     "RIG_UE5_Comando_AK_Aim_Fire",    // 1
@@ -165,8 +165,8 @@ void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg)
         return;
     }
     //static int CR_STATE i = 3;
-    Weapon& wpn = reg.getPool<Weapon>().data[0];
-    auto& anim = reg.getPool<Animated>().get(wpn.id);
+    
+    auto& anim = reg.getPool<Animated>().get(rnt.Entities[0]);
     
     AnimParams p{};
     p.isMoving = state.keyHeld(Input::Key::Z) || state.keyHeld(Input::Key::X) || state.keyHeld(Input::Key::C) || state.keyHeld(Input::Key::V);
@@ -185,7 +185,7 @@ void updateWeaponSystem(Input::State& state, EngineAPI& api, ECS::Registry& reg)
                     t.print();
                 }
 
-                api.setAnimation(anims[t.dst], wpn.id, t.lockNext, t.bypass); //current state updated here
+                api.setAnimation(anims[t.dst], rnt.Entities[0], t.lockNext, t.bypass); //current state updated here
                 return;
             }
         }

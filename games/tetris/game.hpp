@@ -140,13 +140,12 @@ inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State&
 
 
 struct Weapon{
-	int id{};
 	int bullets = 30;
-	REFLECT_2(id, bullets);
-	REFLECT_ADDRESS_2(id,bullets);
+	REFLECT_ADDRESS_1(bullets);
 	COMP_NAME(Weapon);
 };
+
 void init(ECS::Registry& reg, EngineAPI& api) ;
 void update(float aspect, float dt, Input::State &state, ECS::Registry &reg, EngineAPI& api) ;
 
-void updateWeaponSystem(Input::State & state, EngineAPI & api, ECS::Registry &reg);
+void updateWeaponSystem(Input::State & state, EngineAPI & api, ECS::Registry &reg, RuntimeData& rnt);

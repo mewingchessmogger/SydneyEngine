@@ -84,13 +84,11 @@ struct Collider{
     
     //NARROW COLLIDER
     enum Shape : uint32_t {NONE, SPHERE, OBB, AABB, COCONUT};
-    Shape narrowShape = NONE;  
+    uint32_t narrowShape = static_cast<uint32_t>(NONE);  
     float narrowRadius = 0.5f;
     glm::vec3 narrowExtents = glm::vec3(1.0f);
     
-    //narrowCollider
-
-    REFLECT_ADDRESS_5(offset, broadRadius, (uint32_t)narrowShape, narrowRadius, narrowExtents);
+    REFLECT_ADDRESS_5(offset, broadRadius, narrowShape, narrowRadius, narrowExtents);
     COMP_NAME(Collider);
 };
 
@@ -134,6 +132,5 @@ struct Animated{
 
         return frameIndex;
     }
-    REFLECT_ADDRESS_9(animationIndex, time, speed, duration, offset, totalFrames, layer, crossfade, isLocked);
     COMP_NAME(Animated);
 };

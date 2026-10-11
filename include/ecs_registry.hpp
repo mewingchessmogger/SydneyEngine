@@ -180,7 +180,8 @@
                 if constexpr (has_member(comp, reflectAddress())){ // this check is for rn only making sure tagonly comps can get assigned e.g empty structs
                     addresses = comp.reflectAddress();
                 }
-                
+                //this wil not be iterateed if tagonly comps
+
                 for(int i{}; i < addresses.size(); i++){
 
                     VariableAddress& v = addresses[i];
@@ -202,11 +203,22 @@
                     }
                     else if(std::holds_alternative<uint32_t*>(v.address)){
                         uint32_t* ptr = std::get<uint32_t*>(v.address);
-                        *ptr = std::get<uint32_t>(vars[i].var);
+                        // Safely check what is actually inside the variant
+                        if (std::holds_alternative<uint32_t>(vars[i].var)) {
+                            *ptr = std::get<uint32_t>(vars[i].var);
+                        } else if (std::holds_alternative<int>(vars[i].var)) {
+                            *ptr = static_cast<uint32_t>(std::get<int>(vars[i].var));
+                        }
                     }
+                    
                     else if(std::holds_alternative<glm::quat*>(v.address)){
                         glm::quat* ptr = std::get<glm::quat*>(v.address);
                         *ptr = std::get<glm::quat>(vars[i].var);
+                        
+                    }
+                    else if(std::holds_alternative<bool*>(v.address)){
+                        bool* ptr = std::get<bool*>(v.address);
+                        *ptr = std::get<bool>(vars[i].var);
                     }
                     else if(std::holds_alternative<glm::vec<3,float>*>(v.address)){
                         glm::vec<3,float>* ptr = std::get<glm::vec<3,float>*>(v.address);
