@@ -15,7 +15,10 @@ struct SaveData{
 
 
 struct RuntimeData{
+	
 	int Entities[16];
+	
+	int(*funcs[5])(int, int);
 };
 
 struct GameMemory{
@@ -26,59 +29,11 @@ struct GameMemory{
     uint8_t pad1[896 * 1024 - sizeof(RuntimeData)];
 };
 
-inline void updateCameraOrientation(Camera& cam, const Input::State& state, float sens, float aspect){
-    // 1. Mouse Look (Pitch & Yaw)
-    cam.pitch += state.mouseDY * sens;
-    cam.yaw   += state.mouseDX * sens;
 
-    // Clamp pitch to prevent camera flipping
-    if (cam.pitch >  89.0f) cam.pitch =  89.0f;
-    if (cam.pitch < -89.0f) cam.pitch = -89.0f;
 
-    // 2. Compute Direction Vectors
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-    direction.y = sin(glm::radians(cam.pitch));
-    direction.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-
-    cam.dir   = glm::normalize(direction);
-    cam.right = glm::normalize(glm::cross(cam.dir, cam.up)); // Precompute for movement
-	
-    // 3. Compute View & Projection Matrices
-    cam.view = glm::lookAt(cam.eye, cam.eye + cam.dir, cam.up);
-    cam.proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-
-}
-
-inline void updatePlayerMovement(SydX::Particle& particle, TransformInfo& transInfo, Camera& cam, Input::State& state, float moveSpeed){
-    // Calculate planar forward (flattened on Y so moving forward doesn't fly up/down)
-    glm::vec3 planarFront = glm::normalize(glm::vec3(cam.dir.x, 0.0f, cam.dir.z));
-
-    glm::vec3 desiredVelocity(0.0f);
-	
-    if (state.keyHeld(Input::Key::C)) desiredVelocity += planarFront;
-    if (state.keyHeld(Input::Key::X)) desiredVelocity -= planarFront;
-    if (state.keyHeld(Input::Key::Z)) desiredVelocity -= cam.right;
-    if (state.keyHeld(Input::Key::V)) desiredVelocity += cam.right;
-	
-    // Normalize diagonal movement so holding two keys isn't 1.41x faster
-    if (glm::length(desiredVelocity) > 0.0001f) {
-        desiredVelocity = glm::normalize(desiredVelocity) * moveSpeed;
-    }
-
-	particle.vel.x = desiredVelocity.x;
-    // Apply directly to velocity component
-    particle.vel.z =  desiredVelocity.z;
-
-	cam.eye = transInfo.position;
-    
-}
 inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State& state, float sens, float aspect, float dt)
 {
-        // float aspect = plt.aspectRatio;
-		// float dt = plt.deltaTime;
-		// Input::State &state = plt.inputState;
-
+        
         float& pitch = cam.pitch;
         float& yaw = cam.yaw;
         
@@ -100,7 +55,7 @@ inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State&
 
 		glm::vec3 cameraFront = glm::normalize(direction);
 		
-		glm::vec3& eye = cam.eye;
+		//glm::vec3& eye = cam.eye;
 		glm::vec3& cameraUp = cam.up;
 
 	
@@ -110,30 +65,27 @@ inline void updateGameCamera(Camera& cam, TransformInfo& camTrans, Input::State&
 		
 
 		if (state.keyHeld(Input::Key::C)){
-			eye += glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
+			camTrans.position += glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
 		if (state.keyHeld(Input::Key::X)){
-			eye -= glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
+			camTrans.position -= glm::vec3(cameraFront.x, cameraYAxis, cameraFront.z) * dt;
 		}
 		if (state.keyHeld(Input::Key::Z)){
-			eye -= glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
+			camTrans.position -= glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 
 		}
 		if (state.keyHeld(Input::Key::V)){
-			eye += glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
+			camTrans.position += glm::normalize(glm::cross(cameraFront, cameraUp)) * dt;
 		}
 		
-		glm::mat4 camPos = inverse(glm::lookAt(eye, cameraFront+eye, cameraUp));
-
-		camTrans.position.x = camPos[3].x;
-		camTrans.position.z = camPos[3].z;
-		eye.y = camTrans.position.y;
-		
+		camTrans.setRot(glm::vec3(pitch, yaw, 0.0f));
 		camTrans.dirty = true;
-
-		camTrans.setRot(glm::vec3(glm::degrees(glm::eulerAngles(glm::quat_cast(camPos)))));
+		//camTrans.position.x = camPos[3].x;
+		//camTrans.position.z = camPos[3].z;
+		//camTrans.setRot(cameraFront);
 		
-		cam.view = glm::lookAt(eye, cameraFront+eye, cameraUp);
+		
+		cam.view = glm::lookAt(camTrans.position, cameraFront + camTrans.position, cameraUp);
 		cam.proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 		cam.dir = cameraFront;
 }

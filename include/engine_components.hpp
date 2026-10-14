@@ -13,7 +13,23 @@ struct TransformInfo{
     uint32_t dirty = true;
     
     void setPos(const glm::vec3& newPosition) {dirty = true; position = newPosition;}
-    void setRot(const glm::vec3& newRotation) {dirty = true; quatRot = glm::quat(glm::radians(newRotation));}
+    void setRot(const glm::vec3& newRotation) {
+        dirty = true;         
+        // Interpret newRotation as (pitch, yaw, roll) in degrees
+        glm::vec3 rad = glm::radians(newRotation);
+        
+        // 1. Create Yaw quaternion around World Y-axis (0, 1, 0)
+        glm::quat yawQuat = glm::angleAxis(rad.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        
+        // 2. Create Pitch quaternion around Local X-axis (1, 0, 0)
+        glm::quat pitchQuat = glm::angleAxis(rad.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        
+        // 3. Create Roll quaternion around Local Z-axis (0, 0, 1)
+        glm::quat rollQuat = glm::angleAxis(rad.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        
+        // Multiply in order: Yaw * Pitch * Roll
+        quatRot = glm::normalize(yawQuat * pitchQuat * rollQuat);
+    }
     void setScale(const glm::vec3& newScale)  {dirty = true; scale = newScale;}
     
     void addPos(const glm::vec3& newPosition) {dirty = true; position += newPosition;}
@@ -110,6 +126,8 @@ struct Renderable{
 
     COMP_NAME(Renderable);
 };
+
+struct Events{};
 
 struct Animated{
     int animationIndex{};

@@ -3,6 +3,7 @@
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 #include "sydney_physics.hpp"
 #include <glm/gtx/norm.hpp>
+#include "event_bus.hpp"
 namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
@@ -65,12 +66,12 @@ namespace Sys{
                         case EngineAPI::LOAD_MODEL:{
                                 printf("parsing %s ...", req.path.c_str());
                                 if(!ast.isUploaded(req.path)){
-                                    continue;
+                                    loader.loadModel(req.path.c_str(), true);
+                                    printf("done!\n");
+                                }else{
+                                    printf("model alread uploaded...\n");
                                 }
-                                loader.loadModel(req.path.c_str(), true);
-                                //ldr.loadScene(req.path.c_str());
-                                printf("done!\n");
-
+                                
                                 break;
                         }			
                         case EngineAPI::ATTACH_MODEL:{
@@ -141,11 +142,12 @@ namespace Sys{
                                     }
                                     for (const auto& entJson : j["entities"]){
                                         if(entJson.contains("tag") && entJson.contains("parent")){
-                                            std
-                                            ::string childTag = entJson["tag"];  
+                                            std::string childTag = entJson["tag"];  
                                             std::string parentTag = entJson["parent"];
+                                            
                                             int childId = tagToEntity[childTag];
                                             int parentId = tagToEntity[parentTag];
+                                            printf(" child %d, parent : %d\n", childId, parentId);
                                             reg.setParent(childId, parentId);
                                         }
                                     }
@@ -444,7 +446,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
     SydX::GJK gjk{};
     SydX::EPA epa{};
     std::vector<SydX::CandidatePair> pairs{};
-    void updatePhysics(ECS::Registry& reg, float dt)
+    void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
     {
             /*you get a copy of vector filled with refs*/
             auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::Particle>();
@@ -456,6 +458,46 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                 TransformInfo& tinfo = transInfoPool.get(e);
                 integrateParticle(p,tinfo,dt);
             }
+
+
+            for(int e : bus.subscribedEntities){
+                
+                if(!collPool.hasEntity(e)){
+                    continue;
+                }
+                ECS::Entity e1 = e;
+                Collider& c1 = collPool.get(e);
+                
+                if(!rawTransPool.hasEntity(e1)){
+                    return;
+                }
+                RawTransform& r1 = rawTransPool.get(e1);
+
+                for (int j = 0; j < collPool.count; j++){
+                    ECS::Entity e2 = collPool.dense[j];
+                    if(e == e2){
+                        continue;
+                    }
+
+                    Collider& c2 = collPool.data[j];
+                    RawTransform& r2 = rawTransPool.get(e2);
+                    
+                    if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+                        auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
+                        if(gjk.intersect(supportFn)){
+                            bus.collisions.push_back({e,e2});
+
+                        }else{
+
+                        }
+                        gjk.reset();
+
+
+                    }
+
+                }
+            }
+            
 
             /*COLLISION DETECTION*/
             for (int i{}; i < collPool.count; i++){
@@ -472,9 +514,13 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                     if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
                         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
                         if(gjk.intersect(supportFn)){
-                            //printf("NARROW COLLISION!!!\n");
+                            
                             SydX::ResultEPA result = epa.run(gjk.abcd(), supportFn);
+                            
                             //printf("EPA Result - Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", result.normal.x, result.normal.y, result.normal.z, result.depth);
+                            if(!particPool.hasEntity(e1) || !particPool.hasEntity(e2)){
+                                continue;
+                            }
                             pairs.push_back({.A = e1, .B = e2, .n = result.normal, .depth = result.depth});
                             //add candidate
                         }else{

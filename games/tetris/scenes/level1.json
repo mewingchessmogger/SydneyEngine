@@ -18,7 +18,7 @@
                 "dirty": 1
             },
             "Collider": {
-                "offset": [0.0, -0.2, 0.0],
+                "offset": [0.0, -2.0, 0.0],
                 "broadRadius": 1.0,
                 "narrowShape": 1,
                 "narrowRadius": 0.3,
@@ -70,7 +70,7 @@
             "parent" : "MainCamera",
             "TransformInfo": {
                 "position": [0.0,-1.55, 0.02],
-                "rotation": [0.0, 0.0, 0.0],
+                "rotation": [0.0, 180.0, 0.0],
                 "scale": [1.0, 1.0, 1.0],
                 "dirty": 1
             }

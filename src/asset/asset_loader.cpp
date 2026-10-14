@@ -453,7 +453,7 @@
             bool notInRegistry =  reg.StringToIntegerSkinnedModelMap.find(filename) == reg.StringToIntegerSkinnedModelMap.end();
             bool isFileEmpty = false;
             if (cacheExist && notInRegistry){
-                printf(" %s is in cache!! skipping assimp.. ", filename.c_str());
+                printf(" %s is in cache!! skipping assimp.. \n", filename.c_str());
                 AssetRegistry::SkinnedModel mdl = {.name = filename};
                 readSkinnedFile(cachedPath, mdl);
                 reg.IntegerToStringSkinnedModelMap[mdlCounter] = mdl.name;
@@ -469,7 +469,7 @@
             bool notInRegistry =  reg.StringToIntegerStaticModelMap.find(filename) == reg.StringToIntegerStaticModelMap.end();
             bool isFileEmpty = false;
             if (cacheExist && notInRegistry){
-                printf(" %s is in cache!! skipping assimp.. ", filename.c_str());
+                printf(" %s is in cache!! skipping assimp.. \n", filename.c_str());
                 AssetRegistry::StaticModel mdl = {.name = filename};
                 readStaticFile(cachedPath, mdl);
                 reg.IntegerToStringStaticModelMap[mdlCounter] = mdl.name;

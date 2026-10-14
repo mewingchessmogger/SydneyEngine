@@ -2,12 +2,15 @@
 //#include <variant>
 //#include <vector>
 #include  "string_hasher.hpp"
+#include "event_bus.hpp"
 class EngineAPI{
     private:
     int gameCameraEntity{};
     
 
     public:
+    EventBus bus{};
+
     enum Command{
       LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_ETE_BONE, COCONUT
     };

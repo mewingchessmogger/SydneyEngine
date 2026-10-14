@@ -95,4 +95,4 @@
     static constexpr uint64_t getHash(){\
         return Hasher::stringview(#type);\
     }\
-    
+

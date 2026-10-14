@@ -35,7 +35,7 @@ void Engine::run(){
 
         Sys::finalizeTransforms(reg); 
 
-        Sys::updatePhysics(reg, plt.deltaTime);
+        Sys::updatePhysics(reg, api.bus, plt.deltaTime);
         
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
