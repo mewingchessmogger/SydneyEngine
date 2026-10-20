@@ -17,6 +17,8 @@ struct CollisionEvent{
 
 struct Subscribed{
     int ent{-1};
+    //void(*callback)(int, int);
+    int vTableSlot = -1;
 };
 
 
@@ -25,7 +27,7 @@ class EventBus{
     
     public:
     std::vector<CollisionEvent> collisions{};
-    std::vector<int> subscribedEntities{};
+    std::vector<Subscribed> subscribedEntities{};
     EventBus() {
         evnts = {{CollisionEvent::getHash(), 0}};
     }

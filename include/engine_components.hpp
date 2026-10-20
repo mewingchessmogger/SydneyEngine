@@ -13,39 +13,36 @@ struct TransformInfo{
     uint32_t dirty = true;
     
     void setPos(const glm::vec3& newPosition) {dirty = true; position = newPosition;}
-    void setRot(const glm::vec3& newRotation) {
-        dirty = true;         
-        // Interpret newRotation as (pitch, yaw, roll) in degrees
-        glm::vec3 rad = glm::radians(newRotation);
-        
-        // 1. Create Yaw quaternion around World Y-axis (0, 1, 0)
-        glm::quat yawQuat = glm::angleAxis(rad.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        
-        // 2. Create Pitch quaternion around Local X-axis (1, 0, 0)
-        glm::quat pitchQuat = glm::angleAxis(rad.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        
-        // 3. Create Roll quaternion around Local Z-axis (0, 0, 1)
-        glm::quat rollQuat = glm::angleAxis(rad.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        
-        // Multiply in order: Yaw * Pitch * Roll
-        quatRot = glm::normalize(yawQuat * pitchQuat * rollQuat);
-    }
-    void setScale(const glm::vec3& newScale)  {dirty = true; scale = newScale;}
+        inline void setRot(const glm::vec3& newRotation) {
+            dirty = true;
     
-    void addPos(const glm::vec3& newPosition) {dirty = true; position += newPosition;}
-    
-
-    void addRot(const glm::vec3& newRotation) {
-        dirty = true;
-        glm::vec3 rad = glm::radians(newRotation);
-        float angle = glm::length(rad);
-        if (angle < 0.0001f){ // when dt is supah small, this will return, 
-            return;
+            // Convert to radians
+            glm::vec3 rad = glm::radians(newRotation);
+            
+            // Construct quaternions for each axis individually
+            glm::quat qPitch = glm::angleAxis(rad.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::quat qYaw   = glm::angleAxis(rad.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::quat qRoll  = glm::angleAxis(rad.z, glm::vec3(0.0f, 0.0f, 1.0f));
+            
+            // Compose in desired order (e.g., Yaw * Pitch * Roll)
+            quatRot = glm::normalize(qYaw * qPitch * qRoll);
         }
-        glm::vec3 axis = glm::normalize(rad); 
-        glm::quat delta = glm::angleAxis(angle, axis);
-        quatRot = glm::normalize(quatRot * delta);
-    }
+        inline void setScale(const glm::vec3& newScale)  {dirty = true; scale = newScale;}
+        
+        inline void addPos(const glm::vec3& newPosition) {dirty = true; position += newPosition;}
+        
+
+        void addRot(const glm::vec3& newRotation) {
+            dirty = true;
+            glm::vec3 rad = glm::radians(newRotation);
+            float angle = glm::length(rad);
+            if (angle < 0.0001f){ // when dt is supah small, this will return, 
+                return;
+            }
+            glm::vec3 axis = glm::normalize(rad); 
+            glm::quat delta = glm::angleAxis(angle, axis);
+            quatRot = glm::normalize(quatRot * delta);
+        }
     void addRot(const glm::vec3& newRotation, float dt) {
         addRot(newRotation * dt);
     }

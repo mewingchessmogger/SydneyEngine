@@ -14,9 +14,9 @@ void Engine::run(){
     //planned future is that you can switch out games like a cartridge, cr.h is amazing library used here to streamline hot reload DLLs
     RawMemory mem(1024*1024); // 1024 kilobytes
     PassedStructuresDLL psd = {.reg = &reg, .api = &api, .state = &plt.inputState, .aspect = &plt.aspectRatio, .dt = & plt.deltaTime, .mem = &mem};
+    Input::State dummyState{};
     cr_plugin game_plugin = {.userdata = &psd}; // we just pass all state we want in dll as a pointer here!
     cr_plugin_open(game_plugin, "games/tetris/Debug/TetrisDLL.dll"); //game plugin contains the pointer! works if DLL shares same def as PassedStructuresDLL
-
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt 
         bool shutDown = debugStuff(plt, mode, ldr.getAssetReg()); if(shutDown) { break;}
@@ -25,6 +25,10 @@ void Engine::run(){
         
         
         if (mode == EngineMode::GAME){        
+            psd.state = &plt.inputState;
+            cr_plugin_update(game_plugin);
+        }else{
+            psd.state = &dummyState;
             cr_plugin_update(game_plugin);
         }
         
@@ -39,7 +43,9 @@ void Engine::run(){
         
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
-        Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
+        if(mode== EngineMode::EDITOR){
+            Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
+        }
         
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
         

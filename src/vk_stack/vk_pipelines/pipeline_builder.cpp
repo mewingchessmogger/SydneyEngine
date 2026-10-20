@@ -97,7 +97,7 @@ PipelineBuilder& PipelineBuilder::setScissorAndViewport(vk::Extent2D ext)
 	return *this;
 }
 
-PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace)
+PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace, vk::CullModeFlags cullMode)
 {
 
 	razInfo
@@ -105,7 +105,7 @@ PipelineBuilder& PipelineBuilder::setRasterizerInfo(vk::PolygonMode poly, vk::Fr
 		.setRasterizerDiscardEnable(vk::False)
 		.setPolygonMode(poly)
 
-		.setCullMode(vk::CullModeFlagBits::eBack)
+		.setCullMode(cullMode)
 		
 		.setFrontFace(frontFace)
 		.setDepthBiasEnable(vk::True)

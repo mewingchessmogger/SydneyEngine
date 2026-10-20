@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 4.00)
 
 project(TetrisDLL)
-
+set(CMAKE_BUILD_PARALLEL_LEVEL 8)
+set(CMAKE_CACHE_VERSION 2)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -24,6 +25,17 @@ set(DLL_SOURCES
 )
 
 add_library(${PROJECT_NAME} SHARED ${DLL_SOURCES})
+# 4. Target-specific configurations (MUST come AFTER add_library)
+
+# if(MSVC)
+#     target_compile_options(${PROJECT_NAME} PRIVATE 
+#         /Bt          # Measures time spent in C1/C1XX (Frontend: parsing & headers) and C2 (Backend: codegen)
+#         /d2cgsummary # Prints detailed code-generation and optimization pass timings
+#     )
+#     target_link_options(${PROJECT_NAME} PRIVATE 
+#         /TIME        # Prints detailed linker pass timings (LTCG, symbol resolution, PDB emission)
+#     )
+# endif()
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE pch_game.hpp)
 
@@ -31,7 +43,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE pch_game.hpp)
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../library"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../library/"
     
 )
 

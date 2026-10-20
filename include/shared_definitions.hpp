@@ -41,6 +41,7 @@ struct CreatePipelineInfo {
     int clrAttachCount{};
     vk::Bool32 isDepthPass{};
     vk::Bool32 blendEnable{};
+    vk::CullModeFlags cullMode{};
     // Fluent Setters
     CreatePipelineInfo& setClrAttachCount(uint32_t count) { clrAttachCount = count; return *this; }
     CreatePipelineInfo& setClrFormat(vk::Format format) { clrFormat = format; return *this; }
@@ -50,12 +51,11 @@ struct CreatePipelineInfo {
     CreatePipelineInfo& setExtent(vk::Extent2D extent) { viewportExtent = extent; return *this; }
     CreatePipelineInfo& setPolyMode(vk::PolygonMode mode) { polyMode = mode; return *this; }
     CreatePipelineInfo& setFrontFace(vk::FrontFace face) { fFace = face; return *this; }
+    CreatePipelineInfo& setCullMode(vk::CullModeFlags cull) { cullMode = cull; return *this; }
     CreatePipelineInfo& setBytesPC(uint32_t bytes) { bytesPC = bytes; return *this; }
     CreatePipelineInfo& setStagePC(vk::ShaderStageFlags flags) { stagePC = flags; return *this; }
     CreatePipelineInfo& setDepthTest(vk::Bool32 enable) { depthTestEnable = enable; return *this; }
     CreatePipelineInfo& setDepthWrite(vk::Bool32 enable) { depthWriteEnable = enable; return *this; }
     CreatePipelineInfo& setDescSetLayout(std::vector<vk::DescriptorSetLayout> layouts) { descSetLayouts = layouts; return *this; }
     CreatePipelineInfo& setBlendState(vk::Bool32 isDpthPass, vk::Bool32 blndEnable) {isDepthPass = isDpthPass; blendEnable = blndEnable ; return *this; }
-
-    
 };

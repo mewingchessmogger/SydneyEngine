@@ -18,7 +18,7 @@ struct RuntimeData{
 	
 	int Entities[16];
 	
-	int(*funcs[5])(int, int);
+	std::array<void(*)(int, int, ECS::Registry*),10> callbacks{};
 };
 
 struct GameMemory{

@@ -303,15 +303,15 @@ namespace Sys{
             
             RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
             
-            // broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
-            // broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
-            // for(auto& mesh : sphere.meshes){
-            //     broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-            //     broadPkt.indexCount = mesh.indexCount;
-            //     broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+            broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+            broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
+            for(auto& mesh : sphere.meshes){
+                broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                broadPkt.indexCount = mesh.indexCount;
+                broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                 
-            //     packets.push_back(broadPkt);
-            // }
+                packets.push_back(broadPkt);
+            }
             
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
             narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
@@ -460,8 +460,8 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
             }
 
 
-            for(int e : bus.subscribedEntities){
-                
+            for(Subscribed& sub : bus.subscribedEntities){
+                int e = sub.ent;
                 if(!collPool.hasEntity(e)){
                     continue;
                 }
@@ -486,13 +486,8 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
                         if(gjk.intersect(supportFn)){
                             bus.collisions.push_back({e,e2});
-
-                        }else{
-
                         }
                         gjk.reset();
-
-
                     }
 
                 }

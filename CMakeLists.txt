@@ -57,7 +57,15 @@ add_executable( ${PROJECT_NAME} ${SOURCE_FILES})
 
 # 2. Define the path to the DLL
 target_precompile_headers(${PROJECT_NAME} PRIVATE include/pch.hpp)
-
+# if(MSVC)
+#     target_compile_options(${PROJECT_NAME} PRIVATE 
+#         /Bt          # Measures time spent in C1/C1XX (Frontend: parsing & headers) and C2 (Backend: codegen)
+#         /d2cgsummary # Prints detailed code-generation and optimization pass timings
+#     )
+#     target_link_options(${PROJECT_NAME} PRIVATE 
+#         /TIME        # Prints detailed linker pass timings (LTCG, symbol resolution, PDB emission)
+#     )
+# endif()
 target_include_directories(${PROJECT_NAME} PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/src"

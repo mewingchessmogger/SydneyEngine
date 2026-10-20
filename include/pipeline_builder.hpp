@@ -17,7 +17,7 @@ public:
     PipelineBuilder& setAssemblyInfo(vk::PrimitiveTopology top = vk::PrimitiveTopology::eTriangleList);
 	PipelineBuilder& setScissorAndViewport(vk::Extent2D ext);
 
-    PipelineBuilder &setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace);
+    PipelineBuilder &setRasterizerInfo(vk::PolygonMode poly, vk::FrontFace frontFace, vk::CullModeFlags cullMode);
 
 	PipelineBuilder& setMultiSampling();
 	PipelineBuilder& setBlendState(bool isDepthPass = false, bool blendEnable = true);
