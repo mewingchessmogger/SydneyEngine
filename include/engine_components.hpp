@@ -124,7 +124,6 @@ struct Renderable{
     COMP_NAME(Renderable);
 };
 
-struct Events{};
 
 struct Animated{
     int animationIndex{};

@@ -78,14 +78,6 @@ void main() {
     pos     += matBuffer.mats[v.boneIDs[2] + boneOffset] * v.weights[2] *vec4(v.pos, 1.0);
     pos     += matBuffer.mats[v.boneIDs[3] + boneOffset] * v.weights[3] *vec4(v.pos, 1.0);
 
-	// if (secBoneOffset != 0){
-    //     pos += matBuffer.mats[v.boneIDs[0] + secBoneOffset] * v.weights[0] *vec4(v.pos, 1.0);
-    //     pos += matBuffer.mats[v.boneIDs[1] + secBoneOffset] * v.weights[1] *vec4(v.pos, 1.0);
-    //     pos += matBuffer.mats[v.boneIDs[2] + secBoneOffset] * v.weights[2] *vec4(v.pos, 1.0);
-    //     pos += matBuffer.mats[v.boneIDs[3] + secBoneOffset] * v.weights[3] *vec4(v.pos, 1.0);
-    // }
-    
-
 //* boneTransform
     gl_Position = cam.proj * cam.view * pc.model* pos;
     

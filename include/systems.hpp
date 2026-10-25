@@ -12,7 +12,8 @@ namespace Sys{
     void buildRenderPackets(ECS::Registry& reg, AssetRegistry& ast, std::vector<RenderPkt>& packets);
     void buildColliderPackets(ECS::Registry& reg, AssetRegistry& ast, std::vector<RenderPkt>& packets);
     void updateAnimations(ECS::Registry& reg, float dt);
-    void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt);
+
+    void updatePhysics(ECS::Registry &reg, EventBus &bus, float dt);
     void finalizeTransforms(ECS::Registry& reg);
     
 };

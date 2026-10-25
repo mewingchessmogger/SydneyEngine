@@ -17,6 +17,8 @@ void Engine::run(){
     Input::State dummyState{};
     cr_plugin game_plugin = {.userdata = &psd}; // we just pass all state we want in dll as a pointer here!
     cr_plugin_open(game_plugin, "games/tetris/Debug/TetrisDLL.dll"); //game plugin contains the pointer! works if DLL shares same def as PassedStructuresDLL
+
+
     while (plt.windowOpen()) {
         plt.updateState(); // update keyboard and dt 
         bool shutDown = debugStuff(plt, mode, ldr.getAssetReg()); if(shutDown) { break;}
@@ -38,17 +40,14 @@ void Engine::run(){
         reg.updateHierarchyLevels(); reg.sortHierarchyPool();
 
         Sys::finalizeTransforms(reg); 
-
         Sys::updatePhysics(reg, api.bus, plt.deltaTime);
-        
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
-        if(mode== EngineMode::EDITOR){
+
+        if(mode == EngineMode::EDITOR){
             Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
         }
-        
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
-        
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))/*buncha stuff rebuilt inside validateImage if window is resized including imgui stuff, */
         {
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
@@ -59,8 +58,7 @@ void Engine::run(){
             };
             
             stk.updateUBO(activeCam.view, activeCam.proj);
-
-            stk.renderToTarget();
+            stk.renderToTarget(); //there is target image, which is later rendered onto imgui viewport  or standard viewport image directly depending on enginemode
 
             if(mode == EngineMode::EDITOR){
                 stk.blitTargetToViewport(); //viewport in imgui
@@ -74,6 +72,8 @@ void Engine::run(){
             }
             stk.endFrame();
         }
+
+        
         plt.inputState.clearCursorDeltas();
     }
     plt.shutdown();

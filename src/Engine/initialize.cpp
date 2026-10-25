@@ -52,7 +52,7 @@ void Engine::initialize(){
     //creating Ecs Pools that engine completely knows about, game can create its own components that engine dont know complete defintion of, all components need COMP_NAME macro to function
     // shitty ways of doing same funcitonalty as the comp_name macro -> https://stackoverflow.com/questions/1055452/c-get-name-of-type-in-template
 
-    reg.createPool<SydX::Particle>();
+    
     reg.createPool<TransformInfo>();
     reg.createPool<RawTransform>();
     reg.createPool<Collider>();
@@ -60,7 +60,9 @@ void Engine::initialize(){
     reg.createPool<Camera>();
     reg.createPool<Animated>();
     
-   
-
+    reg.createPool<SydX::Particle>();
+    reg.createPool<SydX::RigidBody>();
+    
+    
 
 }

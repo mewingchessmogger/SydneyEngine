@@ -1,6 +1,6 @@
 
 #include "game.hpp"
-#include "sydney_physics.hpp"
+#include "sydney_physics_components.hpp"
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 inline glm::quat eulerDeg(glm::vec3 deg){
@@ -17,26 +17,29 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	cam, cam, floor,women, gun
 	0,1,2,3,4
 	*/
-	TransformInfo t = {.position = glm::vec3(2.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 3.0, 1.0, 4.0 } };
-	Collider c = {.offset = {0.0,0.8,0.0}, .broadRadius = 5.0f, .narrowShape = Collider::AABB, .narrowExtents = {3.0,1.2,4.0}};
+	TransformInfo t = {.position = glm::vec3(2.0, -5.0, 0.0), .quatRot = {}, .scale = glm::vec3{ 7.0, 1.0, 7.0 } };
+	Collider c = {.offset = {0.0,0.0,0.0}, .broadRadius = 10.0f, .narrowShape = Collider::AABB, .narrowExtents = {7.0,1.0,7.0}};
 
 	int floor = reg.createEntity();
 	
 	reg.add(floor, t, c);
-	SydX::Particle p{};
+	SydX::RigidBody p{};
 	p.inverseMass = 0.0;
+	p.position = glm::vec3(2.0, -5.0, 0.0);
+
 	reg.add(floor,p);
 	api.attachModel("cube.glb", floor);
 
 	int women = reg.createEntity();
 	
-	TransformInfo w = {.position = {0.0, 2.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
-	reg.add(women, w);
-	api.attachModel("shibahu.glb", women);
-	api.setAnimation("Take 001", women);
-	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
-	reg.add(women, SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f});
+	// TransformInfo w = {.position = {-1.0, 2.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
+	// reg.add(women, w);
+	// api.attachModel("shibahu.glb", women);
+	// api.setAnimation("Take 001", women);
+	// reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
+	// reg.add(women, SydX::RigidBody{.inverseMass = 5.0, .position = {0.0, 2.0, 0.0}});
 
+	
 
 
 	int gun = reg.createEntity();
@@ -49,16 +52,16 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
     api.setGameCamera(camera);
 	reg.add(camera, TransformInfo{.position = {0.0,0.0, 0.0}});
 	reg.emplace<Camera>(camera);
-	//reg.add(camera, Collider{.offset = {0.0, 0.0, 0.0}, .narrowShape = Collider::OBB, .narrowExtents = {0.20,0.20,0.20}});
+	reg.add(camera, Collider{.offset = {0.0, 0.0, 0.0}, .narrowShape = Collider::OBB, .narrowExtents = {0.20,0.20,0.20}});
 
 	reg.setParent(gun, camera);
 	
 	int player = reg.createEntity();
 	reg.emplace<TransformInfo>(player);
-	reg.add(player, Collider{.offset = {0.0, -0.20, 0.0},.broadRadius = 1.1, .narrowShape = Collider::AABB, .narrowExtents = {0.25,0.75,0.25}});
+	reg.add(player, Collider{.offset = {0.0, -0.20, 0.0}, .broadRadius = 1.1, .narrowShape = Collider::AABB, .narrowExtents = {0.25,0.75,0.25}});
 	reg.setParent(camera, player);
 	
-	reg.add(player, SydX::Particle{.inverseMass = 1.0f, .vel = {}, .acc = {0.0, -1.0, 0.0}, .damping = 0.99f, .bounciness = 0.2});
+	reg.add(player, SydX::RigidBody{.inverseMass = 5.0, .position = {1.0, 2.0, 0.0}});
 	
 	
 	// gun.setPos({0.0,-1.57, -0.02});
@@ -75,7 +78,10 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		Camera& camera = reg.getPool<Camera>().get(api.getGameCamera()); 
 		//SydX::Particle& camParticle =  reg.getPool<SydX::Particle>().get(api.getGameCamera()); 
 		TransformInfo& cameraTrans = reg.getPool<TransformInfo>().get(api.getGameCamera()); 
-		TransformInfo& playerTrans = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().get(api.getGameCamera()).parent);
+		ECS::Entity playerEntity = reg.getPool<ECS::Hierarchic>().get(api.getGameCamera()).parent;
+
+		
+		SydX::RigidBody& playerRB = reg.getPool<SydX::RigidBody>().get(playerEntity);
 		
 		//*********************************** */
 		
@@ -113,27 +119,42 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		float cameraYAxis{};
 		
 
-		glm::vec3 moveForward = glm::vec3(cameraDir.x, cameraYAxis, cameraDir.z) * dt;
-		glm::vec3 moveRight = glm::normalize(glm::cross(cameraDir, cameraUp)) * dt;
+		glm::vec3 flatDir = glm::normalize(glm::vec3(cameraDir.x, 0.0f, cameraDir.z));
+		glm::vec3 moveRight = glm::normalize(glm::cross(flatDir, cameraUp));
 
+		glm::vec3 inputDir(0.0f);
 		if (state.keyHeld(Input::Key::C)) {
-			playerTrans.addPos(moveForward);
+			inputDir += flatDir;
 		}
 		if (state.keyHeld(Input::Key::X)) {
-			playerTrans.addPos(-moveForward);
+			inputDir -= flatDir;
 		}
 		if (state.keyHeld(Input::Key::Z)) {
-			playerTrans.addPos(-moveRight);
+			inputDir -= moveRight;
 		}
 		if (state.keyHeld(Input::Key::V)) {
-			playerTrans.addPos(moveRight);
+			inputDir += moveRight;
 		}
-
+		
+		if (state.keyHeld(Input::Key::Backspace)) {
+			playerRB.velocity.y = 5.0;
+		}
+		float moveSpeed = 6.0f;
+		if (glm::length2(inputDir) > 0.0f) {
+			inputDir = glm::normalize(inputDir);
+			// Override only X and Z velocity, leaving Y (gravity/jumping) completely intact!
+			playerRB.velocity.x = inputDir.x * moveSpeed;
+			playerRB.velocity.z = inputDir.z * moveSpeed;
+		} else {
+			// Apply damping/friction so the player stops immediately when keys are released
+			playerRB.velocity.x *= 0.15f;
+			playerRB.velocity.z *= 0.15f;
+		}
 		
 		cameraTrans.quatRot = glm::quatLookAt(cameraDir,cameraUp);
 		cameraTrans.dirty = true;
 		
-		camera.view = glm::lookAt(playerTrans.position, cameraDir + playerTrans.position, cameraUp);
+		camera.view = glm::lookAt(playerRB.position, cameraDir + playerRB.position, cameraUp);
 		camera.proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 		camera.dir =cameraDir;
 
@@ -144,7 +165,6 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		
 
 
-		//api.bus.handleCollisionSubscriptions();
 
 		for(int i{}; i < api.bus.subscribedEntities.size();){
 			Subscribed& sub = api.bus.subscribedEntities[i];
@@ -156,10 +176,10 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 					mem->rnt.callbacks[sub.vTableSlot](collision.self, collision.other, &reg);
 
 					//sub.callback(collision.self, collision.other);
-					reg.destroy(e);
-					api.bus.subscribedEntities[i] = api.bus.subscribedEntities.back();
-					api.bus.subscribedEntities.pop_back();
-					swappedAndPopped = true;
+					// reg.destroy(e);
+					// api.bus.subscribedEntities[i] = api.bus.subscribedEntities.back();
+					// api.bus.subscribedEntities.pop_back();
+					// swappedAndPopped = true;
 					break;
 				}
 			}
@@ -183,14 +203,11 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			int bullet = reg.createEntity();
-			if((bullet % 2) == 0){
-				api.bus.subscribedEntities.push_back({bullet, 0});
-			}else{
-				api.bus.subscribedEntities.push_back({bullet, 1});
-			}
-			reg.add(bullet,TransformInfo{.position = playerTrans.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
-			reg.add(bullet, SydX::Particle{.inverseMass = 1.0f, .vel = 5.0f * camera.dir, .acc = {0.0, -4.0,0.0}, .damping = 0.99f});
-			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowRadius = 0.3});
+			api.bus.subscribedEntities.push_back({bullet, 0});
+			
+			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
+			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = 5.0f * camera.dir});
+			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::AABB, .narrowExtents = {0.2,0.2,0.2}});
 			api.attachModel("cube.glb", bullet);
 		}
 
@@ -236,13 +253,15 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
   OBSERVER that cr load will hpappne first iteration and then immeidately after cr step will happen aswell
 */
 void print1(int e1, int e2, ECS::Registry* reg){
-	printf("hello!\n");
+
+	SydX::Particle& p = reg->getPool<SydX::Particle>().get(e1);
+	printf("bullet vel: %f, %f, %f\n", p.vel.x,p.vel.y,p.vel.z);
 }
 void print2(int e1, int e2, ECS::Registry* reg){
-	
-	printf("goodbye!\n");
-}
 
+	SydX::Particle& p = reg->getPool<SydX::Particle>().get(e1);
+	printf("bullet vel: %f, %f, %f\n", p.vel.x,p.vel.y,p.vel.z);
+}
 
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
@@ -258,10 +277,10 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 		{
 			case CR_LOAD:
 			{
-				mem->rnt.callbacks = {print1,print2};
 				printf("RELOADING DONE (OR FIRST LOAD)\n");
 				if(ctx->failure != CR_BAD_IMAGE){
-
+					mem->rnt.callbacks = {print1, print2};
+					
 					/*
 					remap all function poointers 
 					*/
@@ -318,6 +337,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 			break;
 
 			case CR_UNLOAD:{
+				mem->rnt.callbacks = {};
 				printf("UNLOAD\n");
 				
 			}

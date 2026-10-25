@@ -103,6 +103,13 @@
                 // int i = sparse[e]; // int i = sparse[i / PAGE_SIZE][i % PAGE_SIZE]
                 // return data[i];
             }
+            std::tuple<T&, T&> get(Entity e1, Entity e2){
+                return {get(e1), get(e2)};
+            }
+            
+            std::tuple<T&, T&> get(std::array<Entity, 2> ents){
+                return {get(ents[0]), get(ents[1])};
+            }
 
             void remove(Entity e) override{
                 

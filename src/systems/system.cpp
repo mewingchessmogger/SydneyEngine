@@ -4,6 +4,8 @@
 #include "sydney_physics.hpp"
 #include <glm/gtx/norm.hpp>
 #include "event_bus.hpp"
+#include <unordered_set>
+
 namespace Sys{
     using Request = EngineAPI::Request;
     using AnimationRequest = EngineAPI::AnimationRequest;
@@ -278,11 +280,6 @@ namespace Sys{
 
 
         }
-
-        
-        
-
-
     }
     
     void buildColliderPackets(ECS::Registry& reg, AssetRegistry& ast, std::vector<RenderPkt>& packets){
@@ -412,27 +409,6 @@ namespace Sys{
     }
     
 
-    void integrateParticle(Particle& particle, TransformInfo& tinfo, float dt, bool accurateDamping = true){
-        
-        if (particle.inverseMass <= 0.0f) return;
-
-        
-        assert(dt >= 0);
-        // p is position 
-        // p' means derivative of p, p'' means second derivative and so on...
-        tinfo.addPos(particle.vel * dt); // p = p + p'*t + [(1/2) * p''*t^2] <- acc part usually neglibigle in pos update so we ignore 
-        //printf("Entity: %f, %f, %f", trans.worldPosition.x, trans.worldPosition.y,trans.worldPosition.z);
-        particle.vel += particle.acc * dt; // p' = p' * d + p'' * t
-        
-        
-        // CODE DOES THIS BUT THIS DOESNT FOLLOW MATH correctly! CHECK PAGE 53 IN IAN MILLINGTON
-        if (accurateDamping){
-            particle.vel *= powf(particle.damping,dt);    
-        }else{
-            particle.vel *= particle.damping;
-        }
-       
-    }
 /*  
 
     3x3 top left is LINEAR trans OF ROTATION * SCALING // 
@@ -442,25 +418,142 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
        [0.0, 0.0, 0.0, 1.0]     [1.0]
 */
 
+    
 
-    SydX::GJK gjk{};
-    SydX::EPA epa{};
-    std::vector<SydX::CandidatePair> pairs{};
+    // void collectCollisions(ECS::Registry& reg, EventBus& bus, float dt, std::vector<SydX::CandidatePair>& pairs){
+    //     static SydX::GJK gjk{};
+    //     static SydX::EPA epa{};
+    //     auto [rawTransPool, collPool, rigBodPool] = reg.getPools<RawTransform, Collider, SydX::RigidBody>();
+
+    //     for (int i{}; i < collPool.count; i++){
+    //             ECS::Entity e1 = collPool.dense[i]; Collider& c1 = collPool.data[i];
+    //             if(!rawTransPool.hasEntity(e1)){
+    //                 return;
+    //             }
+    //             RawTransform& r1 = rawTransPool.get(e1);
+
+    //             for (int j = i + 1; j < collPool.count; j++){
+    //                 ECS::Entity e2 = collPool.dense[j]; Collider& c2 = collPool.data[j];
+    //                 RawTransform& r2 = rawTransPool.get(e2);
+                    
+    //                 if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
+    //                     auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
+    //                     if(gjk.intersect(supportFn)){
+                            
+    //                         SydX::ResultEPA result = epa.run(gjk.abcd(), supportFn);
+                            
+                            
+    //                         if(!rigBodPool.hasEntity(e1) || !rigBodPool.hasEntity(e2)){
+    //                             continue;
+    //                         }
+    //                         pairs.push_back({.A = e1, .B = e2, .n = result.normal, .depth = result.depth});
+    //                         //add candidate
+    //                     }else{
+    //                         //printf("FALSE COLLISION!!!\n");
+    //                     }
+    //                     gjk.reset();
+
+
+    //                 }
+
+    //             }
+    //         }
+    // } 
+
+     void collectBroadCandidates(ECS::Registry& reg, EventBus& bus, float dt, std::vector<SydX::CollisionCandidate>& candidates, SydX::GJK& gjk){
+        auto [collPool, rigBodPool] = reg.getPools<Collider, SydX::RigidBody>();
+        
+        
+        for (int i{}; i < rigBodPool.count; i++){
+            ECS::Entity e1 = rigBodPool.dense[i]; 
+            SydX::RigidBody& rb1 = rigBodPool.data[i];
+            Collider& c1 = collPool.get(e1);
+
+            for (int j = i + 1; j < rigBodPool.count; j++){
+                ECS::Entity e2 = rigBodPool.dense[j];     
+                SydX::RigidBody& rb2 = rigBodPool.data[j];
+                Collider& c2 = collPool.get(e2);
+                if (SydX::checkMidPhaseRB(c1, c2, rb1.position, rb2.position)){
+                        candidates.push_back({{e1,e2}, {}});
+                }
+            }
+        }
+
+    } 
     void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
     {
-            /*you get a copy of vector filled with refs*/
-            auto [transInfoPool, rawTransPool, collPool, particPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::Particle>();
-            /*scuffed PHYSICS*/
-            /*INTEGRATION STEP */
-            for (int i{}; i < particPool.count; i++){
-                ECS::Entity e = particPool.dense[i];
-                Particle& p = particPool.data[i];
-                TransformInfo& tinfo = transInfoPool.get(e);
-                integrateParticle(p,tinfo,dt);
+        auto [transInfoPool, rawTransPool, collPool, rigBodPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::RigidBody>();
+        static SydX::EPA epa{};
+        static SydX::GJK gjk{};
+
+        static std::vector<SydX::CollisionCandidate> candidates{};
+        glm::vec3 gravity = {0.0, -1.0, 0.0};
+        
+        candidates.clear();
+
+        collectBroadCandidates(reg, bus, dt, candidates, gjk);
+        int kSubsteps = 4;
+        float substep = dt / kSubsteps;
+
+        for(int step = 0; step < kSubsteps; step++){
+            for (int i{}; i < rigBodPool.count; i++){
+                SydX::RigidBody& rb = rigBodPool.data[i];
+
+                if(rb.inverseMass <= 0.0){
+                    continue;
+                }
+                rb.prevPosition = rb.position;
+                rb.velocity = rb.velocity + substep * gravity * rb.inverseMass;
+                rb.position = rb.position + substep * rb.velocity;
+            }
+            
+            for(auto& pair: candidates){
+
+                auto [c1, c2] = collPool.get(pair.entities);
+                auto [rb1, rb2] = rigBodPool.get(pair.entities);
+            
+                float w1 = rb1.inverseMass;
+                float w2 = rb2.inverseMass;
+                float wTotal = w1 + w2;
+                if(wTotal <= 0.0){
+                    continue;
+                }                
+                auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_RigidBody(dir, c1, c2, rb1, rb2);};            
+                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
+                if(res.intersected){
+                    SydX::EPA::ResultEPA res2 = epa.run(res.abcd, supportFn);
+                    rb1.position -= res2.normal * res2.depth * (w1 / wTotal); // += depends on the support functions direction A -B or B-A
+                    rb2.position += res2.normal * res2.depth * (w2 / wTotal);
+                }
+
+            
+
+            }
+            for (int i{}; i < rigBodPool.count; i++){
+                SydX::RigidBody& rb = rigBodPool.data[i];
+                if (rb.inverseMass <= 0.0){
+                    continue;
+                }
+                rb.velocity = (rb.position - rb.prevPosition)/substep;
+                //printf("normal %f, %f, %f \n", rb.velocity[0],rb.velocity[1],rb.velocity[2]);
             }
 
 
-            for(Subscribed& sub : bus.subscribedEntities){
+
+        }
+    
+        for (int i{}; i < rigBodPool.count; i++){
+            SydX::RigidBody& rb = rigBodPool.data[i];
+            ECS::Entity e = rigBodPool.dense[i];
+            TransformInfo& tinfo = transInfoPool.get(e);
+            tinfo.setPos(rb.position);
+        }
+
+
+    }
+}
+
+/* for(Subscribed& sub : bus.subscribedEntities){
                 int e = sub.ent;
                 if(!collPool.hasEntity(e)){
                     continue;
@@ -492,65 +585,53 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
 
                 }
             }
+            */
+
             
+        /*COLLISION RESOLUTION, NO ANGULAR KINEMATICS!*/
+                
+        // for (auto& pair : pairs){
+            
+        //     SydX::RigidBody& A = rigBodPool.get(pair.A);
+        //     SydX::RigidBody& B = rigBodPool.get(pair.B);
+        //     glm::vec3 n = pair.n;
+        //     float depth = pair.depth;
+        //     float totalInverseMass = A.inverseMass + B.inverseMass;
+        //     if (totalInverseMass <= 0.0f) continue;
 
-            /*COLLISION DETECTION*/
-            for (int i{}; i < collPool.count; i++){
-                ECS::Entity e1 = collPool.dense[i]; Collider& c1 = collPool.data[i];
-                if(!rawTransPool.hasEntity(e1)){
-                    return;
-                }
-                RawTransform& r1 = rawTransPool.get(e1);
+            
+        //     float v_rel = glm::dot((B.vel - A.vel), n);
+        //     float J{};
+        //     if (v_rel < 0.0f){    
+        //         J = -((A.bounciness + B.bounciness)/2.0f + 1.0f) * v_rel;
+        //     }
+        //     constexpr float beta = 0.3f;       
+        //     constexpr float slop = 0.001f;      
+        //     float baumgarteBias = ((beta / dt) * std::max(0.0f, depth - slop)) / 32.0f;
+            
+        //     float totalImpulse = J + baumgarteBias;
+        //     if(totalImpulse > 0.0f){
+        //         totalImpulse /= totalInverseMass; 
+        //         A.vel = A.vel - (totalImpulse * A.inverseMass) * n;
+        //         B.vel = B.vel + (totalImpulse * B.inverseMass) * n;       
+        //     }
+        // }
+        
+        //friction force
+        // for (auto& pair : pairs) {
+        //     Particle& A = rigBodPool.get(pair.A);
+        //     Particle& B = rigBodPool.get(pair.B);
+        //     glm::vec3 n = pair.n;
 
-                for (int j = i + 1; j < collPool.count; j++){
-                    ECS::Entity e2 = collPool.dense[j]; Collider& c2 = collPool.data[j];
-                    RawTransform& r2 = rawTransPool.get(e2);
-                    
-                    if (SydX::checkMidPhase(c1, c2, r1.matrix, r2.matrix)){
-                        auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B(dir, c1, c2, r1, r2);};
-                        if(gjk.intersect(supportFn)){
-                            
-                            SydX::ResultEPA result = epa.run(gjk.abcd(), supportFn);
-                            
-                            //printf("EPA Result - Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", result.normal.x, result.normal.y, result.normal.z, result.depth);
-                            if(!particPool.hasEntity(e1) || !particPool.hasEntity(e2)){
-                                continue;
-                            }
-                            pairs.push_back({.A = e1, .B = e2, .n = result.normal, .depth = result.depth});
-                            //add candidate
-                        }else{
-                            //printf("FALSE COLLISION!!!\n");
-                        }
-                        gjk.reset();
+        //     glm::vec3 N = abs(n);
+        //     int index = (N[0] > N[1]) ? ((N[0] > N[2]) ? 0 : 2) : ((N[1] > N[2]) ? 1 : 2);
+        //     int t1 = (index + 1) % 3;
+        //     int t2 = (index + 2) % 3;
+            
+        //     A.vel[t1] *= (1.0f - B.friction); 
+        //     A.vel[t2] *= (1.0f - B.friction);
+        //     B.vel[t1] *= (1.0f - A.friction); 
+        //     B.vel[t2] *= (1.0f - A.friction);
+        // }
 
-
-                    }
-
-                }
-            }
-
-            /*COLLISION RESOLUTION, NO ANGULAR KINEMATICS!*/
-            for(int i{}; i < 8; i++){           
-                for (auto& pair : pairs){
-                    
-                    Particle& A = particPool.get(pair.A);
-                    Particle& B = particPool.get(pair.B);
-                    glm::vec3 n = pair.n;
-                    float depth = pair.depth;
-                    
-                    float v_rel = glm::dot((B.vel - A.vel), n);
-                    if (v_rel < 0.0){
-
-                        float J = -((A.bounciness + B.bounciness)/2 + 1.0) * v_rel;
-                        J = J / (A.inverseMass + B.inverseMass); // assert no div by 0
-                        
-                        A.vel = A.vel - (J * A.inverseMass) * n;
-                        B.vel = B.vel + (J * B.inverseMass) * n;
-
-                    }
-
-                }
-            }
-            pairs.clear();
-        }
-}
+        
