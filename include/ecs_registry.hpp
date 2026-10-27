@@ -423,7 +423,37 @@
                 Pool<T>* specificPoolPtr = static_cast<Pool<T>*>(purePtr); 
                 return *specificPoolPtr;
             }
-           
+            
+
+            template <typename T>
+            void swapSlots(Entity src, Entity dst){
+                Pool<T>& pool = getPool<T>();
+                int& srcSlot = pool.sparse[src / pool.PAGE_SIZE][src % pool.PAGE_SIZE];
+                int& dstSlot = pool.sparse[dst / pool.PAGE_SIZE][dst % pool.PAGE_SIZE];
+                
+                std::swap(pool.data[srcSlot], pool.data[dstSlot]);
+                std::swap(pool.dense[srcSlot], pool.dense[dstSlot]);
+                std::swap(srcSlot,dstSlot);// necessary?? yes because we need to switch the stored index
+            }
+            //reg.sort<SydX::RigidBody,Collider>();
+            template <typename T, typename U>
+            void sortPools(){
+                Pool<T>& domPool = getPool<T>();
+                Pool<U>& subPool = getPool<U>();
+                
+                    for(int i{}; i < domPool.count; i++){
+                        Entity e = domPool.dense[i];
+                        if(subPool.hasEntity(e)){
+                            Entity e2 = subPool.dense[i];
+                            if(e != e2)
+                                swapSlots<U>(e,e2);    
+                        }else{
+                            printf("DOESNT have entity to sort!");
+                            assert(0);
+                        }
+                    }
+            }
+
 
             void deserializeComponent(Entity e, std::string_view sName, std::vector<Variable>&& vars){
                 

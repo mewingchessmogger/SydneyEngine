@@ -460,7 +460,7 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
     //         }
     // } 
 
-     void collectBroadCandidates(ECS::Registry& reg, EventBus& bus, float dt, std::vector<SydX::CollisionCandidate>& candidates, SydX::GJK& gjk){
+     void collectBroadCandidates(ECS::Registry& reg, float dt, std::vector<SydX::CollisionCandidate>& candidates, SydX::GJK& gjk){
         auto [collPool, rigBodPool] = reg.getPools<Collider, SydX::RigidBody>();
         
         
@@ -482,28 +482,27 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
     } 
     void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
     {
-        auto [transInfoPool, rawTransPool, collPool, rigBodPool] = reg.getPools<TransformInfo, RawTransform, Collider, SydX::RigidBody>();
+        auto [transInfoPool, collPool, rigBodPool] = reg.getPools<TransformInfo, Collider, SydX::RigidBody>();
         static SydX::EPA epa{};
         static SydX::GJK gjk{};
 
         static std::vector<SydX::CollisionCandidate> candidates{};
-        glm::vec3 gravity = {0.0, -1.0, 0.0};
+        glm::vec3 gravity = {0.0, -5.0, 0.0};
         
         candidates.clear();
 
-        collectBroadCandidates(reg, bus, dt, candidates, gjk);
-        int kSubsteps = 4;
+        collectBroadCandidates(reg, dt, candidates, gjk);
+        int kSubsteps = 8;
         float substep = dt / kSubsteps;
 
         for(int step = 0; step < kSubsteps; step++){
             for (int i{}; i < rigBodPool.count; i++){
                 SydX::RigidBody& rb = rigBodPool.data[i];
-
                 if(rb.inverseMass <= 0.0){
                     continue;
                 }
                 rb.prevPosition = rb.position;
-                rb.velocity = rb.velocity + substep * gravity * rb.inverseMass;
+                rb.velocity = rb.velocity + substep * gravity;
                 rb.position = rb.position + substep * rb.velocity;
             }
             
@@ -517,25 +516,31 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
                 float wTotal = w1 + w2;
                 if(wTotal <= 0.0){
                     continue;
-                }                
+                }
+                //this supportfn will point RB1 - RB2 so arrow pointing towards RB1 from RB2
                 auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_RigidBody(dir, c1, c2, rb1, rb2);};            
                 SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
                 if(res.intersected){
                     SydX::EPA::ResultEPA res2 = epa.run(res.abcd, supportFn);
-                    rb1.position -= res2.normal * res2.depth * (w1 / wTotal); // += depends on the support functions direction A -B or B-A
-                    rb2.position += res2.normal * res2.depth * (w2 / wTotal);
+                    printf("EPA Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", res2.normal.x, res2.normal.y, res2.normal.z, res2.depth);
+
+                    glm::vec3 lambda = (res2.normal * res2.depth) / wTotal;
+                    rb1.position -= lambda * w1; // +-= depends on the support functions direction A -B or B-A
+                    rb2.position += lambda * w2; 
+
+                    if(rb1.inverseMass > 0.0 ){
+                        //printf("normal %f, %f, %f\n", res2.normal.x,res2.normal.y,res2.normal.z);
+                    }
+
                 }
-
-            
-
             }
             for (int i{}; i < rigBodPool.count; i++){
                 SydX::RigidBody& rb = rigBodPool.data[i];
-                if (rb.inverseMass <= 0.0){
+                if (rb.inverseMass <= 0.0f){
                     continue;
                 }
                 rb.velocity = (rb.position - rb.prevPosition)/substep;
-                //printf("normal %f, %f, %f \n", rb.velocity[0],rb.velocity[1],rb.velocity[2]);
+                
             }
 
 

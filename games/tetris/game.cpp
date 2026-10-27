@@ -32,12 +32,12 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 
 	int women = reg.createEntity();
 	
-	// TransformInfo w = {.position = {-1.0, 2.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
-	// reg.add(women, w);
-	// api.attachModel("shibahu.glb", women);
-	// api.setAnimation("Take 001", women);
-	// reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
-	// reg.add(women, SydX::RigidBody{.inverseMass = 5.0, .position = {0.0, 2.0, 0.0}});
+	TransformInfo w = {.position = {-1.0, 3.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};
+	reg.add(women, w);
+	api.attachModel("shibahu.glb", women);
+	api.setAnimation("Take 001", women);
+	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
+	reg.add(women, SydX::RigidBody{.inverseMass = 5.0, .position = {1.0, 5.0, 0.0}});
 
 	
 
@@ -153,13 +153,9 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		
 		cameraTrans.quatRot = glm::quatLookAt(cameraDir,cameraUp);
 		cameraTrans.dirty = true;
-		
 		camera.view = glm::lookAt(playerRB.position, cameraDir + playerRB.position, cameraUp);
 		camera.proj = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-		camera.dir =cameraDir;
-
-
-		//updateGameCamera(camera, cameraPos, state, 0.3, aspect, dt);
+		camera.dir = cameraDir;
 		updateWeaponSystem(state, api, reg, mem->rnt);\
 
 		
@@ -206,8 +202,16 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			api.bus.subscribedEntities.push_back({bullet, 0});
 			
 			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
-			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = 5.0f * camera.dir});
-			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::AABB, .narrowExtents = {0.2,0.2,0.2}});
+			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {}});
+			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowExtents = {0.2,0.2,0.2}});
+			api.attachModel("cube.glb", bullet);
+		}
+		if(state.keyPressed(Input::Key::MouseRight)){
+			int bullet = reg.createEntity();
+			api.bus.subscribedEntities.push_back({bullet, 0});
+			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
+			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {3.0f*camera.dir}});
+			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowExtents = {0.2,0.2,0.2}});
 			api.attachModel("cube.glb", bullet);
 		}
 
@@ -254,13 +258,13 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
 */
 void print1(int e1, int e2, ECS::Registry* reg){
 
-	SydX::Particle& p = reg->getPool<SydX::Particle>().get(e1);
-	printf("bullet vel: %f, %f, %f\n", p.vel.x,p.vel.y,p.vel.z);
+	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e1);
+	printf("bullet velocity: %f, %f, %f\n", rb.velocity.x,rb.velocity.y,rb.velocity.z);
 }
 void print2(int e1, int e2, ECS::Registry* reg){
 
-	SydX::Particle& p = reg->getPool<SydX::Particle>().get(e1);
-	printf("bullet vel: %f, %f, %f\n", p.vel.x,p.vel.y,p.vel.z);
+	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e1);
+	printf("bullet velocity: %f, %f, %f\n", rb.velocity.x,rb.velocity.y,rb.velocity.z);
 }
 
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){

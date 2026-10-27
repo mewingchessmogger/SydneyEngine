@@ -29,7 +29,7 @@ namespace SydX {
     };
     struct CollisionCandidate {
         std::array<ECS::Entity, 2> entities;
-        std::array<glm::vec3, 4> simplexPoints; 
+        float deltaLambda{};
     };
 
     
@@ -330,36 +330,46 @@ namespace SydX {
                 vec3 normal{};
                 float depth{};
             };
+        
         template <typename supportFunc>
         ResultEPA run(std::array<vec3,4> points, supportFunc&& supportFn){
             auto [a, b, c, d] = points;
             std::vector<std::array<vec3,3>> polytope = {{a,b,c}, {b,d,c}, {a,c,d}, {a,d,b}};        /*WELL ITS ACTULALLY CLEARED HERE SO... HAHA*/
             std::vector<Edge> uniqueEdges{};
             
-            float minDistance = -std::numeric_limits<float>::infinity(); /*its MINUS INFINITY*/
+            vec3 normal{};
+            int closestFace = -1;
 
-            while(true){
-
-                FaceResult result = getClosestFace(polytope); /*3. Pick the closest face of the polytope to the origin.*/
-
-                if((result.distance - minDistance) > 0.001f){ /*4. If the closest face is no closer (by a certain threshold) to the origin than the previously picked one, return*/
-                    return {result.normal, result.distance};
+            for(int i{}; i < 32; i++){
+            
+                float minDistance = std::numeric_limits<float>::infinity(); // well still kinda useless but whatevers
+                /*Get closest face!*/
+                for(int j = 0; auto& face : polytope){
+                    vec3 v0 = face[0]; vec3 v1 = face[1]; vec3 v2 = face[2];
+                    vec3 n = normalize(cross(v1-v0, v2-v0));
+                    float distance = dot(v0,n); 
+                    if(distance < minDistance){
+                        minDistance = distance;
+                        normal = n;
+                        closestFace = j;
+                    }
+                    j++;
                 }
-                minDistance = result.distance;
-                
-                std::swap(polytope[result.dyingFace], polytope.back()); /*5. Remove the closest face, */
-                polytope.pop_back();
-                
+        
+                vec3 supportPoint = supportFn(normal); /*use the face normal (outward pointing) as the search direction to find a support point on the CSO.*/
 
-                vec3 supportPoint = supportFn(result.normal); /*use the face normal (outward pointing) as the search direction to find a support point on the CSO.*/
-
+                if((dot(normal, supportPoint) - minDistance) < 0.001f){ /*4. If the closest face is no closer (by a certain threshold) to the origin than the previously picked one, return*/
+                    printf("num EPA iters: %d ", i);
+                    return {normal, minDistance};
+                }
+                
                 /*. Remove all faces from the polytope that can be “seen” by this new support point,
                 and add new faces to cover up the “hole” on the polytope,
                 where all new faces share the new support point as a common vertex (this is the expanding part of the algorithm).*/
-                
+
                 expand(polytope, uniqueEdges, supportPoint);
             }
-            
+            printf("couldnt converge..size of face: %d ", polytope.size());
             return {};
 
         }
@@ -402,21 +412,19 @@ namespace SydX {
 
         FaceResult getClosestFace(std::vector<std::array<vec3,3>>& polytope){
             float minDistance = std::numeric_limits<float>::infinity();
-            vec3 minNormal{};
+            vec3 minNormal = {};
             int faceToBeExecuted{};
-
             for(int i = 0; auto& face : polytope){
                 vec3 v0 = face[0]; vec3 v1 = face[1]; vec3 v2 = face[2];
                 vec3 n = normalize(cross(v1-v0, v2-v0));
-                float d = dot(v0,n); 
-                if(d < minDistance){
-                    minDistance = d;
+                float distance = dot(v0,n); 
+                if(distance < minDistance){
+                    minDistance = distance;
                     minNormal = n;
                     faceToBeExecuted = i;
                 }
                 i++;
             }
-            
             return {minNormal, minDistance, faceToBeExecuted};
         }
     };
