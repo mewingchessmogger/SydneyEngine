@@ -29,4 +29,13 @@ namespace SydX{
         //float bounciness{};
         COMP_NAME(RigidBody)
     };
+    struct Raycast{
+        glm::quat direction{};
+        glm::vec3 origin{};
+        float length{};
+        COMP_NAME(Raycast);
+    };
+
 };
+
+

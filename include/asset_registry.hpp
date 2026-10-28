@@ -96,7 +96,7 @@ class AssetRegistry{
                 auto& anim = animationsData[a];
                 
                 if (anim.hash == hash){
-                    printf("Found '%llu' at index #%d! \n", anim.hash, a);
+            //        printf("Found '%llu' at index #%d! \n", anim.hash, a);
                     return a;
                 }
             }

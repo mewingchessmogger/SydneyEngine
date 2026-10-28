@@ -167,15 +167,16 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			int e = sub.ent; 
 			bool swappedAndPopped = false;
 
-			for(auto& collision: api.bus.collisions){
-				if(e == collision.self){
-					mem->rnt.callbacks[sub.vTableSlot](collision.self, collision.other, &reg);
+			for(auto& hits: api.bus.raycastHits){
+				if(e == hits.ray){
+					bool shouldDestroy = mem->rnt.callbacks[sub.vTableSlot](hits.ray, hits.receiver, &reg);
 
-					//sub.callback(collision.self, collision.other);
-					// reg.destroy(e);
-					// api.bus.subscribedEntities[i] = api.bus.subscribedEntities.back();
-					// api.bus.subscribedEntities.pop_back();
-					// swappedAndPopped = true;
+					if(shouldDestroy){
+						reg.destroy(e);
+						api.bus.subscribedEntities[i] = api.bus.subscribedEntities.back();
+						api.bus.subscribedEntities.pop_back();
+						swappedAndPopped = true;
+					}
 					break;
 				}
 			}
@@ -184,16 +185,16 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			}
 		}
 		api.bus.collisions.clear();
-
+		api.bus.raycastHits.clear();
 
 		if(!reg.getPool<TransformInfo>().dense.size()){
 			return; 
 		}//TEMOPARRY BARRIER, SOMETIMES UPDATE CALLS WHEN
 
 		TransformInfo& gun = reg.getPool<TransformInfo>().get(reg.getPool<ECS::Hierarchic>().dense[0]);
+
 		Collider& womenCollider = reg.getPool<Collider>().data[1];
 		ECS::Entity womenID = reg.getPool<Collider>().dense[1];
-		//reg.getPool<TransformInfo>().get(womenID).addRot({30.0,0.0f,0.0f},dt);
 
 		Collider& camCollider = reg.getPool<Collider>().data[1];
 
@@ -203,7 +204,7 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			
 			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
 			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {}});
-			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowExtents = {0.2,0.2,0.2}});
+			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::AABB, .narrowExtents = {0.2,0.2,0.2}});
 			api.attachModel("cube.glb", bullet);
 		}
 		if(state.keyPressed(Input::Key::MouseRight)){
@@ -212,7 +213,15 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
 			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {3.0f*camera.dir}});
 			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowExtents = {0.2,0.2,0.2}});
-			api.attachModel("cube.glb", bullet);
+			api.attachModel("sphere.glb", bullet);
+			
+
+		}
+		if(state.keyPressed(Input::Key::T)){
+			int raycast = reg.createEntity();
+			api.bus.subscribedEntities.push_back({raycast, 2});
+			reg.add(raycast, SydX::Raycast{.direction{cameraTrans.quatRot}, .origin{playerRB.position}, .length{100.0f}});
+			
 		}
 
 				
@@ -256,16 +265,27 @@ MAKE SURE CR_STEP CASE IS NEVER INVOKED UNTIL NEXT CR_LOAD IS INVOKED AND  MANAG
 
   OBSERVER that cr load will hpappne first iteration and then immeidately after cr step will happen aswell
 */
-void print1(int e1, int e2, ECS::Registry* reg){
+bool print1(int e1, int e2, ECS::Registry* reg){
 
 	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e1);
 	printf("bullet velocity: %f, %f, %f\n", rb.velocity.x,rb.velocity.y,rb.velocity.z);
+	return false;
 }
-void print2(int e1, int e2, ECS::Registry* reg){
+bool print2(int e1, int e2, ECS::Registry* reg){
 
 	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e1);
 	printf("bullet velocity: %f, %f, %f\n", rb.velocity.x,rb.velocity.y,rb.velocity.z);
+	return false; 
 }
+
+bool print3(int e1, int e2, ECS::Registry* reg){
+	SydX::Raycast& rc = reg->getPool<SydX::Raycast>().get(e1);
+	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e2);
+
+	printf("ayo holmes! raycast #%d hit rigidbody #%d! \n",e1,e2);
+	return true;
+}
+
 
 CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 	PassedStructuresDLL* psd = static_cast<PassedStructuresDLL*>(ctx->userdata);	
@@ -283,7 +303,7 @@ CR_EXPORT int cr_main(cr_plugin *ctx, cr_op operation){
 			{
 				printf("RELOADING DONE (OR FIRST LOAD)\n");
 				if(ctx->failure != CR_BAD_IMAGE){
-					mem->rnt.callbacks = {print1, print2};
+					mem->rnt.callbacks = {print1, print2, print3};
 					
 					/*
 					remap all function poointers 

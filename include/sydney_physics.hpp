@@ -6,7 +6,6 @@
 
 #include "engine_components.hpp"
 #include <limits>
-#include <utility>
 #include "sydney_physics_components.hpp"
 namespace SydX {
     using real = float;
@@ -19,20 +18,15 @@ namespace SydX {
     using  vec3 = glm::vec3;
     using  vec4 = glm::vec4;
     using mat3 = glm::mat3;
-   
-
-    struct CandidatePair{
-        int A{};
-        int B{};
-        vec3 n{};
-        float depth{};
-    };
+  
     struct CollisionCandidate {
         std::array<ECS::Entity, 2> entities;
         float deltaLambda{};
     };
 
-    
+    struct RaycastCandidates {
+        std::array<ECS::Entity, 2> entities; //  first id always the ray ID
+    };
 
     inline bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2){
         float rSquared = (c1.broadRadius + c2.broadRadius) * (c1.broadRadius + c2.broadRadius);
@@ -43,6 +37,15 @@ namespace SydX {
         return rSquared > glm::distance2(pos1+ c1.offset, pos2 + c2.offset);
     }
 
+    inline bool checkRaycastBroadPhase(const SydX::Raycast& raycast, glm::vec3 broadColliderPos, float broadRadius){
+        vec3 originToSphere = broadColliderPos - raycast.origin;
+        glm::vec3 direction = raycast.direction * glm::vec3(0.0f, 0.0f, -1.0f);
+        if (glm::dot(direction, originToSphere) < 0.0){ return false; }
+        
+        float rSquared = broadRadius * broadRadius; 
+        vec3 originToSphereProjected = glm::proj(originToSphere, direction);
+        return  rSquared >= glm::distance2(originToSphere, originToSphereProjected);
+    }
     
     inline glm::vec3 support(glm::vec3 dir, Collider& c1, RawTransform& r1){
             assert(c1.narrowShape != c1.NONE);
@@ -142,9 +145,47 @@ namespace SydX {
                     return R * localSupport + c1.offset + r1.position;
 
                 }
+                default:
+                    return {-1, -1, -1};
+
             }
     }
+    inline glm::vec3 supportGeneral(glm::vec3 dir, Collider& c1, const glm::vec3 bodyPos, const glm::quat& bodyRot ){
+            assert(c1.narrowShape != c1.NONE);
+            dir = normalize(dir);
+            switch(c1.narrowShape){
 
+                case Collider::SPHERE:{
+                    return vec3(c1.narrowRadius)* normalize(dir) + c1.offset  + bodyPos;
+                }
+                case Collider::AABB: {
+                    vec3 extents = c1.narrowExtents;
+                    return vec3(
+                        (dir.x < 0) ? -extents.x : extents.x,
+                        (dir.y < 0) ? -extents.y : extents.y,
+                        (dir.z < 0) ? -extents.z : extents.z
+                    ) + c1.offset + bodyPos;
+
+                }
+                case Collider::OBB: {
+                    vec3 extents = c1.narrowExtents;
+                    glm::mat3 R = glm::mat3_cast(bodyRot);
+                    vec3 rotated = glm::transpose(R) * dir;
+                    
+                    vec3 localSupport{
+                        (rotated.x < 0) ? -extents.x : extents.x,
+                        (rotated.y < 0) ? -extents.y : extents.y,
+                        (rotated.z < 0) ? -extents.z : extents.z
+                    };
+
+                    return R * localSupport + c1.offset + bodyPos;
+
+                }
+                default:
+                    return {-1, -1, -1};
+
+            }
+    }
     //will support hierarchical chilren colliders
     inline glm::vec3 supportA_minus_B(glm::vec3 dir, Collider& c1, Collider& c2, RawTransform& r1, RawTransform& r2){
         return supportRawTrans(dir, c1, r1) - supportRawTrans(-dir,c2,r2);
@@ -154,10 +195,12 @@ namespace SydX {
     inline glm::vec3 supportA_minus_B_RigidBody(glm::vec3 dir, Collider& c1, Collider& c2, RigidBody& r1, RigidBody& r2){
         return supportRigidBody(dir, c1, r1) - supportRigidBody(-dir,c2,r2);
     }
-
+    inline glm::vec3 supportA_minus_B_General(glm::vec3 dir, Collider& c1, Collider& c2, RigidBody& r1, RigidBody& r2){
+        return supportGeneral(dir, c1, r1.position, r1.rotation) - supportGeneral(-dir,c2, r2.position, r2.rotation);
+    }
+    
         
     struct GJK{
-        
         vec3 dir;
         vec3 a, b, c, d;
         uint32_t n{}; // n refers to the amount of stored points excluding a!
@@ -213,7 +256,7 @@ namespace SydX {
                         }
                         else{
                             n = 1;
-                            goto line_case;  //alternative to do return recursive update() call
+                            goto line_case;  //alternative to do return recursive update() call this is why vec2s article uses goto
                         }
                         
                     }
@@ -273,8 +316,7 @@ namespace SydX {
                     return true;
                 }
                 default:{
-                    assert(0);
-                    break;
+                    return false;
                 }
             }
 
@@ -340,9 +382,9 @@ namespace SydX {
             vec3 normal{};
             int closestFace = -1;
 
-            for(int i{}; i < 32; i++){
+            for(int i{}; i < 16; i++){
             
-                float minDistance = std::numeric_limits<float>::infinity(); // well still kinda useless but whatevers
+                float minDistance = std::numeric_limits<float>::infinity(); //NEEDS TO BE RESET AFTER EVERY ITERATION OF TOP FOR LOOP, think... we need the current smallest in polytope, not historically smallest..
                 /*Get closest face!*/
                 for(int j = 0; auto& face : polytope){
                     vec3 v0 = face[0]; vec3 v1 = face[1]; vec3 v2 = face[2];
@@ -359,17 +401,13 @@ namespace SydX {
                 vec3 supportPoint = supportFn(normal); /*use the face normal (outward pointing) as the search direction to find a support point on the CSO.*/
 
                 if((dot(normal, supportPoint) - minDistance) < 0.001f){ /*4. If the closest face is no closer (by a certain threshold) to the origin than the previously picked one, return*/
-                    printf("num EPA iters: %d ", i);
+                    //lprintf("num EPA iters: %d ", i);
                     return {normal, minDistance};
                 }
-                
-                /*. Remove all faces from the polytope that can be “seen” by this new support point,
-                and add new faces to cover up the “hole” on the polytope,
-                where all new faces share the new support point as a common vertex (this is the expanding part of the algorithm).*/
 
                 expand(polytope, uniqueEdges, supportPoint);
             }
-            printf("couldnt converge..size of face: %d ", polytope.size());
+            printf("couldnt converge..size of face: %u ", polytope.size());
             return {};
 
         }

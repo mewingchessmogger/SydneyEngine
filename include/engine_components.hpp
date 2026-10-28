@@ -96,7 +96,7 @@ struct Collider{
     float broadRadius = 1.0f;
     
     //NARROW COLLIDER
-    enum Shape : uint32_t {NONE, SPHERE, OBB, AABB, COCONUT};
+    enum Shape : uint32_t {NONE, SPHERE, OBB, AABB, CAPSULE, COCONUT};
     uint32_t narrowShape = static_cast<uint32_t>(NONE);  
     float narrowRadius = 0.25f;
     glm::vec3 narrowExtents = glm::vec3(1.0f);

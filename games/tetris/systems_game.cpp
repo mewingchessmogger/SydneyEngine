@@ -57,7 +57,7 @@ bool condAimFiring(const AnimParams& p) {return p.isFiring && !p.isRunning && p.
 void goon() {printf("DIVEJOB\n");}
 
 constexpr Transition fromIdle[] = {
-    {AKAnim::Walk, condMove, false, true, goon},
+    {AKAnim::Walk, condMove, false, true},
     {AKAnim::Run, condRun, false, true },
     {AKAnim::IdleAim, condIdleAim, false, true },
     {AKAnim::Reload, condReload, true, true },

@@ -15,6 +15,12 @@ struct CollisionEvent{
     EVENT_NAME(CollisionEvent);
 };
 
+struct RaycastEvent{
+    int ray{};
+    int receiver{};
+    EVENT_NAME(CollisionEvent);
+};
+
 struct Subscribed{
     int ent{-1};
     //void(*callback)(int, int);
@@ -27,6 +33,8 @@ class EventBus{
     
     public:
     std::vector<CollisionEvent> collisions{};
+    std::vector<RaycastEvent> raycastHits{};
+    
     std::vector<Subscribed> subscribedEntities{};
     EventBus() {
         evnts = {{CollisionEvent::getHash(), 0}};

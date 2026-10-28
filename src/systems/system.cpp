@@ -1,10 +1,6 @@
 #include "systems.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 #include "sydney_physics.hpp"
-#include <glm/gtx/norm.hpp>
 #include "event_bus.hpp"
-#include <unordered_set>
 
 namespace Sys{
     using Request = EngineAPI::Request;
@@ -198,15 +194,15 @@ namespace Sys{
                             Animated comp = {.animationIndex = animID, .duration = data.duration, .offset = data.offsetInLocalBoneBuffer, .totalFrames = data.totalFrames, .isLocked = req.locked };
 
 
-                            if(animations.hasEntity(req.EntityID)){
-                                printf("entity #%d updating animation slot to '%llu' ...", req.EntityID, data.hash);
+                            // if(animations.hasEntity(req.EntityID)){
+                            //     printf("entity #%d updating animation slot to '%llu' ...", req.EntityID, data.hash);
                             
-                            }else{
-                                printf("entity #%d creating animation slot and setting it to '%llu' ...", req.EntityID, data.hash);
-                            }
+                            // }else{
+                            //     printf("entity #%d creating animation slot and setting it to '%llu' ...", req.EntityID, data.hash);
+                            // }
 
                             animations.assign(req.EntityID, comp); //updates OR creates inside
-                            printf("done!\n");
+                            //printf("done!\n");
                             break;
                         }
 
@@ -298,17 +294,17 @@ namespace Sys{
             glm::mat4 broadMat = glm::translate(glm::mat4(1.0f),coll.offset + rawTrans.getPosition());
             broadMat = glm::scale(broadMat, glm::vec3(coll.broadRadius));
             
-            RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
+            //RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
             
-            broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
-            broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
-            for(auto& mesh : sphere.meshes){
-                broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-                broadPkt.indexCount = mesh.indexCount;
-                broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+            // broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+            // broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
+            // for(auto& mesh : sphere.meshes){
+            //     broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+            //     broadPkt.indexCount = mesh.indexCount;
+            //     broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                 
-                packets.push_back(broadPkt);
-            }
+            //     packets.push_back(broadPkt);
+            // }
             
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
             narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
@@ -409,6 +405,149 @@ namespace Sys{
     }
     
 
+     void collectBroadCandidates(ECS::Registry& reg, std::vector<SydX::CollisionCandidate>& candidates){
+        auto [collPool, rigBodPool] = reg.getPools<Collider, SydX::RigidBody>();
+        
+        
+        for (int i{}; i < rigBodPool.count; i++){
+            ECS::Entity e1 = rigBodPool.dense[i]; 
+            SydX::RigidBody& rb1 = rigBodPool.data[i];
+            Collider& c1 = collPool.get(e1);
+
+            for (int j = i + 1; j < rigBodPool.count; j++){
+                ECS::Entity e2 = rigBodPool.dense[j];     
+                SydX::RigidBody& rb2 = rigBodPool.data[j];
+                Collider& c2 = collPool.get(e2);
+                if (SydX::checkMidPhaseRB(c1, c2, rb1.position, rb2.position)){
+                        candidates.push_back({{e1,e2}, {}});
+                }
+            }
+        }
+
+    } 
+    
+
+    void collectBroadRaycastCandidates(ECS::Registry& reg, std::vector<SydX::RaycastCandidates>& candidates){
+        auto [collPool, raycastPool, rigBodPool] = reg.getPools<Collider, SydX::Raycast, SydX::RigidBody>();
+        
+        
+        for (int i{}; i < raycastPool.count; i++){
+            ECS::Entity e1 = raycastPool.dense[i]; 
+            SydX::Raycast& ray = raycastPool.data[i];
+
+            for (int j = 0; j < collPool.count; j++){
+                ECS::Entity e2 = collPool.dense[j]; 
+                Collider& collider = collPool.get(e2); 
+                if(!rigBodPool.hasEntity(e2)){
+                    continue;
+                }
+                glm::vec3& rbPos = rigBodPool.get(e2).position; 
+
+                if (SydX::checkRaycastBroadPhase(ray, rbPos + collider.offset, collider.broadRadius)){
+                    candidates.push_back({e1,e2});
+                }
+            }
+        }
+
+    } 
+
+    void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
+    {
+        auto [transInfoPool, collPool, rigBodPool, raycastPool] = reg.getPools<TransformInfo, Collider, SydX::RigidBody, SydX::Raycast>();// RAYCAT!!
+        static SydX::EPA epa{};
+        static SydX::GJK gjk{};
+
+        static std::vector<SydX::CollisionCandidate> candidates{};
+        static std::vector<SydX::RaycastCandidates> rayCandids{};
+        
+        glm::vec3 gravity = {0.0, -5.0, 0.0};
+        
+        candidates.clear();
+        rayCandids.clear();
+        collectBroadCandidates(reg, candidates);
+        collectBroadRaycastCandidates(reg, rayCandids);
+        int kSubsteps = 8;
+        float substep = dt / kSubsteps;
+
+        for(int step = 0; step < kSubsteps; step++){
+            for (int i{}; i < rigBodPool.count; i++){
+                SydX::RigidBody& rb = rigBodPool.data[i];
+                if(rb.inverseMass <= 0.0){
+                    continue;
+                }
+                rb.prevPosition = rb.position;
+                rb.velocity = rb.velocity + substep * gravity;
+                rb.position = rb.position + substep * rb.velocity;
+            }
+            
+            for(auto& pair: candidates){
+
+                auto [c1, c2] = collPool.get(pair.entities);
+                auto [rb1, rb2] = rigBodPool.get(pair.entities);
+            
+                float w1 = rb1.inverseMass;
+                float w2 = rb2.inverseMass;
+                float wTotal = w1 + w2;
+                if(wTotal <= 0.0){
+                    continue;
+                }
+                //this supportfn will point RB1 - RB2 so arrow pointing towards RB1 from RB2
+                auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_RigidBody(dir, c1, c2, rb1, rb2);};            
+                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
+                if(res.intersected){
+                    SydX::EPA::ResultEPA res2 = epa.run(res.abcd, supportFn);
+                    //printf("EPA Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", res2.normal.x, res2.normal.y, res2.normal.z, res2.depth);
+
+                    glm::vec3 lambda = (res2.normal * res2.depth) / wTotal;
+                    rb1.position -= lambda * w1; // +-= depends on the support functions direction A -B or B-A
+                    rb2.position += lambda * w2; 
+
+                }
+            }
+            for (int i{}; i < rigBodPool.count; i++){
+                SydX::RigidBody& rb = rigBodPool.data[i];
+                if (rb.inverseMass <= 0.0f){
+                    continue;
+                }
+                rb.velocity = (rb.position - rb.prevPosition)/substep;
+                
+            }
+        }
+    
+        for (int i{}; i < rigBodPool.count; i++){
+            SydX::RigidBody& rb = rigBodPool.data[i];
+            ECS::Entity e = rigBodPool.dense[i];
+            TransformInfo& tinfo = transInfoPool.get(e);
+            tinfo.setPos(rb.position);
+        }
+
+
+        for(auto& pair: rayCandids){
+                ECS::Entity candidateColliderID = pair.entities[1];
+                Collider& c1 = collPool.get(candidateColliderID);
+                SydX::RigidBody& rb = rigBodPool.get(candidateColliderID);
+
+
+                ECS::Entity rayID = pair.entities[0];
+                SydX::Raycast& ray = raycastPool.get(rayID);
+                SydX::RigidBody rayBody{.rotation = ray.direction, .position = ray.origin};
+                
+                Collider rayCollider{};
+                rayCollider.narrowShape = Collider::OBB;
+                rayCollider.narrowExtents = glm::vec3(0.001f, 0.001f, 100.0f);      
+
+                auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_General(dir, c1, rayCollider, rb, rayBody);};            
+                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
+                if(res.intersected){
+                    bus.raycastHits.push_back({rayID, candidateColliderID});
+                }
+        }
+
+        
+
+    }
+}
+
 /*  
 
     3x3 top left is LINEAR trans OF ROTATION * SCALING // 
@@ -459,104 +598,6 @@ mat4 = [a_x, b_x, c_x, T_x]     [x]
     //             }
     //         }
     // } 
-
-     void collectBroadCandidates(ECS::Registry& reg, float dt, std::vector<SydX::CollisionCandidate>& candidates, SydX::GJK& gjk){
-        auto [collPool, rigBodPool] = reg.getPools<Collider, SydX::RigidBody>();
-        
-        
-        for (int i{}; i < rigBodPool.count; i++){
-            ECS::Entity e1 = rigBodPool.dense[i]; 
-            SydX::RigidBody& rb1 = rigBodPool.data[i];
-            Collider& c1 = collPool.get(e1);
-
-            for (int j = i + 1; j < rigBodPool.count; j++){
-                ECS::Entity e2 = rigBodPool.dense[j];     
-                SydX::RigidBody& rb2 = rigBodPool.data[j];
-                Collider& c2 = collPool.get(e2);
-                if (SydX::checkMidPhaseRB(c1, c2, rb1.position, rb2.position)){
-                        candidates.push_back({{e1,e2}, {}});
-                }
-            }
-        }
-
-    } 
-    void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
-    {
-        auto [transInfoPool, collPool, rigBodPool] = reg.getPools<TransformInfo, Collider, SydX::RigidBody>();
-        static SydX::EPA epa{};
-        static SydX::GJK gjk{};
-
-        static std::vector<SydX::CollisionCandidate> candidates{};
-        glm::vec3 gravity = {0.0, -5.0, 0.0};
-        
-        candidates.clear();
-
-        collectBroadCandidates(reg, dt, candidates, gjk);
-        int kSubsteps = 8;
-        float substep = dt / kSubsteps;
-
-        for(int step = 0; step < kSubsteps; step++){
-            for (int i{}; i < rigBodPool.count; i++){
-                SydX::RigidBody& rb = rigBodPool.data[i];
-                if(rb.inverseMass <= 0.0){
-                    continue;
-                }
-                rb.prevPosition = rb.position;
-                rb.velocity = rb.velocity + substep * gravity;
-                rb.position = rb.position + substep * rb.velocity;
-            }
-            
-            for(auto& pair: candidates){
-
-                auto [c1, c2] = collPool.get(pair.entities);
-                auto [rb1, rb2] = rigBodPool.get(pair.entities);
-            
-                float w1 = rb1.inverseMass;
-                float w2 = rb2.inverseMass;
-                float wTotal = w1 + w2;
-                if(wTotal <= 0.0){
-                    continue;
-                }
-                //this supportfn will point RB1 - RB2 so arrow pointing towards RB1 from RB2
-                auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_RigidBody(dir, c1, c2, rb1, rb2);};            
-                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
-                if(res.intersected){
-                    SydX::EPA::ResultEPA res2 = epa.run(res.abcd, supportFn);
-                    printf("EPA Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", res2.normal.x, res2.normal.y, res2.normal.z, res2.depth);
-
-                    glm::vec3 lambda = (res2.normal * res2.depth) / wTotal;
-                    rb1.position -= lambda * w1; // +-= depends on the support functions direction A -B or B-A
-                    rb2.position += lambda * w2; 
-
-                    if(rb1.inverseMass > 0.0 ){
-                        //printf("normal %f, %f, %f\n", res2.normal.x,res2.normal.y,res2.normal.z);
-                    }
-
-                }
-            }
-            for (int i{}; i < rigBodPool.count; i++){
-                SydX::RigidBody& rb = rigBodPool.data[i];
-                if (rb.inverseMass <= 0.0f){
-                    continue;
-                }
-                rb.velocity = (rb.position - rb.prevPosition)/substep;
-                
-            }
-
-
-
-        }
-    
-        for (int i{}; i < rigBodPool.count; i++){
-            SydX::RigidBody& rb = rigBodPool.data[i];
-            ECS::Entity e = rigBodPool.dense[i];
-            TransformInfo& tinfo = transInfoPool.get(e);
-            tinfo.setPos(rb.position);
-        }
-
-
-    }
-}
 
 /* for(Subscribed& sub : bus.subscribedEntities){
                 int e = sub.ent;

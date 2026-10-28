@@ -74,7 +74,6 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 		
 		return upload;
 	}
-
 bool VulkanStack::acquireAndValidateImage(void (*stallMinimizedWindow)(void* winPtr, int& glwidth, int& glheight, float& aspectRatio), void* winPtr, int& glwidth, int& glheight, bool& frameBufferResized, float& aspectRatio ) {
 	vk::Fence curFence[] = {ctx.fences[currentFrame] };
 	ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 

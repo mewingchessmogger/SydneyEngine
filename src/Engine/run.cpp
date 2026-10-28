@@ -25,7 +25,6 @@ void Engine::run(){
 
         Camera& activeCam = reg.getPool<Camera>().get((mode == EngineMode::GAME) ? api.getGameCamera() : editorCamID);
         
-        
         if (mode == EngineMode::GAME){        
             psd.state = &plt.inputState;
             cr_plugin_update(game_plugin);

@@ -59,10 +59,8 @@ void Engine::initialize(){
     reg.createPool<Renderable>();
     reg.createPool<Camera>();
     reg.createPool<Animated>();
-    
-    reg.createPool<SydX::Particle>();
     reg.createPool<SydX::RigidBody>();
-    
+    reg.createPool<SydX::Raycast>();
     
 
 }

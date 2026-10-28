@@ -20,8 +20,10 @@
 #include <chrono>
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/projection.hpp>
 #include <vulkan/vulkan.hpp>
 #include"json.hpp"
-
 
 
