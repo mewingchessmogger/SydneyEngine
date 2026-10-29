@@ -29,8 +29,8 @@ struct VulkanContext {
 
     std::vector<vk::Fence> immFences{};
     std::vector<vk::Fence> fences{};
-    std::array<vk::Semaphore, 2> imageReadySemaphores{};
-    std::array<vk::Semaphore, 2> renderFinishedSemaphores{};
+    std::vector<vk::Semaphore> imageReadySemaphores{}; // will have same as desired_images_in_flight enum 
+    std::vector<vk::Semaphore> renderFinishedSemaphores{};
     vkb::Instance* vkbInstance{};
     vkb::Device* vkbDevice{};
 

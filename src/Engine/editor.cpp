@@ -1,8 +1,7 @@
 #include "editor.hpp"
 
 
-
-void Editor::init(VulkanContext& ctx, PlatformGLFW& plt, vk::Format swapchainFormat)
+void Editor::init(VulkanContext& ctx, PlatformGLFW& plt, vk::Format swapchainFormat, int desired_images_in_flight)
 {
 	// 1. Descriptor pool creation using Vulkan-Hpp
 	std::array<vk::DescriptorPoolSize, 11> poolSizes = {
@@ -35,7 +34,9 @@ void Editor::init(VulkanContext& ctx, PlatformGLFW& plt, vk::Format swapchainFor
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 	// Setup Platform/Renderer backends
-    
+    cachedViews.reserve(desired_images_in_flight);
+	cachedDescriptors.reserve(desired_images_in_flight);
+	imagesInFlight = desired_images_in_flight;
 	ImGui_ImplGlfw_InitForVulkan(plt.windowPtr,true);
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = ctx.instance;
@@ -45,8 +46,8 @@ void Editor::init(VulkanContext& ctx, PlatformGLFW& plt, vk::Format swapchainFor
 	init_info.Queue = ctx.graphicsQueue.handle;
 	init_info.PipelineCache = VK_NULL_HANDLE;
 	init_info.DescriptorPool = pool;
-	init_info.MinImageCount = SWAPCHAIN_IMAGE_COUNT;
-	init_info.ImageCount = SWAPCHAIN_IMAGE_COUNT;
+	init_info.MinImageCount = desired_images_in_flight;
+	init_info.ImageCount = desired_images_in_flight;
 	init_info.Allocator = nullptr;
 	init_info.UseDynamicRendering = true;
 
@@ -76,14 +77,21 @@ void Editor::updateEditorInput(){
 	ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
 }
-void Editor::evalViewport(vk::Sampler sampler, std::vector<AllocatedImage>& inputTargets)
+void Editor::evalViewport(vk::Sampler sampler, const std::vector<AllocatedImage>& inputTargets)
 {
-
-	std::array<vk::ImageView,2> targets = {inputTargets[0].view, inputTargets[1].view} ;
-	//vk::Sampler sampler = res.samplers[static_cast<int>(SamplerType::TEXTURE)];
-
 	
-	for(int i{}; i < 2; i++)
+	//std::array<vk::ImageView,2> targets = {inputTargets[0].view, inputTargets[1].view} ;
+	//vk::Sampler sampler = res.samplers[static_cast<int>(SamplerType::TEXTURE)];
+	std::vector<vk::ImageView> targets;
+    targets.reserve(inputTargets.size());
+    for (const auto& img : inputTargets) {
+        targets.push_back(img.view);
+    }
+	if (cachedViews.size() < targets.size()) {
+        cachedViews.resize(targets.size(), nullptr);
+        cachedDescriptors.resize(targets.size(), nullptr);
+    }
+	for(int i{}; i < targets.size(); i++)
     if (targets[i] != cachedViews[i]) {
         
         if (cachedDescriptors[i] != VK_NULL_HANDLE) {
@@ -95,7 +103,7 @@ void Editor::evalViewport(vk::Sampler sampler, std::vector<AllocatedImage>& inpu
         if (targets[i]) {
             cachedDescriptors[i] = ImGui_ImplVulkan_AddTexture(
                 (VkSampler)sampler, 
-                (VkImageView)targets[i], 
+                (VkImageView)targets[i],
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             );
         }
@@ -216,12 +224,12 @@ void Editor::messingAround(vk::CommandBuffer buffer, ECS::Registry& reg, GameCon
          plt.updateState();
     }
 
-
-    if (cachedDescriptors[currentImgIndex] != VK_NULL_HANDLE) {
-            ImVec2 size = ImGui::GetContentRegionAvail();
-            ImGui::Image((ImTextureID)(VkDescriptorSet)cachedDescriptors[currentImgIndex], size);
-        }
-    
+	if(!cachedDescriptors.empty()){
+		if (cachedDescriptors[currentImgIndex] != VK_NULL_HANDLE) {
+				ImVec2 size = ImGui::GetContentRegionAvail();
+				ImGui::Image((ImTextureID)(VkDescriptorSet)cachedDescriptors[currentImgIndex], size);
+		}
+	}
     ImGui::End();
 
     

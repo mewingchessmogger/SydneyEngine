@@ -37,7 +37,7 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	api.attachModel("shibahu.glb", women);
 	api.setAnimation("Take 001", women);
 	reg.add(women, Collider{.offset = {0.0,0.8,0.0}, .broadRadius = 1.0f, .narrowShape = Collider::OBB, .narrowExtents = {1.0,0.75,0.25}});
-	reg.add(women, SydX::RigidBody{.inverseMass = 5.0, .position = {1.0, 5.0, 0.0}});
+	reg.add(women, SydX::RigidBody{.inverseMass = 5.0, .position = {3.0, 5.0, 3.0}});
 
 	
 
@@ -158,34 +158,26 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		camera.dir = cameraDir;
 		updateWeaponSystem(state, api, reg, mem->rnt);\
 
-		
-
-
-
-		for(int i{}; i < api.bus.subscribedEntities.size();){
-			Subscribed& sub = api.bus.subscribedEntities[i];
+	
+		for(int i{}; i < api.bus.transientSubscribers.size();i++){
+			Subscribed& sub = api.bus.transientSubscribers[i];
 			int e = sub.ent; 
 			bool swappedAndPopped = false;
 
-			for(auto& hits: api.bus.raycastHits){
-				if(e == hits.ray){
-					bool shouldDestroy = mem->rnt.callbacks[sub.vTableSlot](hits.ray, hits.receiver, &reg);
-
+			for(auto& hit: api.bus.raycastHits){
+				if(e == hit.ray){
+					bool shouldDestroy = mem->rnt.callbacks[sub.vTableSlot](hit.ray, hit.receiver, &reg);
 					if(shouldDestroy){
-						reg.destroy(e);
-						api.bus.subscribedEntities[i] = api.bus.subscribedEntities.back();
-						api.bus.subscribedEntities.pop_back();
-						swappedAndPopped = true;
+						reg.unsafeDestroy<SydX::Raycast>(e);
 					}
-					break;
+					
 				}
-			}
-			if(!swappedAndPopped){
-				i++;
-			}
+			}	
 		}
-		api.bus.collisions.clear();
+		reg.unsafeCleanPool<SydX::Raycast>();
+		api.bus.transientSubscribers.clear();
 		api.bus.raycastHits.clear();
+		api.bus.collisions.clear();
 
 		if(!reg.getPool<TransformInfo>().dense.size()){
 			return; 
@@ -200,28 +192,27 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			int bullet = reg.createEntity();
-			api.bus.subscribedEntities.push_back({bullet, 0});
-			
+			api.bus.permanentSubscribers.push_back({bullet, 0});
 			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
 			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {}});
 			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::AABB, .narrowExtents = {0.2,0.2,0.2}});
 			api.attachModel("cube.glb", bullet);
 		}
+
+
 		if(state.keyPressed(Input::Key::MouseRight)){
 			int bullet = reg.createEntity();
-			api.bus.subscribedEntities.push_back({bullet, 0});
+			api.bus.permanentSubscribers.push_back({bullet, 0});
 			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
 			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {3.0f*camera.dir}});
 			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::SPHERE, .narrowExtents = {0.2,0.2,0.2}});
 			api.attachModel("sphere.glb", bullet);
-			
-
+		
 		}
 		if(state.keyPressed(Input::Key::T)){
 			int raycast = reg.createEntity();
-			api.bus.subscribedEntities.push_back({raycast, 2});
-			reg.add(raycast, SydX::Raycast{.direction{cameraTrans.quatRot}, .origin{playerRB.position}, .length{100.0f}});
-			
+			api.bus.transientSubscribers.push_back({raycast, 2});
+			reg.add(raycast, SydX::Raycast{.direction{cameraTrans.quatRot}, .origin{playerRB.position + 2.0f* camera.dir}, .length{100.0f}});
 		}
 
 				
@@ -283,7 +274,7 @@ bool print3(int e1, int e2, ECS::Registry* reg){
 	SydX::RigidBody& rb = reg->getPool<SydX::RigidBody>().get(e2);
 
 	printf("ayo holmes! raycast #%d hit rigidbody #%d! \n",e1,e2);
-	return true;
+	return false;
 }
 
 

@@ -505,8 +505,27 @@
                     poolPtr->remove(e);
                 }
                 deadIDs.push_back(e);
-                //push e into dead id
-                
+                //push e into dead id   
+            }
+            template<typename T> 
+            void unsafeDestroy(Entity e){
+                assert(T::getHash() != Hierarchic::getHash());
+
+                Pool<T>& pool = getPool<T>();
+                pool.remove(e);
+                deadIDs.push_back(e);
+                //push e into dead id   
+            }
+            
+            template<typename T>
+            void unsafeCleanPool(){
+                assert(T::getHash() != Hierarchic::getHash());
+
+                Pool<T>& pool = getPool<T>();
+                for(int i{}; i < pool.count; i++){
+                    ECS::Entity e = pool.dense[i];
+                    unsafeDestroy<T>(e);
+                }
             }
             
             template<typename T>

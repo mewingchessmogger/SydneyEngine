@@ -8,7 +8,7 @@
 		formatInfo.format = vk::Format::eB8G8R8A8Srgb;
 		formatInfo.colorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
-		vkb::Swapchain vkbSwapchain = swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		vkb::Swapchain vkbSwapchain = swapchainBuilder.set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
 			.set_desired_format(formatInfo)
 			.set_desired_extent(width, height)
 			.set_required_min_image_count(imagesInFlight)

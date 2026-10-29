@@ -11,20 +11,22 @@
 #include "vk_mmu.hpp"
 
 class Editor{
-    const uint32_t SWAPCHAIN_IMAGE_COUNT = 2;
+    //const uint32_t SWAPCHAIN_IMAGE_COUNT = 2;
     
-    std::array<vk::ImageView, 2> cachedViews = {};
-    std::array<vk::DescriptorSet, 2> cachedDescriptors = {};
+    //std::array<vk::ImageView, 4> cachedViews = {};
+    std::vector<vk::ImageView> cachedViews{};
+    std::vector<vk::DescriptorSet> cachedDescriptors = {};
     
     public:
     int selectedEntity = -1;
     bool isFirstFrame = true;
+    int imagesInFlight {-1};
     vk::DescriptorPool pool{};    
     vk::DescriptorSet viewportDescSet{};
     ImGuiContext* edtContext{};
-    void init(VulkanContext& ctx, PlatformGLFW &plt, vk::Format swapchainFormat);
+    void init(VulkanContext& ctx, PlatformGLFW &plt, vk::Format swapchainFormat, int desired_images_in_flight);
     void updateEditorInput();
-    void evalViewport(vk::Sampler sampler, std::vector<AllocatedImage> &inputTargets);
+    void evalViewport(vk::Sampler sampler, const std::vector<AllocatedImage> &inputTargets);
 
     void messingAround(vk::CommandBuffer buffer, ECS::Registry &reg, GameContext &ctx, uint32_t currentImgIndex, Camera &edtCam, PlatformGLFW &plt);
 

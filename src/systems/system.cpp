@@ -453,10 +453,14 @@ namespace Sys{
 
     void updatePhysics(ECS::Registry& reg, EventBus& bus, float dt)
     {
+        static float lastDt{};
+
+        
+
         auto [transInfoPool, collPool, rigBodPool, raycastPool] = reg.getPools<TransformInfo, Collider, SydX::RigidBody, SydX::Raycast>();// RAYCAT!!
         static SydX::EPA epa{};
         static SydX::GJK gjk{};
-
+        
         static std::vector<SydX::CollisionCandidate> candidates{};
         static std::vector<SydX::RaycastCandidates> rayCandids{};
         
@@ -521,13 +525,9 @@ namespace Sys{
             tinfo.setPos(rb.position);
         }
 
-
+        
         for(auto& pair: rayCandids){
-                ECS::Entity candidateColliderID = pair.entities[1];
-                Collider& c1 = collPool.get(candidateColliderID);
-                SydX::RigidBody& rb = rigBodPool.get(candidateColliderID);
-
-
+            
                 ECS::Entity rayID = pair.entities[0];
                 SydX::Raycast& ray = raycastPool.get(rayID);
                 SydX::RigidBody rayBody{.rotation = ray.direction, .position = ray.origin};
@@ -536,8 +536,16 @@ namespace Sys{
                 rayCollider.narrowShape = Collider::OBB;
                 rayCollider.narrowExtents = glm::vec3(0.001f, 0.001f, 100.0f);      
 
+
+
+                ECS::Entity candidateColliderID = pair.entities[1];
+                Collider& c1 = collPool.get(candidateColliderID);
+                SydX::RigidBody& rb = rigBodPool.get(candidateColliderID);
+
+
                 auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_General(dir, c1, rayCollider, rb, rayBody);};            
                 SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
+                
                 if(res.intersected){
                     bus.raycastHits.push_back({rayID, candidateColliderID});
                 }

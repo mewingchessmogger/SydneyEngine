@@ -19,7 +19,7 @@ void Engine::initialize(){
     stk.initUpdateDescriptorSets();
     
     //editor setup
-    edt.init(stk.ctx,plt, stk.res.swapchainImages[0].format);
+    edt.init(stk.ctx,plt, stk.res.swapchainImages[0].format, stk.DESIRED_IMAGES_IN_FLIGHT);
     printf("Processing pipelines ");
 
     //pipelines compilation, funcs stripped from shaderc examples

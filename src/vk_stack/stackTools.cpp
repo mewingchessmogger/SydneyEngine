@@ -76,8 +76,14 @@ vk::ResultValue<uint32_t> VulkanStack::acquiredImage() {
 	}
 bool VulkanStack::acquireAndValidateImage(void (*stallMinimizedWindow)(void* winPtr, int& glwidth, int& glheight, float& aspectRatio), void* winPtr, int& glwidth, int& glheight, bool& frameBufferResized, float& aspectRatio ) {
 	vk::Fence curFence[] = {ctx.fences[currentFrame] };
+
+	
+	//auto start = std::chrono::high_resolution_clock::now();
 	ctx.device.waitForFences(1, curFence, vk::True, 1000000000);// if gpu is still using cmdbuffer stall cpu so  cpu doesnt write into that cmdbuffer, go when 
-		
+	//auto end = std::chrono::high_resolution_clock::now();
+	//float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
+
+	//printf("Time:  %f ms\n", elapsed_ms);
 
 	//RAAAAAAAAAAAAAAAAAGH I DONT KNOW HOW ELSE TO DELETE ZOMBIE BUFFERS
 	static int frame = 0;
@@ -354,6 +360,8 @@ void VulkanStack::renderToTarget(){
 	// if same pipeline dont bind new, just render otherwise rebinddescirptorsets and pipeline
 	vk::Pipeline cachedPipeline{};
 	int numSwitches{};
+	auto start = std::chrono::high_resolution_clock::now();
+
 	for(auto& pkt: packets){
  		PipelineBundle& pipeline = pipelines.getPipeline(pkt.type);
 		
@@ -388,8 +396,14 @@ void VulkanStack::renderToTarget(){
 		}
 
 	}
+
 	//printf("number switches: %d\n", numSwitches);
 	rdr.endRenderPass(cmdBuffer); 
+	auto end = std::chrono::high_resolution_clock::now();
+	float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
+   
+    printf("drawcallTime:  %f ms\n", elapsed_ms);
+
 }
 
 

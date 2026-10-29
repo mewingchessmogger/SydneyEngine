@@ -20,6 +20,7 @@ void Engine::run(){
 
 
     while (plt.windowOpen()) {
+    	
         plt.updateState(); // update keyboard and dt 
         bool shutDown = debugStuff(plt, mode, ldr.getAssetReg()); if(shutDown) { break;}
 
@@ -39,12 +40,21 @@ void Engine::run(){
         reg.updateHierarchyLevels(); reg.sortHierarchyPool();
 
         Sys::finalizeTransforms(reg); 
+        
+        auto start = std::chrono::high_resolution_clock::now();
         Sys::updatePhysics(reg, api.bus, plt.deltaTime);
+        auto end = std::chrono::high_resolution_clock::now();
+	    float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
+   
+        printf("physicsTime:  %f ms, ", elapsed_ms);
+
+
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
 
         if(mode == EngineMode::EDITOR){
             Sys::buildColliderPackets(reg, ldr.getAssetReg(), stk.packets);  
+            //Sys::buildGridPackets(reg, )
         }
         /*THIS IS THE SPLIT BETWEEN ENGINE AND RENDERER, PACKETS ARE GIVEN TO VKSTACK, */
         if (stk.acquireAndValidateImage(PlatformGLFW::stallMinimizedWindow, plt.windowPtr, plt.glwidth, plt.glheight, plt.frameBufferResized, plt.aspectRatio))/*buncha stuff rebuilt inside validateImage if window is resized including imgui stuff, */
@@ -72,8 +82,8 @@ void Engine::run(){
             stk.endFrame();
         }
 
-        
         plt.inputState.clearCursorDeltas();
+       
     }
     plt.shutdown();
     cr_plugin_close(game_plugin);

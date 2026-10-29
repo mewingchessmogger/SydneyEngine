@@ -118,7 +118,7 @@ printf("Feature dynamicRendering: %s\n", supported13.dynamicRendering ? "Support
 printf("Feature synchronization2: %s\n", supported13.synchronization2 ? "Supported" : "Not Supported");
 printf("Feature bufferDeviceAddress: %s\n", supported12.bufferDeviceAddress ? "Supported" : "Not Supported");
 
-// Bools print as 1 or 0 by default in printf to match original std::cout behavior
+// Bools print as 1 or 0 by default a printf to match original std::cout behavior
 printf("GPU supports descriptorIndexing: %d\n", supported12.descriptorIndexing);
 printf("GPU supports runtimeDescriptorArray: %d\n", supported12.runtimeDescriptorArray);
 printf("GPU supports shaderSampledImageArrayNonUniformIndexing: %d\n", supported12.shaderSampledImageArrayNonUniformIndexing);
@@ -180,13 +180,13 @@ void VulkanStack::initSyncs() {
 	createInfo.setFlags(vk::FenceCreateFlagBits::eSignaled);
 	vk::SemaphoreCreateInfo semaphInfo{};
 
-	for (int i{}; i < 2; i++) {
+	for (int i{}; i < DESIRED_IMAGES_IN_FLIGHT; i++) {
 		auto imgR =ctx.device.createSemaphore(semaphInfo);
 		auto renF = ctx.device.createSemaphore(semaphInfo);
 		auto fence = ctx.device.createFence(createInfo);
 		auto immFence = ctx.device.createFence(createInfo);
-		ctx.imageReadySemaphores[i] = imgR;
-		ctx.renderFinishedSemaphores[i] = renF;
+		ctx.imageReadySemaphores.push_back(imgR);
+		ctx.renderFinishedSemaphores.push_back(renF);
 		ctx.fences.push_back(fence);
 		ctx.immFences.push_back(immFence);
 		
@@ -265,12 +265,16 @@ void VulkanStack::initUpdateDescriptorSets(){
 void VulkanStack::initDepthImages(){
 
     
-    AllocatedImage depth{};
-    AllocatedImage depth2{};
-    res.requestImage(ctx.device,ImgType::DEPTH, depth, SET_WIDTH,SET_HEIGHT);
-    res.requestImage(ctx.device,ImgType::DEPTH, depth2, SET_WIDTH,SET_HEIGHT);
-    res.zBufferImages.push_back(depth);
-    res.zBufferImages.push_back(depth2);
+    //AllocatedImage depth2{};
+    for(int i{}; i < DESIRED_IMAGES_IN_FLIGHT; i++){
+        AllocatedImage depth{};
+        res.requestImage(ctx.device,ImgType::DEPTH, depth, SET_WIDTH,SET_HEIGHT);
+        res.zBufferImages.push_back(depth);    
+    }
+    // res.requestImage(ctx.device,ImgType::DEPTH, depth, SET_WIDTH,SET_HEIGHT);
+    // res.requestImage(ctx.device,ImgType::DEPTH, depth2, SET_WIDTH,SET_HEIGHT);
+    // res.zBufferImages.push_back(depth);
+    // res.zBufferImages.push_back(depth2);
     
 }
 
@@ -295,13 +299,17 @@ void VulkanStack::initSwapchain(){
 void VulkanStack::initRenderTargetImages()
 {
      
-    AllocatedImage target{};
-    AllocatedImage target2{};
-    
-    res.requestImage(ctx.device,ImgType::RENDER_TARGET, target, SET_WIDTH,SET_HEIGHT);
-    res.requestImage(ctx.device,ImgType::RENDER_TARGET, target2, SET_WIDTH,SET_HEIGHT);
-    res.renderTargetImages.push_back(target);
-    res.renderTargetImages.push_back(target2);
+    // AllocatedImage target{};
+    // AllocatedImage target2{};
+    for(int i{}; i < DESIRED_IMAGES_IN_FLIGHT; i++){
+        AllocatedImage target{};
+        res.requestImage(ctx.device,ImgType::RENDER_TARGET, target, SET_WIDTH,SET_HEIGHT);
+        res.renderTargetImages.push_back(target);    
+    }
+    // res.requestImage(ctx.device,ImgType::RENDER_TARGET, target, SET_WIDTH,SET_HEIGHT);
+    // res.requestImage(ctx.device,ImgType::RENDER_TARGET, target2, SET_WIDTH,SET_HEIGHT);
+    // res.renderTargetImages.push_back(target);
+    // res.renderTargetImages.push_back(target2);
     
 }
 
@@ -309,13 +317,17 @@ void VulkanStack::initRenderTargetImages()
 void VulkanStack::initViewportImages()
 {
      
-    AllocatedImage target{};
-    AllocatedImage target2{};
-    
-    res.requestImage(ctx.device,ImgType::TEXTURE, target, SET_WIDTH,SET_HEIGHT);
-    res.requestImage(ctx.device,ImgType::TEXTURE, target2, SET_WIDTH,SET_HEIGHT);
-    res.viewportImages.push_back(target);
-    res.viewportImages.push_back(target2);
+    // AllocatedImage target{};
+    // AllocatedImage target2{};
+    for(int i{}; i < DESIRED_IMAGES_IN_FLIGHT;i++){
+        AllocatedImage viewport{};
+        res.requestImage(ctx.device,ImgType::TEXTURE, viewport, SET_WIDTH,SET_HEIGHT);
+        res.viewportImages.push_back(viewport);    
+    }
+    // res.requestImage(ctx.device,ImgType::TEXTURE, target, SET_WIDTH,SET_HEIGHT);
+    // res.requestImage(ctx.device,ImgType::TEXTURE, target2, SET_WIDTH,SET_HEIGHT);
+    // res.viewportImages.push_back(target);
+    // res.viewportImages.push_back(target2);
     
     ImmediateTransitionViewport();
 
@@ -332,8 +344,11 @@ void VulkanStack::ImmediateTransitionViewport(){
     cmdBuffer.begin(beginInfo);
 
     // 3. Record your actual layout changes
-    transitionImage(res.viewportImages[0], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
-    transitionImage(res.viewportImages[1], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+    for(int i{}; i < DESIRED_IMAGES_IN_FLIGHT; i++){     
+        transitionImage(res.viewportImages[i], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal); 
+    }
+    //        transitionImage(res.viewportImages[i], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal); 
+    // transitionImage(res.viewportImages[1], vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
 
     // 4. End recording
     cmdBuffer.end();
