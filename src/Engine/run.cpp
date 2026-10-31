@@ -46,7 +46,7 @@ void Engine::run(){
         auto end = std::chrono::high_resolution_clock::now();
 	    float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
    
-        printf("physicsTime:  %f ms, ", elapsed_ms);
+        //printf("physicsTime:  %f ms, ", elapsed_ms);
 
 
         Sys::updateAnimations(reg, plt.deltaTime);

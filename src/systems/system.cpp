@@ -283,6 +283,7 @@ namespace Sys{
         auto [transPool, rendPool, collPool] = reg.getPools<RawTransform, Renderable, Collider>();
         AssetRegistry::StaticModel& sphere = ast.getStaticModelFromString(std::string{"sphere.glb"});
         AssetRegistry::StaticModel& cube = ast.getStaticModelFromString(std::string{"cube.glb"});
+        AssetRegistry::StaticModel& ramp = ast.getStaticModelFromString(std::string{"ramp.glb"});
 
         for (int i{}; i < collPool.count; i++){
             ECS::Entity e = collPool.dense[i];
@@ -294,17 +295,17 @@ namespace Sys{
             glm::mat4 broadMat = glm::translate(glm::mat4(1.0f),coll.offset + rawTrans.getPosition());
             broadMat = glm::scale(broadMat, glm::vec3(coll.broadRadius));
             
-            //RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
+            RenderPkt broadPkt{.pc{.modelSpace = broadMat}, .type = Mesh::COLLIDER};
             
-            // broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
-            // broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
-            // for(auto& mesh : sphere.meshes){
-            //     broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
-            //     broadPkt.indexCount = mesh.indexCount;
-            //     broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
+            broadPkt.pc.offsetVBO = sphere.baseOffsetBytesVBO / sizeof(Vertex);
+            broadPkt.pc.color = {1.0f,1.0f,1.0f,1.0f};
+            for(auto& mesh : sphere.meshes){
+                broadPkt.offsetIBO = sphere.baseOffsetBytesIBO /sizeof(uint32_t); //  global , THIS AINT  a typo im too tired 
+                broadPkt.indexCount = mesh.indexCount;
+                broadPkt.offsetIBO += mesh.baseIndexLocalIBO;     //global +local           
                 
-            //     packets.push_back(broadPkt);
-            // }
+                packets.push_back(broadPkt);
+            }
             
             RenderPkt narrowPkt{.type = Mesh::COLLIDER};
             narrowPkt.pc.color = {1.0f,0.0f, 0.0f, 1.0f};
@@ -331,11 +332,18 @@ namespace Sys{
                     narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));                   
                     break;
                 }
+                case Collider::RAMP:{
+                    narrowMat = glm::translate(glm::mat4(1.0f),coll.offset+ rawTrans.getPosition());
+                    narrowMat = glm::rotate(narrowMat, coll.narrowRadius, glm::vec3(0.0, 1.0f, 0.0f));
+                    
+                    narrowMat = glm::scale(narrowMat, glm::vec3(coll.narrowExtents));                   
+                    break;
+                }
                 default:
                     assert(0);
                     break;  
             }
-            AssetRegistry::StaticModel& collMesh = (coll.narrowShape == Collider::SPHERE) ? sphere : cube;
+            AssetRegistry::StaticModel& collMesh = (coll.narrowShape == Collider::SPHERE) ? sphere : ((coll.narrowShape == Collider::RAMP) ? ramp : cube);
 
             narrowPkt.pc.modelSpace = narrowMat; 
             narrowPkt.pc.offsetVBO = collMesh.baseOffsetBytesVBO / sizeof(Vertex);

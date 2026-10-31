@@ -145,6 +145,36 @@ namespace SydX {
                     return R * localSupport + c1.offset + r1.position;
 
                 }
+                
+                case Collider::RAMP: {
+                vec3 aDir = dir;
+                vec3 extents = c1.narrowExtents;
+
+                vec3 vertices[6] = {
+                    vec3( -extents.x,  extents.y,  -extents.z),
+                    vec3( -extents.x,  extents.y,  extents.z),
+                    
+                    // Bottom base vertices
+                    vec3(-extents.x, -extents.y, -extents.z),
+                    vec3( extents.x, -extents.y, -extents.z),
+                    vec3(-extents.x, -extents.y, extents.z), 
+                    vec3( extents.x, -extents.y, extents.z)
+                };
+
+                vec3 bestVertex = vertices[0];
+                float maxDot = glm::dot(aDir, vertices[0]);
+
+                for (int i = 1; i < 6; ++i) {
+                    float d = glm::dot(aDir, vertices[i]);
+                    if (d > maxDot) {
+                        maxDot = d;
+                        bestVertex = vertices[i];
+                    }
+                }
+
+                vec3 res = bestVertex + c1.offset + r1.position;
+                return res;
+            }
                 default:
                     return {-1, -1, -1};
 
@@ -181,6 +211,31 @@ namespace SydX {
                     return R * localSupport + c1.offset + bodyPos;
 
                 }
+                case Collider::RAMP: {
+                    vec3 aDir = glm::rotateY(dir, -c1.narrowRadius);
+                    vec3 extents = c1.narrowExtents;
+
+                    vec3 sup {};
+                    if(aDir.z < 0)
+                    {
+                        if(aDir.x < 0)
+                        {
+                            sup = {-extents.x, -extents.y, -extents.z};
+                        }
+                        sup = {extents.x, -extents.y, -extents.z}; 
+                    }
+                    sup = {
+                        (aDir.x < 0) ? -extents.x : extents.x,
+                        (aDir.y < 0) ? -extents.y : extents.y,
+                        extents.z
+                    };
+                    glm::vec3 res = glm::rotateY(sup, c1.narrowRadius) + c1.offset + bodyPos;
+
+                    printf("Result: (%f, %f, %f)\n", res.x, res.y, res.z);
+
+                    return res;
+                }
+
                 default:
                     return {-1, -1, -1};
 

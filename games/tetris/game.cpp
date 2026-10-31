@@ -1,6 +1,7 @@
 
 #include "game.hpp"
 #include "sydney_physics_components.hpp"
+#include "engine_components.hpp"
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 inline glm::quat eulerDeg(glm::vec3 deg){
@@ -12,7 +13,7 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	
 	//api.loadScene("games/tetris/scenes/level1.json");
 	
-	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb"});
+	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb", "ramp.glb"});
 	/*
 	cam, cam, floor,women, gun
 	0,1,2,3,4
@@ -58,7 +59,7 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	
 	int player = reg.createEntity();
 	reg.emplace<TransformInfo>(player);
-	reg.add(player, Collider{.offset = {0.0, -0.20, 0.0}, .broadRadius = 1.1, .narrowShape = Collider::AABB, .narrowExtents = {0.25,0.75,0.25}});
+	reg.add(player, Collider{.offset = {0.0, -0.50, 0.0}, .broadRadius = 1.1, .narrowShape = Collider::SPHERE, .narrowRadius =0.2f, .narrowExtents = {0.25,0.75,0.25}});
 	reg.setParent(camera, player);
 	
 	reg.add(player, SydX::RigidBody{.inverseMass = 5.0, .position = {1.0, 2.0, 0.0}});
@@ -193,10 +194,11 @@ void update(float aspect, float dt, Input::State &state, ECS::Registry& reg, Eng
 		if(state.keyPressed(Input::Key::MouseLeft)){
 			int bullet = reg.createEntity();
 			api.bus.permanentSubscribers.push_back({bullet, 0});
-			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {0.2f,0.2f,0.2f}});
-			reg.add(bullet, SydX::RigidBody{.inverseMass = 1.0f, .position = playerRB.position + 3.0f*camera.dir,.velocity = {}});
-			reg.add(bullet, Collider{.broadRadius = 0.5f, .narrowShape = Collider::AABB, .narrowExtents = {0.2,0.2,0.2}});
-			api.attachModel("cube.glb", bullet);
+			reg.add(bullet,TransformInfo{.position = playerRB.position + 3.0f*camera.dir, .scale = {1.0f,0.5f,2.0f}});
+			reg.add(bullet, SydX::RigidBody{.inverseMass = 0.0, .position = playerRB.position + 3.0f*camera.dir,.velocity = {}});
+			reg.add(bullet, Collider{.broadRadius = 3.0f, .narrowShape = static_cast<uint32_t>(Collider::RAMP), .narrowRadius = 0.0, .narrowExtents = {1.0f,0.5f,2.0f}});
+			printf("%u!!!", Collider::RAMP);
+			api.attachModel("ramp.glb", bullet);
 		}
 
 

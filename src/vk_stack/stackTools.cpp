@@ -402,7 +402,7 @@ void VulkanStack::renderToTarget(){
 	auto end = std::chrono::high_resolution_clock::now();
 	float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
    
-    printf("drawcallTime:  %f ms\n", elapsed_ms);
+    //printf("drawcallTime:  %f ms\n", elapsed_ms);
 
 }
 

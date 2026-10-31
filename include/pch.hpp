@@ -23,6 +23,8 @@
 #include "glm/matrix.hpp"           // For glm::transpose and core mat4 types
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/projection.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/transform.hpp>
 #include <vulkan/vulkan.hpp>
 #include"json.hpp"
 
