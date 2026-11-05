@@ -61,7 +61,22 @@
         meshBaseVertex.shrink_to_fit();
         //printf("\nstatic_model: %s, meshCount: %d, minP:(%f, %f, %f ), maxP:(%f, %f, %f ), scaleFactor: %f . \n\n", mdl.name.c_str(), scn->mNumMeshes, minVertex.x,minVertex.y, minVertex.z, maxVertex.x,maxVertex.y, maxVertex.z, desiredScalingFactor);
     }
-
+    
+    void AssetLoader::parsePositionsOnly(const aiScene *scn, AssetRegistry::TerrainModel& mdl){
+        for(int m{}; m < scn->mNumMeshes; m++){
+            const aiMesh* mesh = scn->mMeshes[m];            
+            for(int v{}; v < mesh->mNumVertices; v++){
+                if(!mesh->HasPositions()){
+                    printf("sereiously no positions for this mesh????!!!\n");
+                    assert(0);    
+                }
+                aiVector3D aiPos = mesh->mVertices[v];
+                
+                mdl.transientPositions.emplace_back(glm::vec3{aiPos.x, aiPos.y, aiPos.z});
+            }
+        }
+        
+    }
     void AssetLoader::parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel& mdl){
         int total_vertices{};
         int total_indices{};
@@ -218,6 +233,11 @@
     }
 
     
+    AssetRegistry::TerrainModel AssetLoader::parseTerrain(const  aiScene *scn, std::string& path){
+        AssetRegistry::TerrainModel mdl{};
+        parsePositionsOnly(scn, mdl);
+        return mdl;
+    }
         
     void AssetLoader::parseScene(const  aiScene *scn, std::string& path)
     {
@@ -230,7 +250,7 @@
             
 
             if(reg.IntegerToStringStaticModelMap.find(mdlCounter) != reg.IntegerToStringStaticModelMap.end()){
-                printf(" THIS SHIT ALREADY IN SKINEND MAP YO MR WHITE!!!\n");
+                printf(" THIS SHIT ALREADY IN static MAP YO MR WHITE!!!\n");
                 assert(0);
             }
             //printf("model: %s, id: %d\n", mdl.name.c_str(), mdlCounter);
@@ -241,7 +261,7 @@
 
             mdlCounter++; 
         }
-
+        
         else{
             AssetRegistry::SkinnedModel mdl{};//TITANIC AINT STATIC!!!!
             mdl.name = path;
@@ -436,7 +456,6 @@
             return v;           
     }
 
-
     void AssetLoader::loadModel(std::string filename, bool tryCaching) {   
         namespace fs = std::filesystem;
         
@@ -463,6 +482,7 @@
                 return;
             }
         }
+
         if(inStaticFolder){
             cachedPath = "models/cached/static/" + filename + ".syd";
             bool cacheExist =fs::exists(cachedPath) && fs::is_regular_file(cachedPath);
@@ -487,16 +507,22 @@
         parseScene(scn, filename);        
         
         if (tryCaching){
-
-        if (inSkinnedFolder){
-            printf(" %s is not in cache..writing to models/cached/skinned..", filename.c_str());
-            AssetRegistry::SkinnedModel& mdl = reg.getSkinnedModelFromID(reg.getModelID(filename)); 
-            writeSkinnedFile(cachedPath, mdl);
+            if (inSkinnedFolder){
+                printf(" %s is not in cache..writing to models/cached/skinned..", filename.c_str());
+                AssetRegistry::SkinnedModel& mdl = reg.getSkinnedModelFromID(reg.getModelID(filename)); 
+                writeSkinnedFile(cachedPath, mdl);
+            }
+            if (inStaticFolder){
+                printf(" %s is not in cache..writing to models/cached/static..", filename.c_str());
+                AssetRegistry::StaticModel& mdl = reg.getStaticModelFromID(reg.getModelID(filename)); 
+                writeStaticFile(cachedPath, mdl);
+            }
         }
-        if (inStaticFolder){
-            printf(" %s is not in cache..writing to models/cached/static..", filename.c_str());
-            AssetRegistry::StaticModel& mdl = reg.getStaticModelFromID(reg.getModelID(filename)); 
-            writeStaticFile(cachedPath, mdl);
-        }
-        }
+    }
+    std::vector<glm::vec3> AssetLoader::getTerrainPolygons(std::string filename) {   
+        std::string subFolder = "static/"; 
+        std::string path = "models/"+ subFolder + filename;
+        const aiScene* scn = getScene(path);
+        AssetRegistry::TerrainModel mdl = parseTerrain(scn, filename);        
+        return mdl.transientPositions;
     }

@@ -14,6 +14,7 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	//api.loadScene("games/tetris/scenes/level1.json");
 	
 	api.loadModels({"dragon.glb","shibahu.glb","fps_character_animation_pack_ak-47.glb", "cube.glb", "sphere.glb", "ramp.glb"});
+	api.loadTerrain("cube.glb");
 	/*
 	cam, cam, floor,women, gun
 	0,1,2,3,4
@@ -29,8 +30,10 @@ void init(ECS::Registry& reg, EngineAPI& api, RuntimeData& rnt){
 	p.position = glm::vec3(2.0, -5.0, 0.0);
 
 	reg.add(floor,p);
-	api.attachModel("cube.glb", floor);
 
+	api.attachModel("cube.glb", floor);
+	//api.attachTerrain("cube.glb", floor);
+	
 	int women = reg.createEntity();
 	
 	TransformInfo w = {.position = {-1.0, 3.0, 0.0}, .quatRot = {}, .scale = glm::vec3{ 1.0f }};

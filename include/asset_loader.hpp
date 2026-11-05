@@ -53,10 +53,12 @@ class AssetLoader : public IAssetLoader{
     public: 
     std::vector<const aiScene*> scenes{};
     void parseMeshes(const aiScene *scn, AssetRegistry::StaticModel& mdl);
+    void parsePositionsOnly(const aiScene *scn, AssetRegistry::TerrainModel &mdl);
     void parseMeshes(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseMeshBones(int meshIndex, const aiMesh *mesh);
     void parseBone(int meshIndex, const aiBone *bone);
-    //void parseSkinned(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
+    AssetRegistry::TerrainModel parseTerrain(const aiScene *scn, std::string &path);
+    // void parseSkinned(const aiScene *scn, AssetRegistry::SkinnedModel &mdl);
     void parseScene(const aiScene *scn, std::string &path);
     const aiNodeAnim *findNodeAnim(const aiAnimation *animation, const std::string nodeName);
     void parseNodeHierarchy(float time, int frameTimesBonesPlusAnimOffset, aiAnimation *pAnimation, const aiNode *pNode, const aiMatrix4x4 &parentTransform, AssetRegistry::SkinnedModel &mdl);
@@ -70,10 +72,10 @@ class AssetLoader : public IAssetLoader{
     //void parseMeshes(const aiScene *scn);
     Vertex parseVertex(const aiMesh *mesh, int i);
     void loadModel(std::string filename, bool tryCaching) override;
+    std::vector<glm::vec3> getTerrainPolygons(std::string filename) override;
     void readSkinnedFile(std::string &path, AssetRegistry::SkinnedModel &mdl);
     void writeSkinnedFile(std::string &path, AssetRegistry::SkinnedModel &mdl);
     void readStaticFile(std::string &path, AssetRegistry::StaticModel &mdl);
-
     void writeStaticFile(std::string &path, AssetRegistry::StaticModel &mdl);
 
     SkinnedVertex parseSkinnedVertex(const aiMesh *mesh, int i);

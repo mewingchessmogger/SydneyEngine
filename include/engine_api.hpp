@@ -12,7 +12,7 @@ class EngineAPI{
     EventBus bus{};
 
     enum Command{
-      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_ETE_BONE, COCONUT
+      LOAD_SCENE, SAVE_SCENE, CREATE_SCENE, SET_DIR_MODELS, SET_DIR_SCENE, LOAD_MODEL, ATTACH_MODEL, SET_ANIMATION,LERP_ANIMATION, ATTACH_ETE_BONE, LOAD_TERRAIN, ATTACH_TERRAIN, COCONUT
     };
     enum EventAction{
       COLLISION, COUNT
@@ -47,6 +47,8 @@ class EngineAPI{
         int srcEntity{-1};
         int dstEntity{-1};
     };
+    
+
 
     std::vector<std::variant<Request,AnimationRequest, AttachEntityToEntityRequest>> reqs{};
     std::vector<Event> events{};
@@ -60,11 +62,19 @@ class EngineAPI{
             reqs.push_back(Request{LOAD_MODEL, path, -1});
         }
     }
-
+    
     void attachModel(const std::string path, int id){
         reqs.push_back(Request{ATTACH_MODEL, path, id});
     }
     
+    void loadTerrain(const std::string path, int id = -1){
+        reqs.push_back(Request{LOAD_TERRAIN, path, -1});
+    }
+    void attachTerrain(const std::string path, int id){
+        reqs.push_back(Request{ATTACH_TERRAIN, path, id});
+    }
+    
+
     void setGameCamera(int entityID){
         gameCameraEntity = entityID;
     }

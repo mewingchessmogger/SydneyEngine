@@ -28,10 +28,7 @@ namespace SydX {
         std::array<ECS::Entity, 2> entities; //  first id always the ray ID
     };
 
-    inline bool checkMidPhase(Collider& c1, Collider& c2, glm::mat4& r1, glm::mat4& r2){
-        float rSquared = (c1.broadRadius + c2.broadRadius) * (c1.broadRadius + c2.broadRadius);
-        return rSquared > glm::distance2(glm::vec3(r1[3])+ c1.offset, glm::vec3(r2[3]) + c2.offset);
-    }
+    
     inline bool checkMidPhaseRB(const Collider& c1, const Collider& c2,const glm::vec3& pos1 , const glm::vec3& pos2){
         float rSquared = (c1.broadRadius + c2.broadRadius) * (c1.broadRadius + c2.broadRadius);
         return rSquared > glm::distance2(pos1+ c1.offset, pos2 + c2.offset);
@@ -81,39 +78,7 @@ namespace SydX {
             }
         }
     
-    inline glm::vec3 supportRawTrans(glm::vec3 dir, Collider& c1, RawTransform& r1){
-            assert(c1.narrowShape != c1.NONE);
-            dir = normalize(dir);
-            switch(c1.narrowShape){
-
-                case Collider::SPHERE:{
-                    return vec3(c1.narrowRadius)* normalize(dir) + c1.offset  + r1.getPosition();
-                }
-                case Collider::AABB: {
-                    vec3 extents = c1.narrowExtents;
-                    return vec3(
-                        (dir.x < 0) ? -extents.x : extents.x,
-                        (dir.y < 0) ? -extents.y : extents.y,
-                        (dir.z < 0) ? -extents.z : extents.z
-                    ) + c1.offset + r1.getPosition();
-
-                }
-                case Collider::OBB: {
-                    vec3 extents = c1.narrowExtents;
-                    glm::mat3 R = r1.getRotationMatrix();
-                    vec3 rotated = glm::transpose(R) * dir;
-                    
-                    vec3 localSupport{
-                        (rotated.x < 0) ? -extents.x : extents.x,
-                        (rotated.y < 0) ? -extents.y : extents.y,
-                        (rotated.z < 0) ? -extents.z : extents.z
-                    };
-
-                    return R * localSupport + c1.offset + r1.getPosition();
-
-                }
-            }
-    }
+    
     inline glm::vec3 supportRigidBody(glm::vec3 dir, Collider& c1, RigidBody& r1){
             assert(c1.narrowShape != c1.NONE);
             dir = normalize(dir);
@@ -154,7 +119,6 @@ namespace SydX {
                     vec3( -extents.x,  extents.y,  -extents.z),
                     vec3( -extents.x,  extents.y,  extents.z),
                     
-                    // Bottom base vertices
                     vec3(-extents.x, -extents.y, -extents.z),
                     vec3( extents.x, -extents.y, -extents.z),
                     vec3(-extents.x, -extents.y, extents.z), 
@@ -180,86 +144,23 @@ namespace SydX {
 
             }
     }
-    inline glm::vec3 supportGeneral(glm::vec3 dir, Collider& c1, const glm::vec3 bodyPos, const glm::quat& bodyRot ){
-            assert(c1.narrowShape != c1.NONE);
-            dir = normalize(dir);
-            switch(c1.narrowShape){
-
-                case Collider::SPHERE:{
-                    return vec3(c1.narrowRadius)* normalize(dir) + c1.offset  + bodyPos;
-                }
-                case Collider::AABB: {
-                    vec3 extents = c1.narrowExtents;
-                    return vec3(
-                        (dir.x < 0) ? -extents.x : extents.x,
-                        (dir.y < 0) ? -extents.y : extents.y,
-                        (dir.z < 0) ? -extents.z : extents.z
-                    ) + c1.offset + bodyPos;
-
-                }
-                case Collider::OBB: {
-                    vec3 extents = c1.narrowExtents;
-                    glm::mat3 R = glm::mat3_cast(bodyRot);
-                    vec3 rotated = glm::transpose(R) * dir;
-                    
-                    vec3 localSupport{
-                        (rotated.x < 0) ? -extents.x : extents.x,
-                        (rotated.y < 0) ? -extents.y : extents.y,
-                        (rotated.z < 0) ? -extents.z : extents.z
-                    };
-
-                    return R * localSupport + c1.offset + bodyPos;
-
-                }
-                case Collider::RAMP: {
-                    vec3 aDir = glm::rotateY(dir, -c1.narrowRadius);
-                    vec3 extents = c1.narrowExtents;
-
-                    vec3 sup {};
-                    if(aDir.z < 0)
-                    {
-                        if(aDir.x < 0)
-                        {
-                            sup = {-extents.x, -extents.y, -extents.z};
-                        }
-                        sup = {extents.x, -extents.y, -extents.z}; 
-                    }
-                    sup = {
-                        (aDir.x < 0) ? -extents.x : extents.x,
-                        (aDir.y < 0) ? -extents.y : extents.y,
-                        extents.z
-                    };
-                    glm::vec3 res = glm::rotateY(sup, c1.narrowRadius) + c1.offset + bodyPos;
-
-                    printf("Result: (%f, %f, %f)\n", res.x, res.y, res.z);
-
-                    return res;
-                }
-
-                default:
-                    return {-1, -1, -1};
-
-            }
-    }
-    //will support hierarchical chilren colliders
-    inline glm::vec3 supportA_minus_B(glm::vec3 dir, Collider& c1, Collider& c2, RawTransform& r1, RawTransform& r2){
-        return supportRawTrans(dir, c1, r1) - supportRawTrans(-dir,c2,r2);
-    }
+    
 
     //only supports ROOT entities, rigidbodyes cant be children
     inline glm::vec3 supportA_minus_B_RigidBody(glm::vec3 dir, Collider& c1, Collider& c2, RigidBody& r1, RigidBody& r2){
         return supportRigidBody(dir, c1, r1) - supportRigidBody(-dir,c2,r2);
     }
-    inline glm::vec3 supportA_minus_B_General(glm::vec3 dir, Collider& c1, Collider& c2, RigidBody& r1, RigidBody& r2){
-        return supportGeneral(dir, c1, r1.position, r1.rotation) - supportGeneral(-dir,c2, r2.position, r2.rotation);
-    }
     
+    class BVH{
         
-    struct GJK{
+    };
+        
+    class GJK{
+        private:
         vec3 dir;
         vec3 a, b, c, d;
         uint32_t n{}; // n refers to the amount of stored points excluding a!
-    
+    public:
     struct ResultGJK{
         std::array<glm::vec3,4> abcd{};
         bool intersected{};
@@ -380,7 +281,7 @@ namespace SydX {
 
         
         template <typename supportFunc>
-        ResultGJK intersect(supportFunc&& supportFn){
+        ResultGJK run(supportFunc&& supportFn){
             
             dir = vec3{1.0, 0.0, 0.0}; 
            
@@ -412,8 +313,6 @@ namespace SydX {
 
     
     struct EPA{
-        
-
         struct FaceResult{
             vec3 normal{};
             float distance{};

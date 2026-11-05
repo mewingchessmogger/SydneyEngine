@@ -87,6 +87,34 @@ namespace Sys{
 
                                 break;
                         }
+                        case EngineAPI::LOAD_TERRAIN:{
+                                printf("parsing terrain %s ...", req.path.c_str());
+                                std::vector<glm::vec3> positions = loader.getTerrainPolygons(req.path.c_str());
+                                for(auto& p : positions){
+                                    printf("%f, %f, %f \n", p.x, p.y, p.z);
+                                }
+
+                                printf("done!\n");
+                                
+                                break;
+                        }			
+                        case EngineAPI::ATTACH_TERRAIN:{
+                                auto& renderables = reg.getPool<Renderable>();
+                                uint32_t meshID = ast.getModelID(req.path);
+                                
+                                if(renderables.hasEntity(req.EntityID)){
+                                    printf("entity #%d updating to '%s' (modelID #%d -> #%d)...", req.EntityID, req.path.c_str(), renderables.get(req.EntityID).id, meshID);
+                                
+                                }else{
+                                    printf("entity #%d assigning  '%s', creating renderable component...", req.EntityID, req.path.c_str());
+                                }
+                                renderables.assign(req.EntityID, {meshID});
+                                printf("done!\n");
+
+                                break;
+                        }
+
+                        
                         case EngineAPI::LOAD_SCENE:{
                                 std::ifstream file(req.path,std::ios::binary);
                                 nlohmann::ordered_json j = nlohmann::ordered_json::parse(file);
@@ -468,19 +496,20 @@ namespace Sys{
         auto [transInfoPool, collPool, rigBodPool, raycastPool] = reg.getPools<TransformInfo, Collider, SydX::RigidBody, SydX::Raycast>();// RAYCAT!!
         static SydX::EPA epa{};
         static SydX::GJK gjk{};
-        
+        static SydX::BVH bvh{};
+
         static std::vector<SydX::CollisionCandidate> candidates{};
-        static std::vector<SydX::RaycastCandidates> rayCandids{};
+        //static std::vector<SydX::RaycastCandidates> rayCandids{};
         
         glm::vec3 gravity = {0.0, -5.0, 0.0};
         
         candidates.clear();
-        rayCandids.clear();
+        //rayCandids.clear();
         collectBroadCandidates(reg, candidates);
-        collectBroadRaycastCandidates(reg, rayCandids);
+        //collectBroadRaycastCandidates(reg, rayCandids);
         int kSubsteps = 8;
         float substep = dt / kSubsteps;
-
+        
         for(int step = 0; step < kSubsteps; step++){
             for (int i{}; i < rigBodPool.count; i++){
                 SydX::RigidBody& rb = rigBodPool.data[i];
@@ -493,7 +522,6 @@ namespace Sys{
             }
             
             for(auto& pair: candidates){
-
                 auto [c1, c2] = collPool.get(pair.entities);
                 auto [rb1, rb2] = rigBodPool.get(pair.entities);
             
@@ -505,10 +533,10 @@ namespace Sys{
                 }
                 //this supportfn will point RB1 - RB2 so arrow pointing towards RB1 from RB2
                 auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_RigidBody(dir, c1, c2, rb1, rb2);};            
-                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
+                
+                SydX::GJK::ResultGJK res = gjk.run(supportFn);
                 if(res.intersected){
                     SydX::EPA::ResultEPA res2 = epa.run(res.abcd, supportFn);
-                    //printf("EPA Normal: (%.4f, %.4f, %.4f) | Depth: %.4f\n", res2.normal.x, res2.normal.y, res2.normal.z, res2.depth);
 
                     glm::vec3 lambda = (res2.normal * res2.depth) / wTotal;
                     rb1.position -= lambda * w1; // +-= depends on the support functions direction A -B or B-A
@@ -516,6 +544,7 @@ namespace Sys{
 
                 }
             }
+
             for (int i{}; i < rigBodPool.count; i++){
                 SydX::RigidBody& rb = rigBodPool.data[i];
                 if (rb.inverseMass <= 0.0f){
@@ -534,36 +563,57 @@ namespace Sys{
         }
 
         
-        for(auto& pair: rayCandids){
-            
-                ECS::Entity rayID = pair.entities[0];
-                SydX::Raycast& ray = raycastPool.get(rayID);
-                SydX::RigidBody rayBody{.rotation = ray.direction, .position = ray.origin};
-                
-                Collider rayCollider{};
-                rayCollider.narrowShape = Collider::OBB;
-                rayCollider.narrowExtents = glm::vec3(0.001f, 0.001f, 100.0f);      
-
-
-
-                ECS::Entity candidateColliderID = pair.entities[1];
-                Collider& c1 = collPool.get(candidateColliderID);
-                SydX::RigidBody& rb = rigBodPool.get(candidateColliderID);
-
-
-                auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_General(dir, c1, rayCollider, rb, rayBody);};            
-                SydX::GJK::ResultGJK res = gjk.intersect(supportFn);
-                
-                if(res.intersected){
-                    bus.raycastHits.push_back({rayID, candidateColliderID});
-                }
-        }
-
+        
         
 
     }
 }
 
+// for(auto& pair: rayCandids){
+            
+        //         ECS::Entity rayID = pair.entities[0];
+        //         SydX::Raycast& ray = raycastPool.get(rayID);
+        //         SydX::RigidBody rayBody{.rotation = ray.direction, .position = ray.origin};
+                
+        //         Collider rayCollider{};
+        //         rayCollider.narrowShape = Collider::OBB;
+        //         rayCollider.narrowExtents = glm::vec3(0.001f, 0.001f, 100.0f);      
+
+
+
+        //         ECS::Entity candidateColliderID = pair.entities[1];
+        //         Collider& c1 = collPool.get(candidateColliderID);
+        //         SydX::RigidBody& rb = rigBodPool.get(candidateColliderID);
+
+
+        //         auto supportFn = [&](glm::vec3 dir) {return SydX::supportA_minus_B_General(dir, c1, rayCollider, rb, rayBody);};            
+        //         SydX::GJK::ResultGJK res = gjk.run(supportFn);
+                
+        //         if(res.intersected){
+        //             bus.raycastHits.push_back({rayID, candidateColliderID});
+        //         }
+        // }
+
+/*
+
+    update SPH
+    run dyn though BVH -> push candidates
+    for dyn in sph:
+        handle static neighbours  -> push candidates / send events
+        handle dyn neighbours  -> push candidates
+
+    for candidates:
+        resolve triangle collisions:
+        resole dyn vs rigidStatic
+        resolve dyn vs dyn
+    
+        
+    
+
+
+
+
+*/
 /*  
 
     3x3 top left is LINEAR trans OF ROTATION * SCALING // 

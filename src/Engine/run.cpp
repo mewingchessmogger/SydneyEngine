@@ -38,7 +38,6 @@ void Engine::run(){
         Sys::processAPI(reg, ldr.getAssetReg(), api, ldr);  // the way game sends requests to engine via api, api queue can be pushed anywhere aswell, future also in editor?
        
         reg.updateHierarchyLevels(); reg.sortHierarchyPool();
-
         Sys::finalizeTransforms(reg); 
         
         auto start = std::chrono::high_resolution_clock::now();
@@ -47,8 +46,6 @@ void Engine::run(){
 	    float elapsed_ms = std::chrono::duration<float, std::milli>(end - start).count();		
    
         //printf("physicsTime:  %f ms, ", elapsed_ms);
-
-
         Sys::updateAnimations(reg, plt.deltaTime);
         Sys::buildRenderPackets(reg, ldr.getAssetReg(), stk.packets);  // <--- NOTICE PASSING REF OF A VECTOR HERE BELONGING TO RENDERER STACk
 
@@ -62,10 +59,9 @@ void Engine::run(){
             edt.evalViewport(stk.res.samplers[static_cast<int>(SamplerType::TEXTURE)], stk.res.viewportImages); //required convoluted mess for my imgui setup to work 
             stk.startFrame();
             if (stk.flushUploads(ldr.getAssetReg())){
-                //stk.abortFrame  (); //laptop conected to monitor crashes on this, not on laptop screen only
+                //stk.abortFrame(); //laptop conected to monitor crashes on this, not on laptop screen only
                 //continue;
             };
-            
             stk.updateUBO(activeCam.view, activeCam.proj);
             stk.renderToTarget(); //there is target image, which is later rendered onto imgui viewport  or standard viewport image directly depending on enginemode
 
@@ -81,7 +77,6 @@ void Engine::run(){
             }
             stk.endFrame();
         }
-
         plt.inputState.clearCursorDeltas();
        
     }
